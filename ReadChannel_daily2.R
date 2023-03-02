@@ -27,11 +27,11 @@ grab_hru<-paste0(c(BR,WM),collapse="|")
 headers<-c("jday",	"mon",	"day",	"yr",	"unit",	"gis_id",	"name",	"areaha",	"precipha.m",	"evapha.m",	
 "seepha.m",	"flo_storm.3.s",	"sed_stormtons",	"orgn_storkgN",	"sedp_storkgP",	"no3_storkgN",	"solp_storkgP",
 "chla_storkg",	"nh3_storkgN",	"no2_storkgN",	"cbod_storkg",	"dox_storkg",	"san_stortons",	"sil_stortons",	"cla_stortons",	"sag_stortons",
-"lag_stortons",	"grv_stortons",	"null1",	"flo_inm.3.s",	"sed_inmtons",	"orgn_inkgN",	"sedp_inkgP",	"no3_inkgN",
+"lag_stortons",	"grv_stortons",	"null1", "setl_stor",	"setlp_stor",	"flo_inm.3.s",	"sed_inmtons",	"orgn_inkgN",	"sedp_inkgP",	"no3_inkgN",
 "solp_inkgP",	"chla_inkg",	"nh3_inkgN",	"no2_inkgN",	"cbod_inkg",	"dox_inkg",	"san_intons",	"sil_intons",	"cla_intons",
-"sag_intons",	"lag_intons",	"grv_intons",	"null",	"flo_outm.3.s",	"sed_outmtons",	"orgn_outkgN",	"sedp_outkgP",	"no3_outkgN",
+"sag_intons",	"lag_intons",	"grv_intons",	"null",	 "setl_in",	"setlp_in","flo_outm.3.s",	"sed_outmtons",	"orgn_outkgN",	"sedp_outkgP",	"no3_outkgN",
 "solp_outkgP",	"chla_outkg",	"nh3_outkgN",	"no2_outkgN",	"cbod_outkg",	"dox_outkg",	"san_outtons",	"sil_outtons",	"cla_outtons",
-"sag_outtons",	"lag_outtons",	"grv_outtons",	"null2","water_tempdegC")#"null3","null4","null5","null6","null7")
+"sag_outtons",	"lag_outtons",	"grv_outtons",	"null2", "setl_out",	"setlp_out", "water_tempdegC")#"null3","null4","null5","null6","null7")
 
 
 
@@ -71,8 +71,7 @@ nrowHRU<- nyrs*nhru
 
 ##### Check if processed channel data already exists
 
-  
-  print("reading from channel output")
+
 
 setwd(scenario_dir)
 tmp <- file('channel_sd_yr.txt')
@@ -143,10 +142,15 @@ baseline_data$scenario[baseline_data$variable=="totp_kg"]<-sum(BR_data$solp_outk
 #scen_flow_5<-quantile(DF$flo_outm.3.s, c(.25)) 
 #scen_flow_95<-quantile(DF$flo_outm.3.s, c(.95)) 
 
-baseline_data$change<-NA
-baseline_data$change<-(baseline_data$scenario-baseline_data$baseline) *100 / baseline_data$baseline
+baseline_data$change_per<-NA
+baseline_data$change_per<-(baseline_data$scenario-baseline_data$baseline) *100 / baseline_data$baseline
 
-average_change_plot<-ggplot(baseline_data,aes(x=variable,y=change))+geom_bar(stat = 'identity')+ylab("Change from baseline (%)")+xlab("")+theme_bw()
+average_change_plot<-ggplot(baseline_data,aes(x=variable,y=change_per))+geom_bar(stat = 'identity')+ylab("Change from baseline (%)")+
+xlab("")+ 
+geom_text(size=20,aes(label=round(change_per)), position=position_dodge(width=0.9), vjust=-0.25,colour="white")+
+theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+      panel.background = element_blank(),text = element_text(size = 16),
+      panel.border = element_rect(colour = "black", fill=NA, size=1))
 
 return(average_change_plot)
 

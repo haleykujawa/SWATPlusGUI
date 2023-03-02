@@ -24,6 +24,8 @@ source("testGUI.R")
 source("ReadHRU_losses.R")
 source("ReadChannel_daily2.R")
 
+run_yrs<-c(2009)
+
 
 # Load needed data ---
 rotations <- read.csv("data/LumAreaSummary.csv")
@@ -157,7 +159,7 @@ server <- function(input, output, session) {
  })
  
 ChangeAtOutlet_reactive<- eventReactive(input$ChangeAtOutlet,{
-   ReadChannel_daily2(c(2011:2017),baseline_data_avg,scenario_dir)
+   ReadChannel_daily2(run_yrs,baseline_data_avg,scenario_dir)
  })
 
 output$ChangeAtOutlet_reactive <- renderPlot({
