@@ -150,7 +150,7 @@ xlab("")+
 geom_text(size=20,aes(label=round(change_per)), position=position_dodge(width=0.9), vjust=-0.25,colour="white")+
 theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
       panel.background = element_blank(),text = element_text(size = 16),
-      panel.border = element_rect(colour = "black", fill=NA, size=1))
+      panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
 
 return(average_change_plot)
 

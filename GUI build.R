@@ -45,18 +45,14 @@ ui <- fluidPage(
                    
                    
                    
-                          
-                          #Make these lines specific to adding cover crops
-                          sliderInput("cc_rate", label = h3("Cover crops"), min = 11, 
-                                      max = 100, value = 11),
-                   p("Baseline rye cover crop rate is 11%"),
-                   
-                   checkboxGroupInput("cc_rot", label = h3("Add to management scenarios"), 
-                                      choices = list("Corn Soy" , "Corn Soy - no till" , "Corn Soy Wheat Soy" ),
-                                      selected = 1),
+                   #management widgets       
+                   numericInput("CSFT", label = "Corn Soy - Full Tillage", value = 21),
+                   hr(),
+                   fluidRow(column(3, verbatimTextOutput("value"))),
+                   p("Baseline rate of Corn Soy - Full Tillage is 21%"),
                    
 
-                   #Make these lines specific to adding cover crops
+                   #ditch widget
                    sliderInput("ditch_rate", label = h3("Conservation ditches"), min = 0, 
                                max = 100, value = 10),
                    p("This changes the rate of conservation ditches on streams of order 1-2. Changing to 100% only changes 128 km (80 mi) of stream"),
@@ -74,12 +70,16 @@ ui <- fluidPage(
                    ),
                    
       mainPanel(
+        #### INPUTS ##################
+        #management scenarios
+        textOutput("selected_CSFT_rate"),
         
-        textOutput("selected_cc_rate"),
-        p("Scenarios to add a rye cover crop to:"),
-        textOutput("selected_rot"),
+        #ditches
         textOutput("selected_ditch_rate"),
+        
         p(),p(),p(),
+        
+        #### OUTPUTS ##################
         uiOutput("runningmodel"),
         p(),p(),p(),
         actionButton("HRUlossapply", "Nutrient and sediment loss from row crops"),
@@ -96,24 +96,21 @@ ui <- fluidPage(
 # Define server logic ----
 server <- function(input, output, session) {
   
-  #final_ditch_rate<-reactive({input$ditch_rate})
+  ###management scenarios###
+  #print input management to UI
+  output$selected_CSFT_rate <- renderText({paste0("Change Corn Soy - Full Tillage rate to ", input$CSFT ,"%") })
   
-  # You can access the value of the widget with input$slider1, e.g.
-  output$selected_cc_rate <- renderText({paste0("Change cover crop rate to ", input$cc_rate ,"%") })
-  output$selected_rot <- renderPrint({ input$cc_rot })
   
+  
+  ###ditches###
+  #print input ditch rate to UI
   output$selected_ditch_rate <- renderText({paste0("Change conservation ditch rate to ", input$ditch_rate ,"%") })  
-  
-  #This is where you place scripts to be run AS A FUNCTION
-  #Will have to render this as some sort of output
-  
-  
- #Change_rot_dist(rotations, cc_rot, cc_rate)
-  
+  #run code to change ditch parameters
+  observeEvent(input$simulate,ImproveDitchParams(input$ditch_rate))
  
- observeEvent(input$simulate,ImproveDitchParams(input$ditch_rate))
- 
- observeEvent(input$cleardir,  Reset_scenario(baseline_dir,scenario_dir)) 
+  
+  #clear scenario inputs by copying baseline to scenario folder
+  observeEvent(input$cleardir,  Reset_scenario(baseline_dir,scenario_dir)) 
 # observeEvent(input$cleardir, {shinyjs::reset("side-panel")})
  
  
