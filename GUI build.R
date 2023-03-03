@@ -16,7 +16,7 @@ library(ggplot2)
 
 # Load scripts to be used ---
 source("Change_rot_dist.R")
-source("ImproveDitchParams.R")
+source("ChangeSWATInputs.R") #changed from improve ditch params
 source("TestShiny.R")
 source("Reset_scenario.R")
 source("RunAllScripts_SWATv60.5.2.R")
@@ -79,6 +79,8 @@ ui <- fluidPage(
         
         p(),p(),p(),
         
+
+        
         #### OUTPUTS ##################
         uiOutput("runningmodel"),
         p(),p(),p(),
@@ -99,14 +101,16 @@ server <- function(input, output, session) {
   ###management scenarios###
   #print input management to UI
   output$selected_CSFT_rate <- renderText({paste0("Change Corn Soy - Full Tillage rate to ", input$CSFT ,"%") })
-  
-  
+
   
   ###ditches###
   #print input ditch rate to UI
   output$selected_ditch_rate <- renderText({paste0("Change conservation ditch rate to ", input$ditch_rate ,"%") })  
-  #run code to change ditch parameters
-  observeEvent(input$simulate,ImproveDitchParams(input$ditch_rate))
+  
+  #run code to change all inputs
+  observeEvent(input$simulate,ChangeSWATInputs(input$ditch_rate,input$CSFT))
+  
+
  
   
   #clear scenario inputs by copying baseline to scenario folder
