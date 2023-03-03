@@ -6,7 +6,7 @@
 
 ### Improvements - move hard coded % up to the top
 
-ChangeSWATInputs <- function(stream_rate,CSFT) {
+ChangeSWATInputs <- function(stream_rate,CSFT,CSNT,CSRT,CSRot,CSNTcc,CSWS,CSWcc) {
 
 
 ############### READ IN DATA ##########################
@@ -180,6 +180,7 @@ sink()
 ########################### CHANGE MANAGEMENT ######################################################
 
 print(paste(c("Hi! testing, heres's the CSFT rate:"), as.character(CSFT)))
+print(paste(c("Hi! testing, heres's the CSNT rate:"), as.character(CSNT)))
 
 
 }
