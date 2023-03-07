@@ -12,6 +12,7 @@ library(reshape2)
 library(tidyr)
 library(rapportools)
 library(ggplot2)
+library(stringr)
 
 
 # Load scripts to be used ---
@@ -46,10 +47,23 @@ ui <- fluidPage(
                    
                    
                    #management widgets       
-                   numericInput("CSFT", label = "Corn Soy - Full Tillage", value = 21),
-                   hr(),
-                   fluidRow(column(3, verbatimTextOutput("value"))),
-                   p("Baseline rate of Corn Soy - Full Tillage is 21%"),
+                   numericInput("CSFT", label = "Corn Bean - Full Tillage", value = 21),
+                   numericInput("CSNT", label = "Corn Bean - No Till", value = 40),
+                   numericInput("CSRT", label = "Corn Bean - Reduced Till", value = 4),
+                   numericInput("CSRot", label = "Corn Bean - Rotational No Till", value = 15),
+                   numericInput("CSNTcc", label = "Corn Bean - Full No Till with rye cover crop", value = 10),
+                   numericInput("CSWS", label = "Corn Bean Wheat /Double crop bean", value = 9),
+                   numericInput("CSWcc", label = "Corn Bean Wheat /rye cover crop", value = 1),
+
+                   
+                   h5("Baseline rates of management:"),
+                   p("Corn Bean - Full Tillage is 21%"), #maybe do /n to remove spave netween them in UI
+                   p("Corn Bean - No Tillage is 40%"),
+                   p("Corn Bean - Reduced Tillage is 4%"),
+                   p("Corn Bean - Rotational No-Till is 15%"),
+                   p("Corn Bean - No-Till with rye cover crop is 10%"),
+                   p("Corn Bean Wheat /Double crop bean is 9%"),
+                   p("Corn Bean Wheat /rye cover crop is 1%"),
                    
 
                    #ditch widget
@@ -71,8 +85,10 @@ ui <- fluidPage(
                    
       mainPanel(
         #### INPUTS ##################
+        #Don't know if I need all this printed to the UI if it's already in the left hand panel, consider removing...
         #management scenarios
         textOutput("selected_CSFT_rate"),
+        textOutput("selected_CSNT_rate"), 
         
         #ditches
         textOutput("selected_ditch_rate"),
@@ -101,6 +117,7 @@ server <- function(input, output, session) {
   ###management scenarios###
   #print input management to UI
   output$selected_CSFT_rate <- renderText({paste0("Change Corn Soy - Full Tillage rate to ", input$CSFT ,"%") })
+  output$selected_CSNT_rate <- renderText({paste0("Change Corn Soy - No Till rate to ", input$CSNT ,"%") })
 
   
   ###ditches###
@@ -108,7 +125,8 @@ server <- function(input, output, session) {
   output$selected_ditch_rate <- renderText({paste0("Change conservation ditch rate to ", input$ditch_rate ,"%") })  
   
   #run code to change all inputs
-  observeEvent(input$simulate,ChangeSWATInputs(input$ditch_rate,input$CSFT))
+  observeEvent(input$simulate,ChangeSWATInputs(input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
+                                               input$CSNTcc,input$CSWS,input$CSWcc))
   
 
  
