@@ -182,8 +182,6 @@ sink()
 
 ########################### CHANGE MANAGEMENT ######################################################
 
-print(paste(c("Hi! testing, heres's the CSFT rate:"), as.character(CSFT)))
-print(paste(c("Hi! testing, heres's the CSNT rate:"), as.character(CSNT)))
 
 ########################## CONVERT MANAGEMENT RATES TO DECIMAL PERCENT ##############
 CSFT<-CSFT/100
@@ -194,14 +192,6 @@ CSNTcc<-CSNTcc/100
 CSWS<-CSWS/100
 CSWcc<-CSWcc/100
 
-#testing
-print(CSFT)
-print(CSNT)
-print(CSRT)
-print(CSRot)
-print(CSNTcc)
-print(CSWS)
-print(CSWcc)
 
 ############### READ IN HRU-DATA ##########################
 setwd(scenario)
@@ -335,8 +325,6 @@ hru_data$lu_mgt[IndexVal]<-"SC_RT"
 
 
 ###### 15% of fields with Corn Soy / Soy Corn - Rotational no-till #######################
-print(cropland_area) #testing
-print(CSRot) #testing
 IndexVal<-(grepl("^CS_FT_tile$",hru_data$lu_mgt))
 hru_data$lu_mgt[ChangeHRU(hru_data,IndexVal,cropland_area, CSRot/2,hru_data$area_ha)]<-"CS_RotT_tile"
 
@@ -534,5 +522,112 @@ sink()
 print('I should have wrote the new hru file by now :)')
 
 ##################### CHANGE HRU PARAMETERS TO MATCH ROTATIONS ##########################
+############### READ IN DATA ##########################
+
+tmp <- file('hydrology.hyd')
+open(tmp, "r") #read
+
+#read past headerline and save to rewrite the file
+topOfFile<-readLines(tmp, n = 2) 
+
+#read file 
+data1<-readLines(tmp, n = -1)
+
+
+close(tmp)
+headers<-c("name", "lat_ttime", "lat_sed", "can_max", "esco", "epco", "orgn_enrich", "orgp_enrich",   "cn3_swf",    "bio_mix", "perco",  "lat_orgn",
+           "lat_orgp",  "harg_pet", "latq_co")
+
+#read by spacing 
+DF<-strsplit(data1,split=" ")
+DF<-lapply(DF, function(z){ z[z != ""]}) 
+DF<-data.frame(do.call(rbind, DF)) #unlist
+colnames(DF)<-headers
+
+################## READ IN SOILS DATA ###############################
+#setwd('..')
+#SSURGO<-read.table("SSURGO.txt",header=T,sep="\t")
+# currently I only need hydr grp and muid
+#SSURGO<-SSURGO[,c(2,6)]
+#colnames(hru_data)[5]<-"muid"
+#hru_data$muid<-as.integer(hru_data$muid)
+
+#hru_data<-left_join(hru_data,SSURGO,by="muid")
+
+################# HRU LOOKUP ########################################
+# merge hru params and hru data to only change ag hru params
+
+# remove white space from hydro in hru-data.hru
+hru_data$hydro<-str_replace_all(hru_data$hydro, fixed(" "), "")
+
+hru_data<-left_join(DF,hru_data,by=c("name"="hydro"))
+
+
+############## CHANGE PERCO based on land use ############################
+# increase CN --> set low (0.05)
+# lower CN --> set high (0.95)
+
+hru_data$perco[grepl("frsd_lum",hru_data$lu_mgt)]<-"0.95000" #stayed the same
+hru_data$perco[grepl("past_lum",hru_data$lu_mgt)]<-"0.70000" #had at 0.7
+hru_data$perco[grepl("urml_lum",hru_data$lu_mgt)]<-"0.05000"
+hru_data$perco[grepl("CS",hru_data$lu_mgt)]<-"0.10000"
+hru_data$perco[grepl("SC",hru_data$lu_mgt)]<-"0.10000"
+
+#rotations with no conservation
+hru_data$perco[grepl("NT",hru_data$lu_mgt)]<-"0.40000" #had all conservation at 0.4
+hru_data$perco[grepl("NTcc",hru_data$lu_mgt)]<-"0.40000"
+hru_data$perco[grepl("CSW",hru_data$lu_mgt)]<-"0.40000"
+hru_data$perco[grepl("RT",hru_data$lu_mgt)]<-"0.20000" #these were at 0.2
+hru_data$perco[grepl("RotT",hru_data$lu_mgt)]<-"0.20000"
+
+DF<-hru_data[,c(1:15)]
+
+################ REWRITE NEW HRU PARAMS #################################
+# convert table to characters and strip of whitespace
+DF[] <- lapply(DF, as.character)
+DF <- lapply(DF, str_trim) # keep the first column with the correct spacing
+
+
+spaceOutput<-function(data,nspaces){
+  
+  newData<-paste0(str_dup(" ",(nspaces-nchar(data))),data)
+  return(newData)
+  
+}
+
+spaceOutput_spacesecond<-function(data,nspaces){
+  
+  newData<-paste0(data,str_dup(" ",(nspaces-nchar(data))))
+  return(newData)
+  
+}
+
+
+
+#space the first two columns appropriately
+DF[[1]]<-spaceOutput_spacesecond(DF[[1]],21) 
+DF[[2]]<-spaceOutput(DF[[2]],9)
+
+#all other columns have 14 spaces
+for (i in c(3:length(DF))){
+  
+  DF[[i]] <- spaceOutput(DF[[i]],14)
+  
+  
+}
+
+setwd(scenario)
+
+#unlink(tmp,force=T)
+file.remove('hydrology.hyd')
+
+sink('hydrology.hyd', type=c("output"), append = T)
+
+write(c(topOfFile),'hydrology.hyd',sep = "\n",append=T)
+
+write(c(paste0(DF[[1]],DF[[2]],DF[[3]],DF[[4]],DF[[5]],DF[[6]],DF[[7]],DF[[8]],DF[[9]],DF[[10]],
+               DF[[11]],DF[[12]],DF[[13]],DF[[14]],DF[[15]])),'hydrology.hyd',sep="\n",append=T)
+
+sink()
 
 }

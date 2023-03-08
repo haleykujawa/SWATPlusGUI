@@ -15,9 +15,6 @@
 
 ### Improvements - move hard coded % up to the top
 
-rm(list=ls())
-xlib = c("readtext","dplyr","splitstackshape","stringr")
-lapply(xlib, require, character.only=T) ; rm(xlib)
 
 set.seed(1)
 
