@@ -93,7 +93,7 @@ ChangeHRU<-function(hru_data,IndexVal,cropland_area,per_change,area_col){
   #sample until the % area of cropland is met
   #ASSUMING ONCE THE AREA GOES OVER IT DOESN'T EXECUTE THAT LOOP AND JUST EXITS THE LOOP, THAT'S WHY SOME OF MY PERCENTAGES I INPUT ARE SLIGHTLY LOWER THAN INPUT (1-2%)
   #THAN THE OUTPUT
-  while( area <= x ){
+  while( area <= x ){ #change to x*1.015 to get closer to the actual input number
     
     #randomly sample per_change value where they are true
     #sampling without replacement has to occur within the one go
@@ -263,7 +263,7 @@ hru_data$area_ha<-as.numeric(hru_data$area_ha)
 
 #total cropland area
 cropland_area<-sum(hru_data$area_ha[grepl("corn_lum",hru_data$lu_mgt) | grepl("soyb_lum",hru_data$lu_mgt) | grepl(paste(c("CS","SC"),collapse="|"),hru_data$lu_mgt)])
-
+print(paste("cropland area is", cropland_area, "ha")) #testing
 ################# READ IN HRU SLOPES ###############################
 
 ##Pull slope of each hru from topography.hyd
@@ -285,7 +285,6 @@ close(tmp)
 
 ################# EDIT HRU DATA #####################################
 
-print('Made it to editing inputs')
 
 ##### Edit an input based on a percentage you want changed ##########
 
@@ -307,16 +306,13 @@ hru_data$lu_mgt[ChangeHRU(hru_data,tileInd,cropland_area, 0.5,hru_data$area_ha)]
 tileInd<-(grepl("rowcrop_lum",hru_data$lu_mgt) )
 hru_data$lu_mgt[tileInd]<-"SC_FT_tile"
 
-#replace HRUs with A classification with no tile landuse
-#notile_cropland_area<-sum(hru_data$area_ha[notileInd])
-#hru_data$lu_mgt[ChangeHRU(hru_data,notileInd,notile_cropland_area, 0.5)]<-"CS_FT"
+# replace HRUs with A classification with no tile landuse
+# notile_cropland_area<-sum(hru_data$area_ha[notileInd])
+# hru_data$lu_mgt[ChangeHRU(hru_data,notileInd,notile_cropland_area, 0.5)]<-"CS_FT"
 
-#notileInd<-grepl("rowcrop_lum",hru_data$lu_mgt) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02)) 
-#hru_data$lu_mgt[notileInd]<-"SC_FT"
+# notileInd<-grepl("rowcrop_lum",hru_data$lu_mgt) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
+# hru_data$lu_mgt[notileInd]<-"SC_FT"
 
-# CSFT,,,,,,
-print('Made it to line 343....')
-print(CSRT)
 ###### 4% of fields with Corn Soy / Soy Corn - Reduced tillage #######################
 
 #Have to re-grab the indicies that can be replaced everytime the table changes
@@ -338,7 +334,6 @@ hru_data$lu_mgt[IndexVal]<-"SC_RT"
 
 
 
-print('Made it to line 365....')
 ###### 15% of fields with Corn Soy / Soy Corn - Rotational no-till #######################
 print(cropland_area) #testing
 print(CSRot) #testing
@@ -469,6 +464,27 @@ hru_data$lu_mgt[IndexVal]<-"CS_FT"
 
 IndexVal<-grepl("SC_FT_tile",hru_data$lu_mgt) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02)) 
 hru_data$lu_mgt[IndexVal]<-"SC_FT"
+
+############ CHECK % OF FINAL MGT ##############################
+
+ # mgt_check<-hru_data %>%
+ # group_by(lu_mgt) %>%
+ # summarize(value=sum(area_ha,na.rm=T))
+
+mgt_check<-data.frame(matrix(nrow=1,ncol=7))
+colnames(mgt_check)<-c("CSFT","CSNT","CSRT","CSRotT","CS_NTcc","CSWS","CSWcc")
+
+mgt_check$CSFT<-sum(hru_data$area_ha[grepl(paste(c("CS_FT","SC_FT"),collapse="|"),hru_data$lu_mgt)])
+mgt_check$CSNT<-sum(hru_data$area_ha[grepl(paste(c("CS_NT","SC_NT"),collapse="|") ,hru_data$lu_mgt) & !grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|") ,hru_data$lu_mgt)])
+mgt_check$CSRT<-sum(hru_data$area_ha[grepl(paste(c("CS_RT","SC_RT"),collapse="|"),hru_data$lu_mgt)])
+mgt_check$CSRotT<-sum(hru_data$area_ha[grepl(paste(c("CS_RotT","SC_RotT"),collapse="|"),hru_data$lu_mgt)])
+mgt_check$CS_NTcc<-sum(hru_data$area_ha[grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|"),hru_data$lu_mgt)])
+mgt_check$CSWS<-sum(hru_data$area_ha[grepl(c("CSWS"),hru_data$lu_mgt)])
+mgt_check$CSWcc<-sum(hru_data$area_ha[grepl(c("CSWcc"),hru_data$lu_mgt)])
+
+# colnames(mgt_check)<-c("lum","area ha") 
+
+ write.csv(mgt_check,"mgt_check.csv",row.names=F)
 
 ############ WRITE NEW HRU-DATA.HRU #############################
 # convert table to characters and strip of whitespace
