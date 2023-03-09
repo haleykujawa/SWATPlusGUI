@@ -55,10 +55,18 @@ ui <- fluidPage(
                    numericInput("CSNTcc", label = "Corn Bean - Full No Till with rye cover crop", value = 10),
                    numericInput("CSWS", label = "Corn Bean Wheat /Double crop bean", value = 9),
                    numericInput("CSWcc", label = "Corn Bean Wheat /rye cover crop", value = 1),
+                   
+                   numericInput("CSFT_B", label = "Corn Bean - Full Tillage - buffer rate", value = 21),
+                   numericInput("CSNT_B", label = "Corn Bean - No Till - buffer rate", value = 40),
+                   numericInput("CSRT_B", label = "Corn Bean - Reduced Till - buffer rate", value = 4),
+                   numericInput("CSRot_B", label = "Corn Bean - Rotational No Till - buffer rate", value = 15),
+                   numericInput("CSNTcc_B", label = "Corn Bean - Full No Till with rye cover crop - buffer rate", value = 10),
+                   numericInput("CSWS_B", label = "Corn Bean Wheat /Double crop bean - buffer rate", value = 9),
+                   numericInput("CSWcc_B", label = "Corn Bean Wheat /rye cover crop - buffer rate", value = 1),
 
                    
                    h5("Baseline rates of management:"),
-                   p("Corn Bean - Full Tillage is 21%"), #maybe do /n to remove spave netween them in UI
+                   p("Corn Bean - Full Tillage is 21%"), #maybe do /n to remove space between them in UI
                    p("Corn Bean - No Tillage is 40%"),
                    p("Corn Bean - Reduced Tillage is 4%"),
                    p("Corn Bean - Rotational No-Till is 15%"),
@@ -127,7 +135,10 @@ server <- function(input, output, session) {
   
   #run code to change all inputs
   observeEvent(input$simulate,ChangeSWATInputs(input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
-                                               input$CSNTcc,input$CSWS,input$CSWcc))
+                                               input$CSNTcc,input$CSWS,input$CSWcc,
+                                               
+                                               input$CSFT_B,input$CSNT_B,input$CSRT_B,input$CSRot_B,
+                                               input$CSNTcc_B,input$CSWS_B,input$CSWcc_B))
   
 
  
