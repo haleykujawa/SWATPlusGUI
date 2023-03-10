@@ -352,7 +352,7 @@ for(mgt_nm in mgt$name[-length(mgt$name)]){
   
    IndexVal<-grepl("^rowcrop_lum$",hru_data$lu_mgt)
    rt<-mgt$rate[mgt$name == mgt_nm]
-   hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , cropland_area , rt , hru_data$area_ha)]<-mgt_nm
+   hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , cropland_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_tile")
 
   print(mgt_nm)
 }
@@ -360,25 +360,25 @@ for(mgt_nm in mgt$name[-length(mgt$name)]){
 #replace remaining with the last mgt rotation or the loop will hang
 mgt_nm<-mgt$name[length(mgt$name)]
 IndexVal<-grepl("^rowcrop_lum$",hru_data$lu_mgt)
-hru_data$lu_mgt[IndexVal]<-mgt_nm
+hru_data$lu_mgt[IndexVal]<-paste0(mgt_nm,"_tile")
 
 ##### add grww ##########################################################
 for(mgt_nm in mgt$name[-length(mgt$name)]){
   
   
-  IndexVal<-grepl(paste0("^",mgt_nm,"$"),hru_data$lu_mgt)
-  mgt_area<-sum(hru_data$area_ha[IndexVal])
+  IndexVal<-grepl(paste0("^",mgt_nm,"_tile$"),hru_data$lu_mgt)
+  mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
   rt<-mgt$grww_rate[mgt$name == mgt_nm]
-  hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_GW") 
+  hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_tile_GW") 
   
 }
 
 #replace remaining with the last mgt rotation or the loop will hang
 mgt_nm<-mgt$name[length(mgt$name)]
-IndexVal<-grepl(paste0("^",mgt_nm,"$"),hru_data$lu_mgt)
-mgt_area<-sum(hru_data$area_ha[IndexVal])
+IndexVal<-grepl(paste0("^",mgt_nm,"_tile$"),hru_data$lu_mgt)
+mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
 rt<-mgt$grww_rate[mgt$name == mgt_nm]
-hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_GW") 
+hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_tile_GW") 
 
 # add LS, MS, or HS based on slope
 # IndexVal<-(grepl("_GW",hru_data$lu_mgt) & (hru_data$slp <=  0.02))
@@ -396,20 +396,20 @@ hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha
 for(mgt_nm in mgt$name[-length(mgt$name)]){
   
 
-  IndexVal<-grepl(paste0("^",mgt_nm,"$"),hru_data$lu_mgt)
-  mgt_area<-sum(hru_data$area_ha[IndexVal])
+  IndexVal<-grepl(paste0("^",mgt_nm,"_tile$"),hru_data$lu_mgt)
+  mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
   rt<-mgt$vfs_rate[mgt$name == mgt_nm]
-  hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_B") #remove tile at the end
+  hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_tile_B") 
   
   print(mgt_nm)
 }
 
 #replace remaining with the last mgt rotation or the loop will hang
 mgt_nm<-mgt$name[length(mgt$name)]
-IndexVal<-grepl(paste0("^",mgt_nm,"$"),hru_data$lu_mgt)
-mgt_area<-sum(hru_data$area_ha[IndexVal])
+IndexVal<-grepl(paste0("^",mgt_nm,"_tile$"),hru_data$lu_mgt)
+mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
 rt<-mgt$vfs_rate[mgt$name == mgt_nm]
-hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_B") #remove tile at the end
+hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_tile_B") 
 
 
 ###### check buffers #################################################################
@@ -429,7 +429,11 @@ input_grww_rate<-sum(mgt$rate*100*mgt$grww_rate)
 
 grww_error<-output_grww_rate-input_grww_rate
 
-############ ADD TILES BACK IN #################################
+############ REMOVE TILES #################################
+rmtileInd<-( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
+
+hru_data$lu_mgt[rmtileInd]<-str_remove(hru_data$lu_mgt[rmtileInd],"_tile")
+
 
 ############ CHECK % OF FINAL MGT ##############################
 
