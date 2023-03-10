@@ -6,7 +6,8 @@
 
 ### Improvements - move hard coded % up to the top
 
-ChangeSWATInputs <- function(stream_rate,CSFT,CSNT,CSRT,CSRot,CSNTcc,CSWS,CSWcc) {
+ChangeSWATInputs <- function(stream_rate,CSFT,CSNT,CSRT,CSRot,CSNTcc,CSWS,CSWcc,
+                             CSFT_B,CSNT_B,CSRT_B,CSRot_B,CSNTcc_B,CSWS_B,CSWcc_B) {
 
 
 ############### READ IN DATA ##########################
@@ -120,7 +121,7 @@ ChangeHRU<-function(hru_data,IndexVal,cropland_area,per_change,area_col){
 #stream order 1 or 2
 ind<- grepl(paste0(c("1","2"),collapse="|"),DF$order)
 
-DF$erod_fact[ChangeHRU(DF,ind,sum(DF$len_num), stream_rate,DF$len_num)]<-"0.00010"
+DF$erod_fact[ChangeHRU(DF,ind,sum(DF$len_num), stream_rate,DF$len_num)]<-"0.00010" #Testing to find what this should be
 
 # also change other related parameters
 
@@ -184,14 +185,81 @@ sink()
 
 
 ########################## CONVERT MANAGEMENT RATES TO DECIMAL PERCENT ##############
-CSFT<-CSFT/100
-CSNT<-CSNT/100
-CSRT<-CSRT/100
-CSRot<-CSRot/100
-CSNTcc<-CSNTcc/100
-CSWS<-CSWS/100
-CSWcc<-CSWcc/100
+# CSFT<-CSFT/100
+# CSNT<-CSNT/100
+# CSRT<-CSRT/100
+# CSRot<-CSRot/100
+# CSNTcc<-CSNTcc/100
+# CSWS<-CSWS/100
+# CSWcc<-CSWcc/100
 
+mgt<-data.frame(matrix(nrow=12,ncol=4))
+colnames(mgt)<-c("name","rate","vfs_rate","grww_rate")
+
+mgt$name<-c("CS_FT","CS_RT","CS_RotT","CS_NT","CS_NTcc","CSWS","CSWcc","SC_FT","SC_RT","SC_RotT","SC_NT","SC_NTcc")
+#don't know if I need all this, could just append the base name
+# mgt$name_tile<-c("CS_FT_tile","CS_RT_tile","CS_RotT_tile","CS_NT_tile","CS_NTcc_tile","CSWS_tile","CSWcc_tile", 
+                 # "SC_FT_tile","SC_RT_tile","SC_RotT_tile","SC_NT_tile","SC_NTcc_tile")
+
+#mgt
+mgt$rate[mgt$name=="CS_FT"]<-(CSFT/2)/100
+mgt$rate[mgt$name=="SC_FT"]<-(CSFT/2)/100
+
+mgt$rate[mgt$name=="CS_RT"]<-(CSRT/2)/100
+mgt$rate[mgt$name=="SC_RT"]<-(CSRT/2)/100
+
+mgt$rate[mgt$name=="CS_RotT"]<-(CSRot/2)/100
+mgt$rate[mgt$name=="SC_RotT"]<-(CSRot/2)/100
+
+mgt$rate[mgt$name=="CS_NT"]<-(CSNT/2)/100
+mgt$rate[mgt$name=="SC_NT"]<-(CSNT/2)/100
+
+mgt$rate[mgt$name=="CS_NTcc"]<-(CSNTcc/2)/100
+mgt$rate[mgt$name=="SC_NTcc"]<-(CSNTcc/2)/100
+
+mgt$rate[mgt$name=="CSWS"]<-(CSWS)/100
+
+mgt$rate[mgt$name=="CSWcc"]<-(CSWcc)/100
+
+#buffers
+mgt$vfs_rate[mgt$name=="CS_FT"]<-(CSFT_B/2)/100
+mgt$vfs_rate[mgt$name=="SC_FT"]<-(CSFT_B/2)/100
+
+mgt$vfs_rate[mgt$name=="CS_RT"]<-(CSRT_B/2)/100
+mgt$vfs_rate[mgt$name=="SC_RT"]<-(CSRT_B/2)/100
+
+mgt$vfs_rate[mgt$name=="CS_RotT"]<-(CSRot_B/2)/100
+mgt$vfs_rate[mgt$name=="SC_RotT"]<-(CSRot_B/2)/100
+
+mgt$vfs_rate[mgt$name=="CS_NT"]<-(CSNT_B/2)/100
+mgt$vfs_rate[mgt$name=="SC_NT"]<-(CSNT_B/2)/100
+
+mgt$vfs_rate[mgt$name=="CS_NTcc"]<-(CSNTcc_B/2)/100
+mgt$vfs_rate[mgt$name=="SC_NTcc"]<-(CSNTcc_B/2)/100
+
+mgt$vfs_rate[mgt$name=="CSWS"]<-(CSWS_B)/100
+
+mgt$vfs_rate[mgt$name=="CSWcc"]<-(CSWcc_B)/100
+
+#grassed waterways
+mgt$grww_rate[mgt$name=="CS_FT"]<-(CSFT_GW/2)/100
+mgt$grww_rate[mgt$name=="SC_FT"]<-(CSFT_GW/2)/100
+
+mgt$grww_rate[mgt$name=="CS_RT"]<-(CSRT_GW/2)/100
+mgt$grww_rate[mgt$name=="SC_RT"]<-(CSRT_GW/2)/100
+
+mgt$grww_rate[mgt$name=="CS_RotT"]<-(CSRot_GW/2)/100
+mgt$grww_rate[mgt$name=="SC_RotT"]<-(CSRot_GW/2)/100
+
+mgt$grww_rate[mgt$name=="CS_NT"]<-(CSNT_GW/2)/100
+mgt$grww_rate[mgt$name=="SC_NT"]<-(CSNT_GW/2)/100
+
+mgt$grww_rate[mgt$name=="CS_NTcc"]<-(CSNTcc_GW/2)/100
+mgt$grww_rate[mgt$name=="SC_NTcc"]<-(CSNTcc_GW/2)/100
+
+mgt$grww_rate[mgt$name=="CSWS"]<-(CSWS_GW)/100
+
+mgt$grww_rate[mgt$name=="CSWcc"]<-(CSWcc_GW)/100
 
 ############### READ IN HRU-DATA ##########################
 setwd(scenario)
@@ -275,183 +343,93 @@ close(tmp)
 
 ################# EDIT HRU DATA #####################################
 
-
-##### Edit an input based on a percentage you want changed ##########
-
-# rename CS,CSW,CSWcc with some generic filler so I know which cells have and haven't been changed
+#replace all data with a generic filler
 hru_data$lu_mgt[grepl(paste(c("CS","SC","corn_lum","soyb_lum"),collapse="|"),hru_data$lu_mgt)]<-"rowcrop_lum"
 
-#tile index
-#C,D, and B soils with slopes less than 2%
-tileInd<-(grepl("rowcrop_lum",hru_data$lu_mgt))
+###### loop for base mgt #################################################
 
-#no tile index
-#A soils and B soils with slope greater than or equal to 2%
-#notileInd<-grepl("rowcrop_lum",hru_data$lu_mgt) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02)) 
+for(mgt_nm in mgt$name[-length(mgt$name)]){
+  
+   IndexVal<-grepl("^rowcrop_lum$",hru_data$lu_mgt)
+   rt<-mgt$rate[mgt$name == mgt_nm]
+   hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , cropland_area , rt , hru_data$area_ha)]<-mgt_nm
 
-#replace 100% replace all automated corn and soy with the CS/SC rotations I specified
-hru_data$lu_mgt[ChangeHRU(hru_data,tileInd,cropland_area, 0.5,hru_data$area_ha)]<-"CS_FT_tile"
+  print(mgt_nm)
+}
 
-#replace the remaining 50%
-tileInd<-(grepl("rowcrop_lum",hru_data$lu_mgt) )
-hru_data$lu_mgt[tileInd]<-"SC_FT_tile"
+#replace remaining with the last mgt rotation or the loop will hang
+mgt_nm<-mgt$name[length(mgt$name)]
+IndexVal<-grepl("^rowcrop_lum$",hru_data$lu_mgt)
+hru_data$lu_mgt[IndexVal]<-mgt_nm
 
-# replace HRUs with A classification with no tile landuse
-# notile_cropland_area<-sum(hru_data$area_ha[notileInd])
-# hru_data$lu_mgt[ChangeHRU(hru_data,notileInd,notile_cropland_area, 0.5)]<-"CS_FT"
+##### add grww ##########################################################
+for(mgt_nm in mgt$name[-length(mgt$name)]){
+  
+  
+  IndexVal<-grepl(paste0("^",mgt_nm,"$"),hru_data$lu_mgt)
+  mgt_area<-sum(hru_data$area_ha[IndexVal])
+  rt<-mgt$grww_rate[mgt$name == mgt_nm]
+  hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_GW") 
+  
+}
 
-# notileInd<-grepl("rowcrop_lum",hru_data$lu_mgt) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
-# hru_data$lu_mgt[notileInd]<-"SC_FT"
+#replace remaining with the last mgt rotation or the loop will hang
+mgt_nm<-mgt$name[length(mgt$name)]
+IndexVal<-grepl(paste0("^",mgt_nm,"$"),hru_data$lu_mgt)
+mgt_area<-sum(hru_data$area_ha[IndexVal])
+rt<-mgt$grww_rate[mgt$name == mgt_nm]
+hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_GW") 
 
-###### 4% of fields with Corn Soy / Soy Corn - Reduced tillage #######################
-
-#Have to re-grab the indicies that can be replaced everytime the table changes
-# using ^ character $ ensures you only grab that specific row with the exact text match
-#replace with tiled fields, then out of that replace any with untiled characteristics (A, B w/ slope >2%) with the management but no tile
-IndexVal<-grepl("^CS_FT_tile$",hru_data$lu_mgt)
-hru_data$lu_mgt[ChangeHRU(hru_data,IndexVal,cropland_area, CSRT/2,hru_data$area_ha)]<-"CS_RT_tile_B" # These fields have buffers #
-
-IndexVal<-grepl("^SC_FT_tile$",hru_data$lu_mgt)
-hru_data$lu_mgt[ChangeHRU(hru_data,IndexVal,cropland_area, CSRT/2,hru_data$area_ha)]<-"SC_RT_tile"
-
-IndexVal<-(grepl("^CS_RT_tile_B$",hru_data$lu_mgt)) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
-hru_data$lu_mgt[IndexVal]<-"CS_RT_B" # These fields have buffers #
-
-
-#replace rows with soil type A or B with slopes >2% with same management but no tile
-IndexVal<-grepl("SC_RT_tile",hru_data$lu_mgt) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02)) 
-hru_data$lu_mgt[IndexVal]<-"SC_RT"
-
-
-
-###### 15% of fields with Corn Soy / Soy Corn - Rotational no-till #######################
-IndexVal<-(grepl("^CS_FT_tile$",hru_data$lu_mgt))
-hru_data$lu_mgt[ChangeHRU(hru_data,IndexVal,cropland_area, CSRot/2,hru_data$area_ha)]<-"CS_RotT_tile"
-
-IndexVal<-(grepl("^SC_FT_tile$",hru_data$lu_mgt))
-hru_data$lu_mgt[ChangeHRU(hru_data,IndexVal,cropland_area, CSRot/2,hru_data$area_ha)]<-"SC_RotT_tile_B" # These fields have buffers #
-
-#replace rows with soil type A/B with same management but notile
-IndexVal<-(grepl("SC_RotT_tile",hru_data$lu_mgt)) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
-hru_data$lu_mgt[IndexVal]<-"SC_RotT_B" # These fields have buffers #
-
-IndexVal<-(grepl("CS_RotT_tile",hru_data$lu_mgt)) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
-hru_data$lu_mgt[IndexVal]<-"CS_RotT"
-
-
-
-###### 40% CS full no till ###########################
-IndexVal<-(grepl("^CS_FT_tile$",hru_data$lu_mgt))
-hru_data$lu_mgt[ChangeHRU(hru_data,IndexVal,cropland_area, CSNT/2,hru_data$area_ha)]<-"CS_NT_tile" #These fields have grassed waterways#
-
-#Have to add tile here before using grassed waterways index
-IndexVal<-(grepl("CS_NT_tile",hru_data$lu_mgt)) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
-hru_data$lu_mgt[IndexVal]<-"CS_NT" #These fields have grassed waterways #
-
-#Replace with grassed waterway based on slope (low, medium, high)
-#tiled
-#low
-IndexVal<-(grepl("^CS_NT_tile$",hru_data$lu_mgt) & (hru_data$slp <=  0.02))
-hru_data$lu_mgt[IndexVal]<-"CS_NT_tile_GW_LS" # low slope buffers #
+# add LS, MS, or HS based on slope
+# IndexVal<-(grepl("_GW",hru_data$lu_mgt) & (hru_data$slp <=  0.02))
+# hru_data$lu_mgt[IndexVal]<-paste0(hru_data$lu_mgt[IndexVal],"_LS") # Low slope buffers #
 
 #medium
-IndexVal<-(grepl("^CS_NT_tile$",hru_data$lu_mgt) & (0.02 < hru_data$slp & hru_data$slp <=  0.08))
-hru_data$lu_mgt[IndexVal]<-"CS_NT_tile_GW_MS" # Medium slope buffers #
+# IndexVal<-(grepl("_GW",hru_data$lu_mgt) & (0.02 < hru_data$slp & hru_data$slp <=  0.08))
+# hru_data$lu_mgt[IndexVal]<-paste0(hru_data$lu_mgt[IndexVal],"_MS") # Medium slope buffers #
 
 #high
-IndexVal<-(grepl("^CS_NT_tile$",hru_data$lu_mgt) & (0.08 < hru_data$slp))
-hru_data$lu_mgt[IndexVal]<-"CS_NT_tile_GW_HS" # High slope buffers #
+# IndexVal<-(grepl("_GW",hru_data$lu_mgt) & (0.08 < hru_data$slp))
+# hru_data$lu_mgt[IndexVal]<-paste0(hru_data$lu_mgt[IndexVal],"_HS") # High slope buffers #
 
-#untiled
-#low
-IndexVal<-(grepl("^CS_NT$",hru_data$lu_mgt) & (hru_data$slp <=  0.02))
-hru_data$lu_mgt[IndexVal]<-"CS_NT_GW_LS" # low slope buffers #
+##### add buffers ##########################################################
+for(mgt_nm in mgt$name[-length(mgt$name)]){
+  
 
-#medium
-IndexVal<-(grepl("^CS_NT$",hru_data$lu_mgt) & (0.02 < hru_data$slp & hru_data$slp <=  0.08))
-hru_data$lu_mgt[IndexVal]<-"CS_NT_GW_MS" # Medium slope buffers #
+  IndexVal<-grepl(paste0("^",mgt_nm,"$"),hru_data$lu_mgt)
+  mgt_area<-sum(hru_data$area_ha[IndexVal])
+  rt<-mgt$vfs_rate[mgt$name == mgt_nm]
+  hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_B") #remove tile at the end
+  
+  print(mgt_nm)
+}
 
-#high
-IndexVal<-(grepl("^CS_NT$",hru_data$lu_mgt) & (0.08 < hru_data$slp))
-hru_data$lu_mgt[IndexVal]<-"CS_NT_GW_HS" # High slope buffers #
-
-
-IndexVal<-(grepl("^SC_FT_tile$",hru_data$lu_mgt))
-hru_data$lu_mgt[ChangeHRU(hru_data,IndexVal,cropland_area, CSNT/2,hru_data$area_ha)]<-"SC_NT_tile_B" # These fields have buffers #
-
-#replace rows with soil type A/B with same management but notile
-IndexVal<-(grepl("SC_NT_tile",hru_data$lu_mgt)) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
-hru_data$lu_mgt[IndexVal]<-"SC_NT_B" # These fields have buffers #
+#replace remaining with the last mgt rotation or the loop will hang
+mgt_nm<-mgt$name[length(mgt$name)]
+IndexVal<-grepl(paste0("^",mgt_nm,"$"),hru_data$lu_mgt)
+mgt_area<-sum(hru_data$area_ha[IndexVal])
+rt<-mgt$vfs_rate[mgt$name == mgt_nm]
+hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_B") #remove tile at the end
 
 
+###### check buffers #################################################################
+mgt_check<-hru_data %>%
+group_by(lu_mgt) %>%
+summarize(value=sum(area_ha,na.rm=T))
 
-###### CS full no till w/ cc  ###########################
-IndexVal<-(grepl("^CS_FT_tile$",hru_data$lu_mgt))
-hru_data$lu_mgt[ChangeHRU(hru_data,IndexVal,cropland_area, CSNTcc/2,hru_data$area_ha)]<-"CS_NTcc_tile_B" # These fields have buffers #
+mgt_check$percent<-round(mgt_check$value*100/cropland_area,2)
 
-IndexVal<-(grepl("^SC_FT_tile$",hru_data$lu_mgt))
-hru_data$lu_mgt[ChangeHRU(hru_data,IndexVal,cropland_area, CSNTcc/2,hru_data$area_ha)]<-"SC_NTcc_tile"
+output_buffer_rate<-sum(mgt_check$value[grepl("B",mgt_check$lu_mgt)]*100/cropland_area)
+input_buffer_rate<-sum(mgt$rate*100*mgt$vfs_rate)
 
-#replace rows with soil type A/B with same management but notile
-IndexVal<-(grepl("CS_NTcc_tile",hru_data$lu_mgt)) & (hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
-hru_data$lu_mgt[IndexVal]<-"SC_NTcc"
+buffer_error<-output_buffer_rate-input_buffer_rate
 
-IndexVal<-(grepl("SC_NTcc_tile",hru_data$lu_mgt)) & (hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
-hru_data$lu_mgt[IndexVal]<-"CS_NTcc_B" # These fields have buffers #
+output_grww_rate<-sum(mgt_check$value[grepl("GW",mgt_check$lu_mgt)]*100/cropland_area)
+input_grww_rate<-sum(mgt$rate*100*mgt$grww_rate)
 
+grww_error<-output_grww_rate-input_grww_rate
 
-
-###### 9% CSW double crop beans ###########################
-IndexVal<-(grepl("^CS_FT_tile$",hru_data$lu_mgt) | grepl("^SC_FT_tile$",hru_data$lu_mgt))
-hru_data$lu_mgt[ChangeHRU(hru_data,IndexVal,cropland_area, CSWS,hru_data$area_ha)]<-"CSWS_tile"
-
-#replace rows with soil type A/B with same management but notile
-IndexVal<-(grepl("CSWS_tile",hru_data$lu_mgt)) & (hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
-hru_data$lu_mgt[IndexVal]<-"CSWS"
-
-
-
-###### 1% CSW double crop beans ###########################
-IndexVal<-(grepl("^CS_FT_tile$",hru_data$lu_mgt) | grepl("^SC_FT_tile$",hru_data$lu_mgt) )
-hru_data$lu_mgt[ChangeHRU(hru_data,IndexVal,cropland_area, CSWcc,hru_data$area_ha)]<-"CSWcc_tile" #These fields have grassed waterways #
-
-#replace rows with soil type A/B with same management but notile
-IndexVal<-(grepl("CSWcc_tile",hru_data$lu_mgt)) & (hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
-hru_data$lu_mgt[IndexVal]<-"CSWcc"
-
-#Replace with grassed waterway based on slope (low, medium, high)
-#tiled
-#low
-IndexVal<-(grepl("^CSWcc_tile$",hru_data$lu_mgt) & (hru_data$slp <=  0.02))
-hru_data$lu_mgt[IndexVal]<-"CSWcc_tile_GW_LS" # low slope buffers #
-
-#medium
-IndexVal<-(grepl("^CSWcc_tile$",hru_data$lu_mgt) & (0.02 < hru_data$slp & hru_data$slp <=  0.08))
-hru_data$lu_mgt[IndexVal]<-"CSWcc_tile_GW_MS" # Medium slope buffers #
-
-#high
-IndexVal<-(grepl("^CSWcc_tile$",hru_data$lu_mgt) & (0.08 < hru_data$slp))
-hru_data$lu_mgt[IndexVal]<-"CSWcc_tile_GW_HS" # High slope buffers #
-
-#untiled
-#low
-IndexVal<-(grepl("^CSWcc$",hru_data$lu_mgt) & (hru_data$slp <=  0.02))
-hru_data$lu_mgt[IndexVal]<-"CSWcc_GW_LS" # low slope buffers #
-
-#medium
-IndexVal<-(grepl("^CSWcc$",hru_data$lu_mgt) & (0.02 < hru_data$slp & hru_data$slp <=  0.08))
-hru_data$lu_mgt[IndexVal]<-"CSWcc_GW_MS" # Medium slope buffers #
-
-#high
-IndexVal<-(grepl("^CSWcc$",hru_data$lu_mgt) & (0.08 < hru_data$slp))
-hru_data$lu_mgt[IndexVal]<-"CSWcc_GW_HS" # High slope buffers #
-
-### Now replace all A + B 2% soils from the initialization of CS and SC FT rotations and replace with no tile ###
-IndexVal<-grepl("CS_FT_tile",hru_data$lu_mgt) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02)) 
-hru_data$lu_mgt[IndexVal]<-"CS_FT"
-
-IndexVal<-grepl("SC_FT_tile",hru_data$lu_mgt) & ( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02)) 
-hru_data$lu_mgt[IndexVal]<-"SC_FT"
+############ ADD TILES BACK IN #################################
 
 ############ CHECK % OF FINAL MGT ##############################
 
