@@ -119,11 +119,13 @@ ChangeHRU<-function(hru_data,IndexVal,cropland_area,per_change,area_col){
 
 ################# CHANGE X% OF STREAM PARAMS TO REPRESENT A CONSERVATION DITCH ############
 
-#stream order 1 or 2
+if(stream_rate > 0){
+  #stream order 1 or 2
 ind<- grepl(paste0(c("1","2"),collapse="|"),DF$order)
-
 DF$erod_fact[ChangeHRU(DF,ind,sum(DF$len_num), stream_rate,DF$len_num)]<-"0.00010" #Testing to find what this should be
 
+
+}
 # also change other related parameters
 
 #DF$mann[grepl("0.0001",DF$erod_fact)]<-"0.00400"
@@ -223,40 +225,41 @@ mgt$rate[mgt$name=="CSWS"]<-(CSWS)/100
 mgt$rate[mgt$name=="CSWcc"]<-(CSWcc)/100
 
 #buffers
-mgt$vfs_rate[mgt$name=="CS_FT"]<-(CSFT_B/2)/100
-mgt$vfs_rate[mgt$name=="SC_FT"]<-(CSFT_B/2)/100
+#remove dividing by 2 bc it's halving the total rate
+mgt$vfs_rate[mgt$name=="CS_FT"]<-(CSFT_B)/100
+mgt$vfs_rate[mgt$name=="SC_FT"]<-(CSFT_B)/100
 
-mgt$vfs_rate[mgt$name=="CS_RT"]<-(CSRT_B/2)/100
-mgt$vfs_rate[mgt$name=="SC_RT"]<-(CSRT_B/2)/100
+mgt$vfs_rate[mgt$name=="CS_RT"]<-(CSRT_B)/100
+mgt$vfs_rate[mgt$name=="SC_RT"]<-(CSRT_B)/100
 
-mgt$vfs_rate[mgt$name=="CS_RotT"]<-(CSRot_B/2)/100
-mgt$vfs_rate[mgt$name=="SC_RotT"]<-(CSRot_B/2)/100
+mgt$vfs_rate[mgt$name=="CS_RotT"]<-(CSRot_B)/100
+mgt$vfs_rate[mgt$name=="SC_RotT"]<-(CSRot_B)/100
 
-mgt$vfs_rate[mgt$name=="CS_NT"]<-(CSNT_B/2)/100
-mgt$vfs_rate[mgt$name=="SC_NT"]<-(CSNT_B/2)/100
+mgt$vfs_rate[mgt$name=="CS_NT"]<-(CSNT_B)/100
+mgt$vfs_rate[mgt$name=="SC_NT"]<-(CSNT_B)/100
 
-mgt$vfs_rate[mgt$name=="CS_NTcc"]<-(CSNTcc_B/2)/100
-mgt$vfs_rate[mgt$name=="SC_NTcc"]<-(CSNTcc_B/2)/100
+mgt$vfs_rate[mgt$name=="CS_NTcc"]<-(CSNTcc_B)/100
+mgt$vfs_rate[mgt$name=="SC_NTcc"]<-(CSNTcc_B)/100
 
 mgt$vfs_rate[mgt$name=="CSWS"]<-(CSWS_B)/100
 
 mgt$vfs_rate[mgt$name=="CSWcc"]<-(CSWcc_B)/100
 
 #grassed waterways
-mgt$grww_rate[mgt$name=="CS_FT"]<-(CSFT_GW/2)/100
-mgt$grww_rate[mgt$name=="SC_FT"]<-(CSFT_GW/2)/100
+mgt$grww_rate[mgt$name=="CS_FT"]<-(CSFT_GW)/100
+mgt$grww_rate[mgt$name=="SC_FT"]<-(CSFT_GW)/100
 
-mgt$grww_rate[mgt$name=="CS_RT"]<-(CSRT_GW/2)/100
-mgt$grww_rate[mgt$name=="SC_RT"]<-(CSRT_GW/2)/100
+mgt$grww_rate[mgt$name=="CS_RT"]<-(CSRT_GW)/100
+mgt$grww_rate[mgt$name=="SC_RT"]<-(CSRT_GW)/100
 
-mgt$grww_rate[mgt$name=="CS_RotT"]<-(CSRot_GW/2)/100
-mgt$grww_rate[mgt$name=="SC_RotT"]<-(CSRot_GW/2)/100
+mgt$grww_rate[mgt$name=="CS_RotT"]<-(CSRot_GW)/100
+mgt$grww_rate[mgt$name=="SC_RotT"]<-(CSRot_GW)/100
 
-mgt$grww_rate[mgt$name=="CS_NT"]<-(CSNT_GW/2)/100
-mgt$grww_rate[mgt$name=="SC_NT"]<-(CSNT_GW/2)/100
+mgt$grww_rate[mgt$name=="CS_NT"]<-(CSNT_GW)/100
+mgt$grww_rate[mgt$name=="SC_NT"]<-(CSNT_GW)/100
 
-mgt$grww_rate[mgt$name=="CS_NTcc"]<-(CSNTcc_GW/2)/100
-mgt$grww_rate[mgt$name=="SC_NTcc"]<-(CSNTcc_GW/2)/100
+mgt$grww_rate[mgt$name=="CS_NTcc"]<-(CSNTcc_GW)/100
+mgt$grww_rate[mgt$name=="SC_NTcc"]<-(CSNTcc_GW)/100
 
 mgt$grww_rate[mgt$name=="CSWS"]<-(CSWS_GW)/100
 
@@ -428,21 +431,21 @@ hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha
 
 
 ###### check buffers #################################################################
-mgt_check<-hru_data %>%
-group_by(lu_mgt) %>%
-summarize(value=sum(area_ha,na.rm=T))
+# mgt_check<-hru_data %>%
+# group_by(lu_mgt) %>%
+# summarize(value=sum(area_ha,na.rm=T))
 
-mgt_check$percent<-round(mgt_check$value*100/cropland_area,2)
+# mgt_check$percent<-round(mgt_check$value*100/cropland_area,2)
 
-output_buffer_rate<-sum(mgt_check$value[grepl("_B",mgt_check$lu_mgt)]*100/cropland_area)
-input_buffer_rate<-sum(mgt$rate*100*mgt$vfs_rate)
+# output_buffer_rate<-sum(mgt_check$value[grepl("_B",mgt_check$lu_mgt)]*100/cropland_area)
+# input_buffer_rate<-sum(mgt$rate*100*mgt$vfs_rate)
 
-buffer_error<-output_buffer_rate-input_buffer_rate
+# buffer_error<-output_buffer_rate-input_buffer_rate
 
-output_grww_rate<-sum(mgt_check$value[grepl("_G",mgt_check$lu_mgt)]*100/cropland_area)
-input_grww_rate<-sum(mgt$rate*100*mgt$grww_rate)
+# output_grww_rate<-sum(mgt_check$value[grepl("_G",mgt_check$lu_mgt)]*100/cropland_area)
+# input_grww_rate<-sum(mgt$rate*100*mgt$grww_rate)
 
-grww_error<-output_grww_rate-input_grww_rate
+# grww_error<-output_grww_rate-input_grww_rate
 
 ############ REMOVE TILES #################################
 rmtileInd<-( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
@@ -456,20 +459,49 @@ hru_data$lu_mgt[rmtileInd]<-str_remove(hru_data$lu_mgt[rmtileInd],"_t")
  # group_by(lu_mgt) %>%
  # summarize(value=sum(area_ha,na.rm=T))
 
-mgt_check<-data.frame(matrix(nrow=1,ncol=7))
-colnames(mgt_check)<-c("CSFT","CSNT","CSRT","CSRotT","CS_NTcc","CSWS","CSWcc")
+mgt_check<-data.frame(matrix(nrow=7,ncol=4))
+colnames(mgt_check)<-c("rot","rate","buffers","grww")
+mgt_check$rot<-c("CSFT","CSNT","CSRT","CSRotT","CSNTcc","CSWS","CSWcc")
 
-mgt_check$CSFT<-sum(hru_data$area_ha[grepl(paste(c("CS_FT","SC_FT"),collapse="|"),hru_data$lu_mgt)])
-mgt_check$CSNT<-sum(hru_data$area_ha[grepl(paste(c("CS_NT","SC_NT"),collapse="|") ,hru_data$lu_mgt) & !grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|") ,hru_data$lu_mgt)])
-mgt_check$CSRT<-sum(hru_data$area_ha[grepl(paste(c("CS_RT","SC_RT"),collapse="|"),hru_data$lu_mgt)])
-mgt_check$CSRotT<-sum(hru_data$area_ha[grepl(paste(c("CS_RotT","SC_RotT"),collapse="|"),hru_data$lu_mgt)])
-mgt_check$CS_NTcc<-sum(hru_data$area_ha[grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|"),hru_data$lu_mgt)])
-mgt_check$CSWS<-sum(hru_data$area_ha[grepl(c("CSWS"),hru_data$lu_mgt)])
-mgt_check$CSWcc<-sum(hru_data$area_ha[grepl(c("CSWcc"),hru_data$lu_mgt)])
+area_CSFT<-sum(hru_data$area_ha[grepl(paste(c("CS_FT","SC_FT"),collapse="|"),hru_data$lu_mgt)])
+area_CSNT<-sum(hru_data$area_ha[grepl(paste(c("CS_NT","SC_NT"),collapse="|") ,hru_data$lu_mgt) & !grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|") ,hru_data$lu_mgt)])
+area_CSRT<-sum(hru_data$area_ha[grepl(paste(c("CS_RT","SC_RT"),collapse="|"),hru_data$lu_mgt)])
+area_CSRotT<-sum(hru_data$area_ha[grepl(paste(c("CS_RotT","SC_RotT"),collapse="|"),hru_data$lu_mgt)])
+area_CSNTcc<-sum(hru_data$area_ha[grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|"),hru_data$lu_mgt)])
+area_CSWS<-sum(hru_data$area_ha[grepl(c("CSWS"),hru_data$lu_mgt)])
+area_CSWcc<-sum(hru_data$area_ha[grepl(c("CSWcc"),hru_data$lu_mgt)])
+
+mgt_check$rate[mgt_check$rot=="CSFT"]<-area_CSFT*100/cropland_area
+mgt_check$rate[mgt_check$rot=="CSNT"]<-area_CSNT*100/cropland_area
+mgt_check$rate[mgt_check$rot=="CSRT"]<-area_CSRT*100/cropland_area
+mgt_check$rate[mgt_check$rot=="CSRotT"]<-area_CSRotT*100/cropland_area
+mgt_check$rate[mgt_check$rot=="CSNTcc"]<-area_CSNTcc*100/cropland_area
+mgt_check$rate[mgt_check$rot=="CSWS"]<-area_CSWS*100/cropland_area
+mgt_check$rate[mgt_check$rot=="CSWcc"]<-area_CSWcc*100/cropland_area
+
+
+mgt_check$buffers[mgt_check$rot=="CSFT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_FT","SC_FT"),collapse="|"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSFT
+mgt_check$buffers[mgt_check$rot=="CSNT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_NT","SC_NT"),collapse="|") ,hru_data$lu_mgt) & !grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|") ,hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSNT
+mgt_check$buffers[mgt_check$rot=="CSRT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_RT","SC_RT"),collapse="|"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSRT
+mgt_check$buffers[mgt_check$rot=="CSRotT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_RotT","SC_RotT"),collapse="|"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSRotT
+mgt_check$buffers[mgt_check$rot=="CSNTcc"]<-sum(hru_data$area_ha[grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSNTcc
+mgt_check$buffers[mgt_check$rot=="CSWS"]<-sum(hru_data$area_ha[grepl(c("CSWS"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSWS
+mgt_check$buffers[mgt_check$rot=="CSWcc"]<-sum(hru_data$area_ha[grepl(c("CSWcc"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSWcc
+
+
+mgt_check$grww[mgt_check$rot=="CSFT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_FT","SC_FT"),collapse="|"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSFT
+mgt_check$grww[mgt_check$rot=="CSNT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_NT","SC_NT"),collapse="|") ,hru_data$lu_mgt) & !grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|") ,hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSNT
+mgt_check$grww[mgt_check$rot=="CSRT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_RT","SC_RT"),collapse="|"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSRT
+mgt_check$grww[mgt_check$rot=="CSRotT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_RotT","SC_RotT"),collapse="|"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSRotT
+mgt_check$grww[mgt_check$rot=="CSNTcc"]<-sum(hru_data$area_ha[grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSNTcc
+mgt_check$grww[mgt_check$rot=="CSWS"]<-sum(hru_data$area_ha[grepl(c("CSWS"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSWS
+mgt_check$grww[mgt_check$rot=="CSWcc"]<-sum(hru_data$area_ha[grepl(c("CSWcc"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSWcc
+
+
 
 # colnames(mgt_check)<-c("lum","area ha") 
+ write.csv(mgt_check,paste0(scenario,"\\mgt_check.csv"),row.names=F) #testing
 
- write.csv(mgt_check,"mgt_check.csv",row.names=F)
 
 ############ WRITE NEW HRU-DATA.HRU #############################
 # convert table to characters and strip of whitespace

@@ -6,3 +6,5 @@
 Baseline/
 Scenario/
 data/
+*.Rproj
+TestShinyUI.R
