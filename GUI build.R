@@ -48,29 +48,62 @@ ui <- fluidPage(
                    
                    
                    #management widgets       
-                   numericInput("CSFT", label = "Corn Bean - Full Tillage", value = 21),
-                   numericInput("CSNT", label = "Corn Bean - No Till", value = 40),
-                   numericInput("CSRT", label = "Corn Bean - Reduced Till", value = 4),
-                   numericInput("CSRot", label = "Corn Bean - Rotational No Till", value = 15),
-                   numericInput("CSNTcc", label = "Corn Bean - Full No Till with rye cover crop", value = 10),
-                   numericInput("CSWS", label = "Corn Bean Wheat /Double crop bean", value = 9),
-                   numericInput("CSWcc", label = "Corn Bean Wheat /rye cover crop", value = 1),
+                   fluidRow(column(4,numericInput("CSFT", label = "Corn Bean - Full Tillage", value = 21)), 
+                            column(4,numericInput("CSFT_B", label = "Vegetated buffer rate", value = 0)),
+                            column(4,numericInput("CSFT_GW", label = "Grassed waterway rate", value = 0))),
                    
-                   numericInput("CSFT_B", label = "Corn Bean - Full Tillage - buffer rate", value = 0),
-                   numericInput("CSNT_B", label = "Corn Bean - No Till - buffer rate", value = 0),
-                   numericInput("CSRT_B", label = "Corn Bean - Reduced Till - buffer rate", value = 0),
-                   numericInput("CSRot_B", label = "Corn Bean - Rotational No Till - buffer rate", value = 0),
-                   numericInput("CSNTcc_B", label = "Corn Bean - Full No Till with rye cover crop - buffer rate", value = 0),
-                   numericInput("CSWS_B", label = "Corn Bean Wheat /Double crop bean - buffer rate", value = 0),
-                   numericInput("CSWcc_B", label = "Corn Bean Wheat /rye cover crop - buffer rate", value = 0),
+                   fluidRow(column(4,numericInput("CSNT", label = "Corn Bean - No Till", value = 40)),
+                            column(4,numericInput("CSNT_B", label = "Vegetated buffer rate", value = 0)),
+                            column(4,numericInput("CSNT_GW", label = "Grassed waterway rate", value = 0))),
                    
-                   numericInput("CSFT_GW", label = "Corn Bean - Full Tillage - grww rate", value = 0),
-                   numericInput("CSNT_GW", label = "Corn Bean - No Till - grww rate", value = 0),
-                   numericInput("CSRT_GW", label = "Corn Bean - Reduced Till - grww rate", value = 0),
-                   numericInput("CSRot_GW", label = "Corn Bean - Rotational No Till - grww rate", value = 0),
-                   numericInput("CSNTcc_GW", label = "Corn Bean - Full No Till with rye cover crop - grww rate", value = 0),
-                   numericInput("CSWS_GW", label = "Corn Bean Wheat /Double crop bean - grww rate", value = 0),
-                   numericInput("CSWcc_GW", label = "Corn Bean Wheat /rye cover crop - grww rate", value = 0),
+                   fluidRow(column(4,numericInput("CSRot", label = "Corn Bean - Rotational No Till", value = 15)),
+                            column(4,numericInput("CSRot_B", label = "Vegetated buffer rate", value = 0)),
+                            column(4,numericInput("CSRot_GW", label = "Grassed waterway rate", value = 0))),
+                   
+                   fluidRow(column(4,numericInput("CSRT", label = "Corn Bean - Reduced Till", value = 4)),
+                            column(4,numericInput("CSRT_B", label = "Vegetated buffer rate", value = 0)),
+                            column(4,numericInput("CSRT_GW", label = "Grassed waterway rate", value = 0))),
+                   
+                   fluidRow(column(4,numericInput("CSNTcc", label = "Corn Bean - No Till with rye cover crop", value = 10)),
+                            column(4,numericInput("CSNTcc_B", label = "Vegetated buffer rate", value = 0)),
+                            column(4,numericInput("CSNTcc_GW", label = "Grassed waterway rate", value = 0))),
+                   
+                   fluidRow(column(4,numericInput("CSWS", label = "Corn Bean Wheat /Double crop bean", value = 9)),
+                            column(4,numericInput("CSWS_B", label = "Vegetated buffer rate", value = 0)),
+                            column(4,numericInput("CSWS_GW", label = "Grassed waterway rate", value = 0))),
+                   
+                   fluidRow(column(4,numericInput("CSWcc", label = "Corn Bean Wheat /rye cover crop", value = 1)),
+                            column(4,numericInput("CSWcc_B", label = "Vegetated buffer rate", value = 0)),
+                            column(4,numericInput("CSWcc_GW", label = "Grassed waterway rate", value = 0))),
+        
+                   
+                   
+                   
+                   
+                            
+                            
+                   # numericInput("CSNT", label = "Corn Bean - No Till", value = 40),
+                   # numericInput("CSRT", label = "Corn Bean - Reduced Till", value = 4),
+                   # numericInput("CSRot", label = "Corn Bean - Rotational No Till", value = 15),
+                   # numericInput("CSNTcc", label = "Corn Bean - Full No Till with rye cover crop", value = 10),
+                   # numericInput("CSWS", label = "Corn Bean Wheat /Double crop bean", value = 9),
+                   # numericInput("CSWcc", label = "Corn Bean Wheat /rye cover crop", value = 1),
+                   
+                   # numericInput("CSFT_B", label = "Corn Bean - Full Tillage - buffer rate", value = 0),
+                   # numericInput("CSNT_B", label = "Corn Bean - No Till - buffer rate", value = 0),
+                   # numericInput("CSRT_B", label = "Corn Bean - Reduced Till - buffer rate", value = 0),
+                   # numericInput("CSRot_B", label = "Corn Bean - Rotational No Till - buffer rate", value = 0),
+                   # numericInput("CSNTcc_B", label = "Corn Bean - Full No Till with rye cover crop - buffer rate", value = 0),
+                   # numericInput("CSWS_B", label = "Corn Bean Wheat /Double crop bean - buffer rate", value = 0),
+                   # numericInput("CSWcc_B", label = "Corn Bean Wheat /rye cover crop - buffer rate", value = 0),
+                   
+                   # numericInput("CSFT_GW", label = "Corn Bean - Full Tillage - grww rate", value = 0),
+                   # numericInput("CSNT_GW", label = "Corn Bean - No Till - grww rate", value = 0),
+                   # numericInput("CSRT_GW", label = "Corn Bean - Reduced Till - grww rate", value = 0),
+                   # numericInput("CSRot_GW", label = "Corn Bean - Rotational No Till - grww rate", value = 0),
+                   # numericInput("CSNTcc_GW", label = "Corn Bean - Full No Till with rye cover crop - grww rate", value = 0),
+                   # numericInput("CSWS_GW", label = "Corn Bean Wheat /Double crop bean - grww rate", value = 0),
+                   # numericInput("CSWcc_GW", label = "Corn Bean Wheat /rye cover crop - grww rate", value = 0),
 
                    
                    h5("Baseline rates of management:"),
@@ -84,9 +117,9 @@ ui <- fluidPage(
                    
 
                    #ditch widget
-                   sliderInput("ditch_rate", label = h3("Conservation ditches"), min = 0, 
+                   fluidRow(column(4,sliderInput("ditch_rate", label = h3("Conservation ditches"), min = 0, 
                                max = 100, value = 10),
-                   p("This changes the rate of conservation ditches on streams of order 1-2. Changing to 100% only changes 128 km (80 mi) of stream"),
+                   p("This changes the rate of conservation ditches on streams of order 1-2. Changing to 100% only changes 128 km (80 mi) of stream"))),
                    
                    
                    br(),br(),
@@ -98,7 +131,7 @@ ui <- fluidPage(
                    
                    
                    
-                  , width = 8 ),
+                  , width = 6 ),
                    
       mainPanel(
         #### INPUTS ##################
@@ -123,7 +156,7 @@ ui <- fluidPage(
         plotOutput("ChangeAtOutlet_reactive")
         
         #This is where you can place the output of the script, see https://shiny.rstudio.com/tutorial/written-tutorial/lesson5/ for details
-      , width = 4) 
+      , width = 6) 
     )
   
 )
