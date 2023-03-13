@@ -93,35 +93,35 @@ basedf$bmp<-"null"
 
 tile<-basedf
 tile$tile<-"OWC_drain"
-tile$name<-paste0(tile$name, "_tile")
+tile$name<-paste0(tile$name, "_t")
 
 ################## Add gww to tile and non tile ############
 
 #non tile gww
 grww_hi<-basedf
 grww_hi$grww<-"grwway_high"
-grww_hi$name<-paste0(grww_hi$name,"_GW_HS")
+grww_hi$name<-paste0(grww_hi$name,"_GH")
 
 grww_med<-basedf
 grww_med$grww<-"grwway_med"
-grww_med$name<-paste0(grww_med$name,"_GW_MS")
+grww_med$name<-paste0(grww_med$name,"_GM")
 
 grww_low<-basedf
 grww_low$grww<-"grwway_low"
-grww_low$name<-paste0(grww_low$name,"_GW_LS")
+grww_low$name<-paste0(grww_low$name,"_GL")
 
 #tile gww
 grww_hi_tile<-tile
 grww_hi_tile$grww<-"grwway_high"
-grww_hi_tile$name<-paste0(grww_hi_tile$name,"_GW_HS")
+grww_hi_tile$name<-paste0(grww_hi_tile$name,"_GH")
 
 grww_med_tile<-tile
 grww_med_tile$grww<-"grwway_med"
-grww_med_tile$name<-paste0(grww_med_tile$name,"_GW_MS")
+grww_med_tile$name<-paste0(grww_med_tile$name,"_GM")
 
 grww_low_tile<-tile
 grww_low_tile$grww<-"grwway_low"
-grww_low_tile$name<-paste0(grww_low_tile$name,"_GW_LS")
+grww_low_tile$name<-paste0(grww_low_tile$name,"_GL")
 
 ############### Add buffers to tile and non tile ##########
 

@@ -2,7 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
-
 #baseline and scenario folder
-Baseline
-Scenario
+Baseline/
+Scenario/
+data/
