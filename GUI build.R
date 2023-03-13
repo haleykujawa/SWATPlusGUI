@@ -49,32 +49,32 @@ ui <- fluidPage(
                    
                    #management widgets       
                    fluidRow(column(4,numericInput("CSFT", label = "Corn Bean - Full Tillage", value = 21)), 
-                            column(4,numericInput("CSFT_B", label = "Vegetated buffer rate", value = 0)),
-                            column(4,numericInput("CSFT_GW", label = "Grassed waterway rate", value = 0))),
+                            column(4,numericInput("CSFT_B", label = "Vegetated buffer rate", value = 10)),
+                            column(4,numericInput("CSFT_GW", label = "Grassed waterway rate", value = 10))),
                    
                    fluidRow(column(4,numericInput("CSNT", label = "Corn Bean - No Till", value = 40)),
-                            column(4,numericInput("CSNT_B", label = "Vegetated buffer rate", value = 0)),
-                            column(4,numericInput("CSNT_GW", label = "Grassed waterway rate", value = 0))),
+                            column(4,numericInput("CSNT_B", label = "Vegetated buffer rate", value = 10)),
+                            column(4,numericInput("CSNT_GW", label = "Grassed waterway rate", value = 10))),
                    
                    fluidRow(column(4,numericInput("CSRot", label = "Corn Bean - Rotational No Till", value = 15)),
-                            column(4,numericInput("CSRot_B", label = "Vegetated buffer rate", value = 0)),
-                            column(4,numericInput("CSRot_GW", label = "Grassed waterway rate", value = 0))),
+                            column(4,numericInput("CSRot_B", label = "Vegetated buffer rate", value = 10)),
+                            column(4,numericInput("CSRot_GW", label = "Grassed waterway rate", value = 10))),
                    
                    fluidRow(column(4,numericInput("CSRT", label = "Corn Bean - Reduced Till", value = 4)),
-                            column(4,numericInput("CSRT_B", label = "Vegetated buffer rate", value = 0)),
-                            column(4,numericInput("CSRT_GW", label = "Grassed waterway rate", value = 0))),
+                            column(4,numericInput("CSRT_B", label = "Vegetated buffer rate", value = 10)),
+                            column(4,numericInput("CSRT_GW", label = "Grassed waterway rate", value = 10))),
                    
                    fluidRow(column(4,numericInput("CSNTcc", label = "Corn Bean - No Till with rye cover crop", value = 10)),
-                            column(4,numericInput("CSNTcc_B", label = "Vegetated buffer rate", value = 0)),
-                            column(4,numericInput("CSNTcc_GW", label = "Grassed waterway rate", value = 0))),
+                            column(4,numericInput("CSNTcc_B", label = "Vegetated buffer rate", value = 10)),
+                            column(4,numericInput("CSNTcc_GW", label = "Grassed waterway rate", value = 10))),
                    
                    fluidRow(column(4,numericInput("CSWS", label = "Corn Bean Wheat /Double crop bean", value = 9)),
-                            column(4,numericInput("CSWS_B", label = "Vegetated buffer rate", value = 0)),
-                            column(4,numericInput("CSWS_GW", label = "Grassed waterway rate", value = 0))),
+                            column(4,numericInput("CSWS_B", label = "Vegetated buffer rate", value = 10)),
+                            column(4,numericInput("CSWS_GW", label = "Grassed waterway rate", value = 10))),
                    
                    fluidRow(column(4,numericInput("CSWcc", label = "Corn Bean Wheat /rye cover crop", value = 1)),
-                            column(4,numericInput("CSWcc_B", label = "Vegetated buffer rate", value = 0)),
-                            column(4,numericInput("CSWcc_GW", label = "Grassed waterway rate", value = 0))),
+                            column(4,numericInput("CSWcc_B", label = "Vegetated buffer rate", value = 10)),
+                            column(4,numericInput("CSWcc_GW", label = "Grassed waterway rate", value = 10))),
         
                    
                    
@@ -137,8 +137,17 @@ ui <- fluidPage(
         #### INPUTS ##################
         #Don't know if I need all this printed to the UI if it's already in the left hand panel, consider removing...
         #management scenarios
-        textOutput("selected_CSFT_rate"),
-        textOutput("selected_CSNT_rate"), 
+        p("Rates of management on row crop lands:"),
+        textOutput("total_rate"),
+        textOutput("cc_rate"),
+        textOutput("winter_cover_rate"),
+        textOutput("FT_rate"),
+        textOutput("NT_rate"), 
+        textOutput("RT_rate"),
+        textOutput("Rot_rate"),
+
+        
+        p(),
         
         #ditches
         textOutput("selected_ditch_rate"),
@@ -165,9 +174,21 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   ###management scenarios###
+  #error message#
+  output$total_rate<-reactive({validate(need((input$CSFT+input$CSNT+input$CSRT+input$CSRot+
+           input$CSNTcc+input$CSWS+input$CSWcc) == 100, "Input management rates do not add up to 100% -- Please adjust before using 'Apply changes'"))
+    paste0("Rate input ", input$CSFT+input$CSNT+input$CSRT+input$CSRot+input$CSNTcc+input$CSWS+input$CSWcc, "%")})
+  
   #print input management to UI
-  output$selected_CSFT_rate <- renderText({paste0("Change Corn Soy - Full Tillage rate to ", input$CSFT ,"%") })
-  output$selected_CSNT_rate <- renderText({paste0("Change Corn Soy - No Till rate to ", input$CSNT ,"%") })
+  output$cc_rate <- renderText({paste0("Rye cover crops = ", input$CSNTcc + input$CSWcc ,"%") })
+  output$winter_cover_rate <- renderText({paste0("Winter cover = ", input$CSNTcc + input$CSWcc + input$CSWS,"%") })
+  output$FT_rate <- renderText({paste0("Full till management = ", input$CSFT ,"%") })
+  output$NT_rate <- renderText({paste0("No till management = ", input$CSNT + input$CSNTcc + input$CSWcc + input$CSWS ,"%") })
+  output$RT_rate <- renderText({paste0("Reduced till management = ", input$CSRT ,"%") })
+  output$Rot_rate <- renderText({paste0("Rotational till management = ", input$CSRot ,"%") })
+  
+  # add other things from excel spreadsheet, like rates of subsurface placement, total N and total P applied 
+  
 
   
   ###ditches###
