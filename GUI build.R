@@ -25,6 +25,7 @@ source("RunAllScripts_SWATv60.5.2.R")
 source("testGUI.R")
 source("ReadHRU_losses.R")
 source("ReadChannel_daily2.R")
+source("testPlot.R")
 
 run_yrs<-c(2009)
 
@@ -42,7 +43,7 @@ ui <- fluidPage(
     titlePanel("OWC-SWAT+"),
     tabsetPanel(
       
-      tabPanel("About OWC-SWAT+", br(), p("Stuff about OWC-SWAT+ here")),
+      tabPanel("Information OWC-SWAT+", br(), p("Stuff about OWC-SWAT+ here")),
       
       tabPanel("Change inputs",
 
@@ -141,20 +142,23 @@ ui <- fluidPage(
 
         
         #### OUTPUTS ##################
-        uiOutput("runningmodel"),
+        uiOutput("runningmodel1"),#change from Ui output--uioutput is for text
         p(),p(),p(),
+      
+        
        
 
-        actionButton("HRUlossapply", "Nutrient and sediment loss from row crops"),
-        tableOutput("HRUloss_reactive"),
-        actionButton("ChangeAtOutlet","Changes in streamflow and water quality"),
-        plotOutput("ChangeAtOutlet_reactive")
+
         
         
         #This is where you can place the output of the script, see https://shiny.rstudio.com/tutorial/written-tutorial/lesson5/ for details
-      , width = 6) ) ),
+       width = 6) ) ),
 
-tabPanel("Visualize outputs",p()) 
+tabPanel("Visualize outputs",
+         br(),
+         
+         plotOutput("runningmodel2")
+)
 
 )
 
@@ -226,35 +230,20 @@ server <- function(input, output, session) {
    showModal(modalDialog("Running SWAT+", footer=NULL)) 
    RunAllScripts_SWATv60.5.2(scenario_dir)
    removeModal()
-   testGUI()
-
+   testPlot()# testGUI()
  })
  
  # text output
- output$runningmodel <- renderUI({
-   strong(text_reactive())
- })
- 
- HRUloss_reactive<- eventReactive(input$HRUlossapply,{
-                                  ReadHRU_losses(scenario_dir)
- })
- 
- output$HRUloss_reactive <- renderTable({
-   HRUloss_reactive()
-
- })
- 
-ChangeAtOutlet_reactive<- eventReactive(input$ChangeAtOutlet,{
-   ReadChannel_daily2(run_yrs,baseline_data_avg,scenario_dir)
- })
-
-output$ChangeAtOutlet_reactive <- renderPlot({
-  ChangeAtOutlet_reactive()
+  output$runningmodel1 <- renderUI({
+     strong(text_reactive()[[2]])
+  })
   
-})
-
+  # plot output
+  output$runningmodel2 <- renderPlot({
+  text_reactive()[[1]]
+  })
  
-}
 
+}
 # Run the app ----
 shinyApp(ui = ui, server = server)
