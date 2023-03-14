@@ -26,6 +26,7 @@ source("testGUI.R")
 source("ReadHRU_losses.R")
 source("ReadChannel_daily2.R")
 source("testPlot.R")
+source("ChangeSWATClimate.R")
 
 run_yrs<-c(2009)
 
@@ -97,19 +98,50 @@ ui <- fluidPage(
                    #ditch widget
                    fluidRow(column(4,sliderInput("ditch_rate", label = h3("Conservation ditches"), min = 0, 
                                max = 100, value = 10),
-                   p("This changes the rate of conservation ditches on streams of order 1-2. Changing to 100% only changes 128 km (80 mi) of stream"))) ),
+                   p("This changes the rate of conservation ditches on streams of order 1-2. Changing to 100% only changes 128 km (80 mi) of stream"))) ,
+                   
+                   
+                   actionButton("simulate", "Apply changes to management")
+                   ),
+                   
+                   
+                   
                    
                    tabPanel("Climate data",  
-                            p("put climate inputs here"))  
+                            p("put climate inputs here"),  
+                   
+                    selectInput("SelectClimateOption", label = h3("Choose climate data to run:"), 
+                                        choices = list("Baseline climate (2013-2020)" = "nochange", "Climate models" = "climmod", "Current climate beyond 2020" = "extended"), 
+                                        selected = "nochange"),
+                            
+                  
+                   checkboxGroupInput("SelectClimateModels", label = h5("Climate models:"), 
+                                      choices = list("CNRM" = 1, "MIROC5" = 2, "IPSL-CM5A-MR" = 3),
+                                      selected = 0),
+                   
+                   fileInput("ClimateFile", label = h5("If extending climate data beyond 2020, insert here:")),
+                   
+                   actionButton("ClimateApply", "Apply changes to climate"),
                    
                    
                    
-                   ),
+                   
+                   
+                   
+                   
+                   
+                   
+                   
+                   
+                   
+                   
+                   
+                   )),
                    
                    br(),br(),
 
                    
-                   actionButton("simulate", "Apply changes"),
+                   # actionButton("simulate", "Apply changes"),
                    
                    actionButton("runswat", "Run OWC-SWAT+")
                    
@@ -139,10 +171,12 @@ ui <- fluidPage(
         
         p(),p(),p(),
         
+        textOutput("ClimateOut"),
+        
 
         
         #### OUTPUTS ##################
-        uiOutput("runningmodel1"),#change from Ui output--uioutput is for text
+        uiOutput("runningmodel1"),
         p(),p(),p(),
       
         
@@ -187,10 +221,10 @@ server <- function(input, output, session) {
   
   ###ditches###
   #print input ditch rate to UI
-  output$selected_ditch_rate <- renderText({paste0("Change conservation ditch rate to ", input$ditch_rate ,"%") })  
+  output$selected_ditch_rate <- renderText({paste0("Conservation ditch rate = ", input$ditch_rate ,"%") })  
   
   #run code to change all inputs
-  observeEvent(input$simulate,ChangeSWATInputs(input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
+  observeEvent(input$climateDataApply,ChangeSWATInputs(input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
                                                input$CSNTcc,input$CSWS,input$CSWcc,
                                                
                                                input$CSFT_B,input$CSNT_B,input$CSRT_B,input$CSRot_B,
@@ -199,6 +233,9 @@ server <- function(input, output, session) {
                                                input$CSFT_GW,input$CSNT_GW,input$CSRT_GW,input$CSRot_GW,
                                                input$CSNTcc_GW,input$CSWS_GW,input$CSWcc_GW))
   
+
+  ClimateOut<-eventReactive(input$ClimateApply,ChangeSWATClimate(input$SelectClimateOption,input$SelectClimateModels,input$ClimateFile))
+  output$ClimateOut<-renderText({ClimateOut()[[1]]})
 
  
   
