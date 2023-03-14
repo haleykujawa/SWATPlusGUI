@@ -41,12 +41,14 @@ scenario_dir <- paste0(getwd(),"/scenario")
 ui <- fluidPage(
     titlePanel("OWC-SWAT+"),
     
+
     sidebarLayout(                   
       sidebarPanel(actionButton("cleardir", "Clear scenario"),
                    br(),br(),br(),
                    
                    
-                   
+                   tabsetPanel(
+                     tabPanel("Management and conservation practices",
                    #management widgets       
                    fluidRow(column(4,numericInput("CSFT", label = "Corn Bean - Full Tillage", value = 21)), 
                             column(4,numericInput("CSFT_B", label = "Vegetated buffer rate", value = 10)),
@@ -77,35 +79,6 @@ ui <- fluidPage(
                             column(4,numericInput("CSWcc_GW", label = "Grassed waterway rate", value = 10))),
         
                    
-                   
-                   
-                   
-                            
-                            
-                   # numericInput("CSNT", label = "Corn Bean - No Till", value = 40),
-                   # numericInput("CSRT", label = "Corn Bean - Reduced Till", value = 4),
-                   # numericInput("CSRot", label = "Corn Bean - Rotational No Till", value = 15),
-                   # numericInput("CSNTcc", label = "Corn Bean - Full No Till with rye cover crop", value = 10),
-                   # numericInput("CSWS", label = "Corn Bean Wheat /Double crop bean", value = 9),
-                   # numericInput("CSWcc", label = "Corn Bean Wheat /rye cover crop", value = 1),
-                   
-                   # numericInput("CSFT_B", label = "Corn Bean - Full Tillage - buffer rate", value = 0),
-                   # numericInput("CSNT_B", label = "Corn Bean - No Till - buffer rate", value = 0),
-                   # numericInput("CSRT_B", label = "Corn Bean - Reduced Till - buffer rate", value = 0),
-                   # numericInput("CSRot_B", label = "Corn Bean - Rotational No Till - buffer rate", value = 0),
-                   # numericInput("CSNTcc_B", label = "Corn Bean - Full No Till with rye cover crop - buffer rate", value = 0),
-                   # numericInput("CSWS_B", label = "Corn Bean Wheat /Double crop bean - buffer rate", value = 0),
-                   # numericInput("CSWcc_B", label = "Corn Bean Wheat /rye cover crop - buffer rate", value = 0),
-                   
-                   # numericInput("CSFT_GW", label = "Corn Bean - Full Tillage - grww rate", value = 0),
-                   # numericInput("CSNT_GW", label = "Corn Bean - No Till - grww rate", value = 0),
-                   # numericInput("CSRT_GW", label = "Corn Bean - Reduced Till - grww rate", value = 0),
-                   # numericInput("CSRot_GW", label = "Corn Bean - Rotational No Till - grww rate", value = 0),
-                   # numericInput("CSNTcc_GW", label = "Corn Bean - Full No Till with rye cover crop - grww rate", value = 0),
-                   # numericInput("CSWS_GW", label = "Corn Bean Wheat /Double crop bean - grww rate", value = 0),
-                   # numericInput("CSWcc_GW", label = "Corn Bean Wheat /rye cover crop - grww rate", value = 0),
-
-                   
                    h5("Baseline rates of management:"),
                    p("Corn Bean - Full Tillage is 21%"), #maybe do /n to remove space between them in UI
                    p("Corn Bean - No Tillage is 40%"),
@@ -119,8 +92,14 @@ ui <- fluidPage(
                    #ditch widget
                    fluidRow(column(4,sliderInput("ditch_rate", label = h3("Conservation ditches"), min = 0, 
                                max = 100, value = 10),
-                   p("This changes the rate of conservation ditches on streams of order 1-2. Changing to 100% only changes 128 km (80 mi) of stream"))),
+                   p("This changes the rate of conservation ditches on streams of order 1-2. Changing to 100% only changes 128 km (80 mi) of stream"))) ),
                    
+                   tabPanel("Climate data",  
+                            p("put climate inputs here"))  
+                   
+                   
+                   
+                   ),
                    
                    br(),br(),
 

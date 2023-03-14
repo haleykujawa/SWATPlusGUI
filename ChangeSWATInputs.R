@@ -3,8 +3,11 @@
 #read in whole file as a table
 # make edits
 # rewrite file
+# bug where if management is 0 and buffer / grww non zero this code hangs -- probably on applying grww/buffers
 
-### Improvements - move hard coded % up to the top
+### To do's:
+# pcp and tmp data
+# soil test data
 
 ChangeSWATInputs <- function(stream_rate,CSFT,CSNT,CSRT,CSRot,CSNTcc,CSWS,CSWcc,
                              CSFT_B,CSNT_B,CSRT_B,CSRot_B,CSNTcc_B,CSWS_B,CSWcc_B,
@@ -76,9 +79,13 @@ stream_rate<-stream_rate*sum(DF$len_num[DF$order == 1 | DF$order == 2])/sum(DF$l
 #if you sample too large a portion this loop will run forever because it has difficulty reaching the area standard 
 ChangeHRU<-function(hru_data,IndexVal,cropland_area,per_change,area_col){
   
-  #add break if cropland_area > 1
-  
   x=cropland_area*per_change
+  #break if cropland_area > 1
+  if (per_change > 1){
+    stop("percent entered greater than 100")
+  }
+  
+  
   #combine with a row index
   IndexVal<-cbind(IndexVal,c(1:length(IndexVal)),area_col)
   
@@ -95,21 +102,30 @@ ChangeHRU<-function(hru_data,IndexVal,cropland_area,per_change,area_col){
   #sample until the % area of cropland is met
   #ASSUMING ONCE THE AREA GOES OVER IT DOESN'T EXECUTE THAT LOOP AND JUST EXITS THE LOOP, THAT'S WHY SOME OF MY PERCENTAGES I INPUT ARE SLIGHTLY LOWER THAN INPUT (1-2%)
   #THAN THE OUTPUT
-  while( area <= x ){ #change to x*1.015 to get closer to the actual input number
+  while(area <= x){ #change to x*1.015 to get closer to the actual input number
     
     #randomly sample per_change value where they are true
     #sampling without replacement has to occur within the one go
     sample1 <- sample(sampleRow[,1],1)
     
+    
     if (!is.element(sample1,spot)){ #if statement saying "if is a duplicate in "spot", sample again
       
-      spot<-rbind(spot,sample1)
       
+      
+      # if (area > x) { # don't add sample if greater than the area
+      # next
+      # }
+      
+      spot<-rbind(spot,sample1)
       area<-sampleRow[sampleRow[,1]==spot[i],2]+area
+      
+
       i<-i+1
       
     }
     
+
     
   }
   spot<-sort.int(spot)
@@ -265,6 +281,9 @@ mgt$grww_rate[mgt$name=="CSWS"]<-(CSWS_GW)/100
 
 mgt$grww_rate[mgt$name=="CSWcc"]<-(CSWcc_GW)/100
 
+#remove rows where mgt rate is 0
+mgt<-mgt[mgt$rate > 0,]
+
 ############### READ IN HRU-DATA ##########################
 setwd(baseline)
 tmp <- file('hru-data.hru')
@@ -373,6 +392,7 @@ hru_data$lu_mgt[IndexVal]<-paste0(mgt_nm,"_t")
 ##### add grww ##########################################################
 for(mgt_nm in mgt$name[-length(mgt$name)]){
  
+  if (mgt$rate[mgt$name == mgt_nm] > 0){
   rt<-mgt$grww_rate[mgt$name == mgt_nm]
   if (rt > 0){ #prevent from adding to very small fields
     
@@ -381,17 +401,21 @@ for(mgt_nm in mgt$name[-length(mgt$name)]){
   hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t_G") 
   
   }
-  
+}
 }
 
 #replace remaining with the last mgt rotation or the loop will hang
 mgt_nm<-mgt$name[length(mgt$name)]
+
+if(mgt$rate[mgt$name == mgt_nm] > 0){
+
 rt<-mgt$grww_rate[mgt$name == mgt_nm]
 
 if (rt > 0){
 IndexVal<-grepl(paste0("^",mgt_nm,"_t$"),hru_data$lu_mgt)
 mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
 hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t_G") 
+} 
 }
 # add LS, MS, or HS based on slope
 IndexVal<-(grepl("_G",hru_data$lu_mgt) & (hru_data$slp <=  0.02))
@@ -407,7 +431,7 @@ hru_data$lu_mgt[IndexVal]<-paste0(hru_data$lu_mgt[IndexVal],"H") # High slope bu
 
 ##### add buffers ##########################################################
 for(mgt_nm in mgt$name[-length(mgt$name)]){
-
+  if (mgt$rate[mgt$name == mgt_nm] > 0){ #don't enter loop if no mgt scenario
   rt<-mgt$vfs_rate[mgt$name == mgt_nm]  
 
   if (rt > 0){
@@ -416,11 +440,12 @@ for(mgt_nm in mgt$name[-length(mgt$name)]){
   hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t_B") 
   
   }
-  
+  }
 }
 
 #replace remaining with the last mgt rotation or the loop will hang
 mgt_nm<-mgt$name[length(mgt$name)]
+if (mgt$rate[mgt$name == mgt_nm] > 0){ 
 rt<-mgt$vfs_rate[mgt$name == mgt_nm]
 
 if (rt > 0){
@@ -428,7 +453,7 @@ IndexVal<-grepl(paste0("^",mgt_nm,"_t$"),hru_data$lu_mgt)
 mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
 hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t_B") 
 }
-
+}
 
 ###### check buffers #################################################################
 # mgt_check<-hru_data %>%
