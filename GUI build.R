@@ -14,6 +14,8 @@ library(rapportools)
 library(ggplot2)
 library(stringr)
 library(here)
+library(ggpmisc) #for testPlot to combine table with plot
+library(patchwork)
 
 
 # Load scripts to be used ---
@@ -35,8 +37,8 @@ run_yrs<-c(2009)
 rotations <- read.csv("data/LumAreaSummary.csv")
 baseline_data_avg<-read.csv("data/baseline_data_avg.csv")
 
-baseline_dir<- paste0(getwd(),"/baseline")
-scenario_dir <- paste0(getwd(),"/scenario")
+baseline_dir<- paste0(getwd(),"/Baseline")
+scenario_dir <- paste0(getwd(),"/Scenario")
 
 
 # Define UI ----
@@ -116,7 +118,7 @@ ui <- fluidPage(
                             
                   
                    checkboxGroupInput("SelectClimateModels", label = h5("Climate models:"), 
-                                      choices = list("CNRM" = 1, "MIROC5" = 2, "IPSL-CM5A-MR" = 3),
+                                      choices = list("CNRM", "MIROC5", "IPSL-CM5A-MR"),
                                       selected = 0),
                    
                    fileInput("ClimateFile", label = h5("If extending climate data beyond 2020, insert here:")),
@@ -224,7 +226,7 @@ server <- function(input, output, session) {
   output$selected_ditch_rate <- renderText({paste0("Conservation ditch rate = ", input$ditch_rate ,"%") })  
   
   #run code to change all inputs
-  observeEvent(input$climateDataApply,ChangeSWATInputs(input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
+  observeEvent(input$simulate,ChangeSWATInputs(input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
                                                input$CSNTcc,input$CSWS,input$CSWcc,
                                                
                                                input$CSFT_B,input$CSNT_B,input$CSRT_B,input$CSRot_B,
@@ -262,10 +264,15 @@ server <- function(input, output, session) {
 #   text_reactive()
 # })
 ###################################################
- 
+
+  #because of how climate is more straight forward as an input than management, maybe just set up climate when going to run SWAT
+  #technically could also do this with management instead of having the button... then whatever management is in the UI when you hit "Run OWC-SWAT+" is the management
+  #You have to stick with--benefit to having it outside is user can fiddle with outputs they want, benefits to inside is it's more clean
+  #Maybe could have list of inputs that are non-reactive at the top of "visualize outputs" That way there's no confusion what inputs the outputs are reflective of
+   
  text_reactive <- eventReactive( input$runswat, {
    showModal(modalDialog("Running SWAT+", footer=NULL)) 
-   RunAllScripts_SWATv60.5.2(scenario_dir)
+   RunAllScripts_SWATv60.5.2(scenario_dir,input$SelectClimateOption,input$SelectClimateModels,input$ClimateFile)
    removeModal()
    testPlot()# testGUI()
  })

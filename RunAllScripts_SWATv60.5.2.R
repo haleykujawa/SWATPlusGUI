@@ -1,13 +1,81 @@
-RunAllScripts_SWATv60.5.2<-function(scenario_dir){
+RunAllScripts_SWATv60.5.2<-function(scenario_dir,ClimateOption,ClimateModels,ClimateFile){
 
+#if going at add changing management into this file, maybe also add copying over the baseline directory here
+  
+  if (ClimateOption=="nochange"){
+    setwd(scenario_dir)
+    system('SWATPlus_60.5.5.exe') #run executable
+  }
+  
+  #Climate model runs
+  if (ClimateOption=="climmod"){
+    
+    
+    for (climatemodel in ClimateModels){
+    
+    pcp_file<-file.path(scenario_dir,'climate',climatemodel,'future','owcmet_pcp.pcp')  
+    tmp_file<-file.path(scenario_dir,'climate',climatemodel,'future','owcmet_tmp.tmp')
+    test_file<-file.path(scenario_dir,'climate',climatemodel,'future','copytest.txt')
+    
+    file.copy(from=pcp_file,to=scenario_dir,overwrite=T)
+    file.copy(from=tmp_file,to=scenario_dir,overwrite=T)
+    file.copy(from=test_file,to=scenario_dir,overwrite=T)
+    
+    setwd(scenario_dir)
+    system('SWATPlus_60.5.5.exe') #run executable
+    
+      
+      
+    }
+  
+    print("setting up climate data runs")
+    
+  }
+  
+  #Extend data beyond 2020 and write to scenario folder
+  if (ClimateOption=="extended"){
+    
+    
+    
+    
+    
+    system('SWATPlus_60.5.5.exe') #run executable 
+  
+  }
+  
+  
+  
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   setwd(scenario_dir)
-  
-  
-  system('SWATPlus_60.5.5.exe') #run executable -- this one is Haley's w/ out septics
-  
-  
-  print("Model run complete!")
   
   
   ####### Read HRU losses #########################################################
@@ -16,7 +84,7 @@ RunAllScripts_SWATv60.5.2<-function(scenario_dir){
              "surqno3_kgha","lat3no3_kgha","surqsolp_kgha","usle_tons","sedmin","tileno3","lchlabp","tilelabp","satexn")
   
   ################# Read in HRU lookup ###########################################
-  #setwd(scenario_dir)
+
   lookup<-read.csv("hru_lookup.csv")
   
   
@@ -65,7 +133,7 @@ RunAllScripts_SWATv60.5.2<-function(scenario_dir){
   DF_aghru<-reshape2::melt(DF_aghru)
   
   
-  return(DF_aghru)
+  return(list(DF_aghru,print("testing")))
   
   #write.table(DF_aghru,"hruLoss_summary.csv",row.names=F,col.names=F,sep="," )
   
