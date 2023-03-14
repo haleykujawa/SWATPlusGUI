@@ -40,15 +40,19 @@ scenario_dir <- paste0(getwd(),"/scenario")
 # Define UI ----
 ui <- fluidPage(
     titlePanel("OWC-SWAT+"),
-    
+    tabsetPanel(
+      
+      tabPanel("About OWC-SWAT+", br(), p("Stuff about OWC-SWAT+ here")),
+      
+      tabPanel("Change inputs",
 
     sidebarLayout(                   
       sidebarPanel(actionButton("cleardir", "Clear scenario"),
-                   br(),br(),br(),
+                   br(),
                    
                    
                    tabsetPanel(
-                     tabPanel("Management and conservation practices",
+                     tabPanel("Management and conservation practices",br(),br(),
                    #management widgets       
                    fluidRow(column(4,numericInput("CSFT", label = "Corn Bean - Full Tillage", value = 21)), 
                             column(4,numericInput("CSFT_B", label = "Vegetated buffer rate", value = 10)),
@@ -116,8 +120,9 @@ ui <- fluidPage(
         #### INPUTS ##################
         #Don't know if I need all this printed to the UI if it's already in the left hand panel, consider removing...
         #management scenarios
-        p("Rates of management on row crop lands:"),
-        textOutput("total_rate"),
+        br(),
+        strong("Rates of management on row crop lands:"),
+        span(textOutput("total_rate"),style='color:green'),
         textOutput("cc_rate"),
         textOutput("winter_cover_rate"),
         textOutput("FT_rate"),
@@ -138,15 +143,21 @@ ui <- fluidPage(
         #### OUTPUTS ##################
         uiOutput("runningmodel"),
         p(),p(),p(),
+       
+
         actionButton("HRUlossapply", "Nutrient and sediment loss from row crops"),
         tableOutput("HRUloss_reactive"),
         actionButton("ChangeAtOutlet","Changes in streamflow and water quality"),
         plotOutput("ChangeAtOutlet_reactive")
         
+        
         #This is where you can place the output of the script, see https://shiny.rstudio.com/tutorial/written-tutorial/lesson5/ for details
-      , width = 6) 
-    )
-  
+      , width = 6) ) ),
+
+tabPanel("Visualize outputs",p()) 
+
+)
+
 )
 
 # Define server logic ----
