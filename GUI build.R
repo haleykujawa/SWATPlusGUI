@@ -2,20 +2,21 @@
 
 library(shiny)
 library(readtext)
-library(dplyr)
+# library(dplyr)
 library(splitstackshape)
-library(stringr)
+# library(stringr)
 library(shinyjs)
 library(tictoc)
 library(rlang)
 library(reshape2)
-library(tidyr)
+# library(tidyr)
 library(rapportools)
-library(ggplot2)
+# library(ggplot2)
 library(stringr)
 library(here)
 library(ggpmisc) #for testPlot to combine table with plot
 library(patchwork)
+library(tidyverse) # commenting out all packages contained in the tidyverse
 
 
 # Load scripts to be used ---
@@ -46,7 +47,7 @@ ui <- fluidPage(
     titlePanel("OWC-SWAT+"),
     tabsetPanel(
       
-      tabPanel("Information OWC-SWAT+", br(), p("Stuff about OWC-SWAT+ here")),
+      tabPanel("Information OWC-SWAT+", br(),br(), p("Information about OWC-SWAT+ here")),
       
       tabPanel("Change inputs",
 
@@ -121,7 +122,8 @@ ui <- fluidPage(
                                       choices = list("CNRM", "MIROC5", "IPSL-CM5A-MR"),
                                       selected = 0),
                    
-                   fileInput("ClimateFile", label = h5("If extending climate data beyond 2020, insert here:")),
+                   fileInput("pcpFile", label = h5("If extending climate data beyond 2020, insert pcp here:")),
+                   fileInput("tmpFile", label = h5("If extending climate data beyond 2020, insert tmp here:")),
                    
                    actionButton("ClimateApply", "Apply changes to climate"),
                    
@@ -272,7 +274,7 @@ server <- function(input, output, session) {
    
  text_reactive <- eventReactive( input$runswat, {
    showModal(modalDialog("Running SWAT+", footer=NULL)) 
-   RunAllScripts_SWATv60.5.2(scenario_dir,input$SelectClimateOption,input$SelectClimateModels,input$ClimateFile)
+   RunAllScripts_SWATv60.5.2(scenario_dir,input$SelectClimateOption,input$SelectClimateModels,input$pcpFile,input$tmpFile)
    removeModal()
    testPlot()# testGUI()
  })
