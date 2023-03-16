@@ -1,4 +1,4 @@
-RunAllScripts_SWATv60.5.2<-function(scenario_dir,ClimateOption,ClimateModels,pcpFile,tmpFile){
+RunAllScripts_SWATv60.5.2<-function(scenario_dir,SelectClimate){
 
 #if going at add changing management into this file, maybe also add copying over the baseline directory here
   
@@ -18,14 +18,14 @@ RunAllScripts_SWATv60.5.2<-function(scenario_dir,ClimateOption,ClimateModels,pcp
   }
   
   
-  
-  if (ClimateOption=="nochange"){
+  # Baseline historical climate
+  if (any(grep("hist",SelectClimate))){
     setwd(scenario_dir)
     system('SWATPlus_60.5.5.exe') #run executable
   }
   
-  #Climate model runs
-  if (ClimateOption=="climmod"){
+  # Climate model runs
+  if (any(grep(paste(c("CNRM","MIROC5","IPSL-CM5A-MR"),collapse="|"),SelectClimate))){
     
     
     # for (climatemodel in ClimateModels){
@@ -45,23 +45,29 @@ RunAllScripts_SWATv60.5.2<-function(scenario_dir,ClimateOption,ClimateModels,pcp
     # https://bookdown.org/rdpeng/rprogdatascience/parallel-computation.html#the-parallel-package
     #potentially use future_lapply or reference SWATPlusR because they have an option for parallel computing.
     
+    #remove historical option from climate runs
+    ClimateModels<-SelectClimate%>%
+      setdiff(c("hist"))
+    
     my_files<-c('hru-data.hru','hyd-sed-lte.cha','hydrology.hyd')
     
     s<-system.time({
     
                 lapply(ClimateModels,function(climatemodel){
+                  # Instead of running the baseline historical with the new mgt--only compare with baseline climate run (1980-1999) with historical management (2013-2020)
+                  # In Likely Adoption project we got weird % changes if we compared LA historical with LA future. The absolute change was smaller than the baseline, but the % change would be larger
+                  
+                              # file.copy(from = file.path(paste0(scenario_dir,"/", my_files)),   # Copy files
+                              # to = file.path(paste0(scenario_dir,'/climate','/',climatemodel,'/historical',"/", my_files)))
       
                               file.copy(from = file.path(paste0(scenario_dir,"/", my_files)),   # Copy files
                               to = file.path(paste0(scenario_dir,'/climate','/',climatemodel,'/future',"/", my_files)))
-      
-                              file.copy(from = file.path(paste0(scenario_dir,"/", my_files)),   # Copy files
-                              to = file.path(paste0(scenario_dir,'/climate','/',climatemodel,'/historical',"/", my_files)))
                               
                               print(paste0("running ",climatemodel))
                               
                               #These would also need to be combined as one function to have every single run running in parallel. Keep for now.
-                              setwd(paste0(scenario_dir,'/climate','/',climatemodel,'/historical'))
-                              system('SWATPlus_60.5.5.exe',ignore.stdout = T,ignore.stderr = T) #run executable
+                              # setwd(paste0(scenario_dir,'/climate','/',climatemodel,'/historical'))
+                              # system('SWATPlus_60.5.5.exe',ignore.stdout = T,ignore.stderr = T) #run executable
                               
                               setwd(paste0(scenario_dir,'/climate','/',climatemodel,'/future'))
                               system('SWATPlus_60.5.5.exe',ignore.stdout = T,ignore.stderr = T) #run executable
@@ -75,7 +81,8 @@ RunAllScripts_SWATv60.5.2<-function(scenario_dir,ClimateOption,ClimateModels,pcp
 
   
   #Extend data beyond 2020 and write to scenario folder
-  if (ClimateOption=="extended"){
+  # the code below does not work with the current GUI, there is no option for "extended". Not sure if i'm going to keep.
+  if (any(grep("extended",SelectClimate))){
     
     print(pcpFile[[4]])
     
@@ -98,10 +105,11 @@ RunAllScripts_SWATv60.5.2<-function(scenario_dir,ClimateOption,ClimateModels,pcp
     new_pcp$date<-as.Date(new_pcp$date,format='%m/%d/%Y')
     
     # fill missing dates and remove dates before 03/02/2022
-    new_pcp<-new_pcp %>%
+    # this dates function isn't working, need to come back and fix this 3/15/23
+    # new_pcp<-new_pcp %>%
       # mutate(date = as.Date(date),format="%m/%d/%Y") %>%
-      complete(date = seq.Date(min(date), max(date), by="day")) %>%
-      filter(date > as.Date("2022-03-01"))
+      # complete(date = seq.Date(min(date), max(date), by="day")) %>%
+      # filter(date > as.Date("2022-03-01"))
     
     # replace empty NA data with -99
     new_pcp$tmp[is.na(new_pcp$tmp)]<-"-99"
@@ -162,6 +170,7 @@ RunAllScripts_SWATv60.5.2<-function(scenario_dir,ClimateOption,ClimateModels,pcp
     write(tmp,file_dir,sep = "\n",append=T)
     sink()
     
+    setwd(scenario_dir)
     system('SWATPlus_60.5.5.exe') #run executable 
   
   }

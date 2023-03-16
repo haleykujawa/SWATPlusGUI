@@ -2,22 +2,21 @@
 
 library(shiny)
 library(readtext)
-# library(dplyr)
 library(splitstackshape)
-# library(stringr)
 library(shinyjs)
 library(tictoc)
 library(rlang)
 library(reshape2)
-# library(tidyr)
 library(rapportools)
-# library(ggplot2)
 library(stringr)
 library(here)
 library(ggpmisc) #for testPlot to combine table with plot
 library(patchwork)
 library(tidyverse) # commenting out all packages contained in the tidyverse
-
+# library(ggplot2)
+# library(tidyr)
+# library(stringr)
+# library(dplyr)
 
 # Load scripts to be used ---
 source("Change_rot_dist.R")
@@ -113,19 +112,20 @@ ui <- fluidPage(
                    tabPanel("Climate data",  
                             p("put climate inputs here"),  
                    
-                    selectInput("SelectClimateOption", label = h3("Choose climate data to run:"), 
-                                        choices = list("Baseline climate (2013-2020)" = "nochange", "Climate models" = "climmod", "Current climate beyond 2020" = "extended"), 
-                                        selected = "nochange"),
+                    # selectInput("SelectClimateOption", label = h3("Choose climate data to run:"), 
+                    # choices = list("Baseline climate (2013-2020)" = "nochange", "Climate models" = "climmod", "Current climate beyond 2020" = "extended"), 
+                                        # selected = "nochange"),
                             
                   
-                   checkboxGroupInput("SelectClimateModels", label = h5("Climate models:"), 
-                                      choices = list("CNRM", "MIROC5", "IPSL-CM5A-MR"),
+                   checkboxGroupInput("SelectClimate", label = h5("Climate data to run:"), 
+                                      choices = list("Historical (2013-2020)"="hist","CNRM"="CNRM", "MIROC5"="MIROC5", "IPSL-CM5A-MR"="IPSL-CM5A-MR"),
                                       selected = 0),
                    
-                   fileInput("pcpFile", label = h5("If extending climate data beyond 2020, insert pcp here:")),
-                   fileInput("tmpFile", label = h5("If extending climate data beyond 2020, insert tmp here:")),
+                   #  going to remove this option for now and work to add it back in if needed
+                   # fileInput("pcpFile", label = h5("If extending climate data beyond 2020, insert pcp here:")),
+                   # fileInput("tmpFile", label = h5("If extending climate data beyond 2020, insert tmp here:")),
                    
-                   actionButton("ClimateApply", "Apply changes to climate"),
+                   # actionButton("ClimateApply", "Apply changes to climate"),
                    
                    
                    
@@ -238,8 +238,8 @@ server <- function(input, output, session) {
                                                input$CSNTcc_GW,input$CSWS_GW,input$CSWcc_GW))
   
 
-  ClimateOut<-eventReactive(input$ClimateApply,ChangeSWATClimate(input$SelectClimateOption,input$SelectClimateModels,input$ClimateFile))
-  output$ClimateOut<-renderText({ClimateOut()[[1]]})
+  # ClimateOut<-eventReactive(input$ClimateApply,ChangeSWATClimate(input$SelectClimateOption,input$SelectClimateModels,input$ClimateFile))
+  # output$ClimateOut<-renderText({ClimateOut()[[1]]})
 
  
   
@@ -274,7 +274,7 @@ server <- function(input, output, session) {
    
  text_reactive <- eventReactive( input$runswat, {
    showModal(modalDialog("Running SWAT+", footer=NULL)) 
-   RunAllScripts_SWATv60.5.2(scenario_dir,input$SelectClimateOption,input$SelectClimateModels,input$pcpFile,input$tmpFile)
+   RunAllScripts_SWATv60.5.2(scenario_dir,input$SelectClimate)
    removeModal()
    testPlot()# testGUI()
  })
