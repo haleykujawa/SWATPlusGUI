@@ -197,8 +197,8 @@ ui <- fluidPage(
 tabPanel("Visualize outputs",
          br(),
          
-         plotOutput("runningmodel2")
-         # imageOutput("runningmodel2")
+         plotOutput("runningmodel2"),
+         imageOutput("runningmodel3")
 )
 
 )
@@ -275,38 +275,63 @@ server <- function(input, output, session) {
   #You have to stick with--benefit to having it outside is user can fiddle with outputs they want, benefits to inside is it's more clean
   #Maybe could have list of inputs that are non-reactive at the top of "visualize outputs" That way there's no confusion what inputs the outputs are reflective of
    
- text_reactive <- eventReactive( input$runswat, {
-   showModal(modalDialog("Running SWAT+", footer=NULL)) 
+  text_reactive <-eventReactive( input$runswat, {
+   showModal(modalDialog("Running SWAT+", footer=NULL))
    RunAllScripts_SWATv60.5.2(scenario_dir,input$SelectClimate)
    removeModal()
-   testPlot()# testGUI()
+   testPlot(scenario_dir,input$SelectClimate)# testGUI()
+   
+   
  })
  
  # text output
-  output$runningmodel1 <- renderUI({
-     strong(text_reactive()[[2]])
-  })
+ output$runningmodel1 <- renderUI({
+ strong(text_reactive()[[5]])
+ })
   
   # plot output
-  # output$runningmodel2 <- renderPlot({
-  # text_reactive()[[1]]
-  # })
+  output$runningmodel2 <- renderPlot({
+  if(length(input$SelectClimate)==1){
+  text_reactive()[[1]]}
+    
+  if(length(input$SelectClimate)==2){
+  grid.arrange(text_reactive()[[1]],
+  text_reactive()[[2]])
+  }
+    
+  if(length(input$SelectClimate)==3){
+      grid.arrange(text_reactive()[[1]],
+                   text_reactive()[[2]],
+                   text_reactive()[[3]])
+  }
+    
+  if(length(input$SelectClimate)==4){
+      grid.arrange(text_reactive()[[1]],
+                   text_reactive()[[2]],
+                   text_reactive()[[3]],
+                   text_reactive()[[4]])
+    }
+  })
   
-  # change to render img
-  output$runningmodel2 <- renderImage({
-    
-    image_file <- paste0('www/','avg_change_BR.png')
-    
-    return(list(
-      src = image_file,
-      filetype = "image/png",
-      height = 520,
-      width = 696
-    ))
-  },
-  deleteFile=T)
- 
+  # This code isn't working when using text_reactive()[[]], unsure why
+  # # # change to render img
+  # output$runningmodel3 <-renderImage({
+  #     
+  #     # image_file <- paste0('www/','avg_change_BR.png')
+  #   image_file <- text_reactive()[[6]]
+  # 
+  #   return(list(
+  #     src = image_file,
+  #     filetype = "image/png",
+  #     height = 520,
+  #     width = 696
+  #   ))
+  # },
+  # deleteFile=T)
 
-}
+
+  
+  
+ }
 # Run the app ----
 shinyApp(ui = ui, server = server)
