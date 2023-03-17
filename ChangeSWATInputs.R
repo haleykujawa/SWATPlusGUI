@@ -22,7 +22,7 @@ set.seed(1)
 
  
 baseline <- paste0(here("baseline"))  
-scenario <- paste0(here("scenario"))
+scenario <- paste0(here("Scenarios"))
 
 
 ############################### CHANGE DITCH PARAMETERS ########################  

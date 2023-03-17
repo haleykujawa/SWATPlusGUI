@@ -12,6 +12,7 @@ library(stringr)
 library(here)
 library(ggpmisc) #for testPlot to combine table with plot
 library(patchwork)
+library(gridExtra) #arranges variable number of plots as "grobs"
 library(tidyverse) # commenting out all packages contained in the tidyverse
 # library(ggplot2)
 # library(tidyr)
@@ -37,8 +38,9 @@ run_yrs<-c(2009)
 rotations <- read.csv("data/LumAreaSummary.csv")
 baseline_data_avg<-read.csv("data/baseline_data_avg.csv")
 
+
 baseline_dir<- paste0(getwd(),"/Baseline")
-scenario_dir <- paste0(getwd(),"/Scenario")
+scenario_dir <- paste0(getwd(),"/Scenarios")
 
 
 # Define UI ----
@@ -196,6 +198,7 @@ tabPanel("Visualize outputs",
          br(),
          
          plotOutput("runningmodel2")
+         # imageOutput("runningmodel2")
 )
 
 )
@@ -285,9 +288,23 @@ server <- function(input, output, session) {
   })
   
   # plot output
-  output$runningmodel2 <- renderPlot({
-  text_reactive()[[1]]
-  })
+  # output$runningmodel2 <- renderPlot({
+  # text_reactive()[[1]]
+  # })
+  
+  # change to render img
+  output$runningmodel2 <- renderImage({
+    
+    image_file <- paste0('www/','avg_change_BR.png')
+    
+    return(list(
+      src = image_file,
+      filetype = "image/png",
+      height = 520,
+      width = 696
+    ))
+  },
+  deleteFile=T)
  
 
 }
