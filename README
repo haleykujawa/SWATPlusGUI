@@ -1,2 +1,16 @@
 OWC-SWAT+ GUI
-This is a line pushed from Rstudio
+
+Folder structure should look like
+
+Main Folder
+Scripts.R
+	
+	Baseline (is TxtInOut)
+	data (potential delete)
+	Scenarios
+		CNRM (is TxtInOut)
+		hist (is TxtInOut)
+		IPSL-CM5A-MR (is TxtInOut)
+		MIROC5 (is TxtInOut)
+	www
+	

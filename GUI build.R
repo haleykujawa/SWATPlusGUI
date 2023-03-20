@@ -53,7 +53,7 @@ ui <- fluidPage(
       tabPanel("Change inputs",
 
     sidebarLayout(                   
-      sidebarPanel(actionButton("cleardir", "Clear scenario"),
+      sidebarPanel(#actionButton("cleardir", "Clear scenario"),
                    br(),
                    
                    
@@ -102,10 +102,10 @@ ui <- fluidPage(
                    #ditch widget
                    fluidRow(column(4,sliderInput("ditch_rate", label = h3("Conservation ditches"), min = 0, 
                                max = 100, value = 10),
-                   p("This changes the rate of conservation ditches on streams of order 1-2. Changing to 100% only changes 128 km (80 mi) of stream"))) ,
+                   p("This changes the rate of conservation ditches on streams of order 1-2. Changing to 100% only changes 128 km (80 mi) of stream"))) #,
                    
                    
-                   actionButton("simulate", "Apply changes to management")
+                   # actionButton("simulate", "Apply changes to management")
                    ),
                    
                    
@@ -231,14 +231,14 @@ server <- function(input, output, session) {
   output$selected_ditch_rate <- renderText({paste0("Conservation ditch rate = ", input$ditch_rate ,"%") })  
   
   #run code to change all inputs
-  observeEvent(input$simulate,ChangeSWATInputs(input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
-                                               input$CSNTcc,input$CSWS,input$CSWcc,
-                                               
-                                               input$CSFT_B,input$CSNT_B,input$CSRT_B,input$CSRot_B,
-                                               input$CSNTcc_B,input$CSWS_B,input$CSWcc_B,
-                                               
-                                               input$CSFT_GW,input$CSNT_GW,input$CSRT_GW,input$CSRot_GW,
-                                               input$CSNTcc_GW,input$CSWS_GW,input$CSWcc_GW))
+  # observeEvent(input$simulate,ChangeSWATInputs(input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
+  #                                              input$CSNTcc,input$CSWS,input$CSWcc,
+  #                                              
+  #                                              input$CSFT_B,input$CSNT_B,input$CSRT_B,input$CSRot_B,
+  #                                              input$CSNTcc_B,input$CSWS_B,input$CSWcc_B,
+  #                                              
+  #                                              input$CSFT_GW,input$CSNT_GW,input$CSRT_GW,input$CSRot_GW,
+  #                                              input$CSNTcc_GW,input$CSWS_GW,input$CSWcc_GW))
   
 
   # ClimateOut<-eventReactive(input$ClimateApply,ChangeSWATClimate(input$SelectClimateOption,input$SelectClimateModels,input$ClimateFile))
@@ -247,7 +247,7 @@ server <- function(input, output, session) {
  
   
   #clear scenario inputs by copying baseline to scenario folder
-  observeEvent(input$cleardir,  Reset_scenario(baseline_dir,scenario_dir)) 
+  # observeEvent(input$cleardir,  Reset_scenario(baseline_dir,scenario_dir)) 
 # observeEvent(input$cleardir, {shinyjs::reset("side-panel")})
  
  
@@ -277,7 +277,14 @@ server <- function(input, output, session) {
    
   text_reactive <-eventReactive( input$runswat, {
    showModal(modalDialog("Running SWAT+", footer=NULL))
-   RunAllScripts_SWATv60.5.2(scenario_dir,input$SelectClimate)
+   RunAllScripts_SWATv60.5.2(scenario_dir,input$SelectClimate,input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
+                             input$CSNTcc,input$CSWS,input$CSWcc,
+                             
+                             input$CSFT_B,input$CSNT_B,input$CSRT_B,input$CSRot_B,
+                             input$CSNTcc_B,input$CSWS_B,input$CSWcc_B,
+                             
+                             input$CSFT_GW,input$CSNT_GW,input$CSRT_GW,input$CSRot_GW,
+                             input$CSNTcc_GW,input$CSWS_GW,input$CSWcc_GW)
    removeModal()
    testPlot(scenario_dir,input$SelectClimate)# testGUI()
    
