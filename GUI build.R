@@ -121,7 +121,7 @@ ui <- fluidPage(
                   
                    checkboxGroupInput("SelectClimate", label = h5("Climate data to run:"), 
                                       choices = list("Historical (2013-2020)"="hist","CNRM"="CNRM", "MIROC5"="MIROC5", "IPSL-CM5A-MR"="IPSL-CM5A-MR"),
-                                      selected = 0),
+                                      selected = "hist"),
                    
                    #  going to remove this option for now and work to add it back in if needed
                    # fileInput("pcpFile", label = h5("If extending climate data beyond 2020, insert pcp here:")),
@@ -276,6 +276,14 @@ server <- function(input, output, session) {
   #Maybe could have list of inputs that are non-reactive at the top of "visualize outputs" That way there's no confusion what inputs the outputs are reflective of
    
   text_reactive <-eventReactive( input$runswat, {
+  
+  # This isn't working but need to find way to stop code from running if user inputs incorrect totals
+  # if (input$CSNTcc == 10){
+  #   showModal(modalDialog("Soft Error", footer=NULL,easyClose=T))  
+  #   # removeModal()
+  #   
+  # } 
+    
    showModal(modalDialog("Running SWAT+", footer=NULL))
    RunAllScripts_SWATv60.5.2(scenario_dir,input$SelectClimate,input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
                              input$CSNTcc,input$CSWS,input$CSWcc,

@@ -14,6 +14,14 @@ print('im here')
 mgt_files<-c('hru-data.hru','hyd-sed-lte.cha','hydrology.hyd')
 myplots<-list()
 
+if (is.null(SelectClimate)){
+ stop('Error: No climate data selected') 
+}
+
+if (CSFT+CSNT+CSRT+CSRot+CSNTcc+CSWS+CSWcc > 100 | CSFT+CSNT+CSRT+CSRot+CSNTcc+CSWS+CSWcc < 100){
+  stop('Error: Management rates do not total 100%')
+}
+
 ### folders ########
 baseline <- paste0(here("baseline"))  
 # scenario <- paste0(here("Scenarios"))
