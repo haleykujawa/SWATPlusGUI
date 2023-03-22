@@ -13,4 +13,14 @@ Scripts.R
 		IPSL-CM5A-MR (is TxtInOut)
 		MIROC5 (is TxtInOut)
 	www
+	UW Climate Data
+		CNRM
+			hist
+			future
+		ACCESS
+			hist
+			...
+
+ReadClimDataWriteSWAT reads output files I processed on the external harddrive in the format date / tmp / pcp
+in the UW Climate Data folder. It is not part of the GUI end product other than processing data needed for the GUI.
 	
