@@ -48,7 +48,12 @@ ui <- fluidPage(
     titlePanel("OWC-SWAT+"),
     tabsetPanel(
       
-      tabPanel("Information OWC-SWAT+", br(),br(), p("Information about OWC-SWAT+ here")),
+      tabPanel("About OWC-SWAT+", br(),br(), p("Information about OWC-SWAT+ here"),br(),br(),
+               img(src="owc_map.png",width=1430/2,height=1105/2),br(),p('Figure 1. Map of Old Woman Creek watershed and estuary'),
+               br(),br(),br(),br(),
+               img(src="old-woman-creek.png",height=503/4,width=800/4),
+               img(src="davidson.png",height=117/2,width=432/2),
+               img(src="osu.png",height=88/2,width=569/2)),
       
       tabPanel("Change inputs",
 
@@ -89,14 +94,14 @@ ui <- fluidPage(
                             column(4,numericInput("CSWcc_GW", label = "Grassed waterway rate", value = 10))),
         
                    
-                   h5("Baseline rates of management:"),
-                   p("Corn Bean - Full Tillage is 21%"), #maybe do /n to remove space between them in UI
-                   p("Corn Bean - No Tillage is 40%"),
-                   p("Corn Bean - Reduced Tillage is 4%"),
-                   p("Corn Bean - Rotational No-Till is 15%"),
-                   p("Corn Bean - No-Till with rye cover crop is 10%"),
-                   p("Corn Bean Wheat /Double crop bean is 9%"),
-                   p("Corn Bean Wheat /rye cover crop is 1%"),
+                   # h5("Baseline rates of management:"),
+                   # p("Corn Bean - Full Tillage is 21%"), #maybe do /n to remove space between them in UI
+                   # p("Corn Bean - No Tillage is 40%"),
+                   # p("Corn Bean - Reduced Tillage is 4%"),
+                   # p("Corn Bean - Rotational No-Till is 15%"),
+                   # p("Corn Bean - No-Till with rye cover crop is 10%"),
+                   # p("Corn Bean Wheat /Double crop bean is 9%"),
+                   # p("Corn Bean Wheat /rye cover crop is 1%"),
                    
 
                    #ditch widget
@@ -120,7 +125,7 @@ ui <- fluidPage(
                             
                   
                    checkboxGroupInput("SelectClimate", label = h5("Climate data to run:"), 
-                                      choices = list("Historical (2013-2020)"="hist","CNRM"="CNRM", "MIROC5"="MIROC5", "IPSL-CM5A-MR"="IPSL-CM5A-MR"),
+                                      choices = list("Historical (2013-2020)"="hist","CNRM"="CNRM", "MIROC5"="MIROC", "IPSL-CM5A-MR"="IPSL","GFDL"="GFDL"),
                                       selected = "hist"),
                    
                    #  going to remove this option for now and work to add it back in if needed
@@ -162,12 +167,18 @@ ui <- fluidPage(
         br(),
         strong("Rates of management on row crop lands:"),
         span(textOutput("total_rate"),style='color:green'),
+        span(textOutput("buff_grw_rate"),style='color:black'),
+        
         textOutput("cc_rate"),
         textOutput("winter_cover_rate"),
         textOutput("FT_rate"),
         textOutput("NT_rate"), 
         textOutput("RT_rate"),
         textOutput("Rot_rate"),
+        textOutput("N_incorp"),
+        textOutput("P_incorp"),
+        textOutput("N_applied"),
+        textOutput("P_applied"),
 
         
         p(),
@@ -199,7 +210,15 @@ tabPanel("Visualize outputs",
          
          plotOutput("runningmodel2"),
          imageOutput("runningmodel3")
-)
+),
+
+tabPanel("Documentation",
+         
+         # Insert pdf
+         tags$iframe(style="height:1000px; width:100%; scrolling=yes",
+                     src="OWC_info.pdf")
+         
+         )
 
 )
 
@@ -211,18 +230,28 @@ server <- function(input, output, session) {
   ###management scenarios###
   #error message#
   output$total_rate<-reactive({validate(need((input$CSFT+input$CSNT+input$CSRT+input$CSRot+
-           input$CSNTcc+input$CSWS+input$CSWcc) == 100, "Input management rates do not add up to 100% -- Please adjust before using 'Apply changes'"))
-    paste0("Rate input ", input$CSFT+input$CSNT+input$CSRT+input$CSRot+input$CSNTcc+input$CSWS+input$CSWcc, "%")})
+           input$CSNTcc+input$CSWS+input$CSWcc) == 100, "Input management rates do not add up to 100% -- Adjust before running SWAT+"))
+    paste0("Management rate input is ", input$CSFT+input$CSNT+input$CSRT+input$CSRot+input$CSNTcc+input$CSWS+input$CSWcc, "%, ready to run!")})
+  
+  output$buff_grw_rate<-reactive({validate(need(( (input$CSFT_B + input$CSFT_GW) <= 100) & ((input$CSNT_B + input$CSNT_GW) <= 100) & ((input$CSRT_B + input$CSRT_GW) <= 100) & ((input$CSRot_B + input$CSRot_GW) <= 100) & ((input$CSNTcc_B + input$CSNTcc_GW) <= 100) & ((input$CSWS_B + input$CSWS_GW) <= 100), "Total rate of buffers and grassed waterways on one management scenario cannot be greater than 100% -- Adjust before running SWAT+"))
+    paste0("Total input rate of vegetated buffers is ", input$CSFT*input$CSFT_B/100 +input$CSNT*input$CSNT_B/100+ input$CSRT*input$CSRT_B/100+ input$CSRot*input$CSRot_B/100+ input$CSNTcc*input$CSNTcc_B/100 +input$CSWS*input$CSWS_B/100 +input$CSWcc*input$CSWcc_B/100, '%',
+           " and total input rate of grassed waterways is ", input$CSFT*input$CSFT_GW/100 +input$CSNT*input$CSNT_GW/100+ input$CSRT*input$CSRT_GW/100+ input$CSRot*input$CSRot_GW/100+ input$CSNTcc*input$CSNTcc_GW/100 +input$CSWS*input$CSWS_GW/100 +input$CSWcc*input$CSWcc_GW/100, '%')})
   
   #print input management to UI
   output$cc_rate <- renderText({paste0("Rye cover crops = ", input$CSNTcc + input$CSWcc ,"%") })
-  output$winter_cover_rate <- renderText({paste0("Winter cover = ", input$CSNTcc + input$CSWcc + input$CSWS,"%") })
+  output$winter_cover_rate <- renderText({paste0("Winter cover (rye + winter wheat) = ", input$CSNTcc + input$CSWcc + input$CSWS,"%") })
   output$FT_rate <- renderText({paste0("Full till management = ", input$CSFT ,"%") })
   output$NT_rate <- renderText({paste0("No till management = ", input$CSNT + input$CSNTcc + input$CSWcc + input$CSWS ,"%") })
   output$RT_rate <- renderText({paste0("Reduced till management = ", input$CSRT ,"%") })
   output$Rot_rate <- renderText({paste0("Rotational till management = ", input$CSRot ,"%") })
   
   # add other things from excel spreadsheet, like rates of subsurface placement, total N and total P applied 
+  output$N_incorp<-renderText({paste0("Incorporated N (%) = ",input$CSFT*1+input$CSNT*0.97+input$CSRT*1+input$CSRot*1+input$CSNTcc*0.9+input$CSWS*0.69+input$CSWcc*0.64)})
+  output$P_incorp<-renderText({paste0("Incorporated P (%) = ",input$CSFT*1+input$CSNT*0.1+input$CSRT*1+input$CSRot*1+input$CSNTcc*0.1+input$CSWS*0.55+input$CSWcc*0.69)}) 
+  output$N_applied<-renderText({paste0("Average annual N applied (lb/acre) = ", round( (223*(input$CSFT/100)/2 +206*(input$CSNT/100)/2 + 223*(input$CSRT/100)/2 + 226*(input$CSRot/100)/2 +222*(input$CSNTcc/100)/2 + 296*(input$CSWS/100)/3 + 311*(input$CSWcc/100)/3) ,0))})
+  output$P_applied<-renderText({paste0("Average annual P2O5 applied (lb/acre) = ", round( (118/2*(input$CSFT/100) + 118/2*(input$CSNT/100) + 118/2*(input$CSRT/100) + 116/2*(input$CSRot/100) + 116/2*(input$CSNTcc/100) + 174/3*(input$CSWS/100) + 168/3*(input$CSWcc/100)) ,0))})
+  
+  
   
 
   

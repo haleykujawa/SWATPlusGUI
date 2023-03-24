@@ -5,6 +5,9 @@ testPlot<-function(scenario_dir,SelectClimate){
   library("patchwork")
   library("ggpmisc")
   
+  # May want to end up building one DF and making a plot with it--hard to compare the same results if multiple plots exist.
+  # Will want to pass this script info on the inputs used to print in the 'visualize outputs' column.
+  
   # x<-runif(n=10, min=1, max=20)
   # y<-runif(n=10, min=1, max=20)
   
@@ -23,8 +26,6 @@ testPlot<-function(scenario_dir,SelectClimate){
   # setwd(here('www'))
   
   myplots<-list('hist','CNRM','IPSL-CM5A-MR','MIROC5')
-
-  setwd(scenario_dir)
   
 # Calculate outputs here
   headers<-c("jday",	"mon",	"day",	"yr",	"unit",	"gis_id",	"name",	"areaha",	"precipha.m",	"evapha.m",	
@@ -86,6 +87,7 @@ testPlot<-function(scenario_dir,SelectClimate){
   
   myplots[[n]]<-plot1
   n=n+1
+  
   }
   
   
@@ -93,7 +95,6 @@ testPlot<-function(scenario_dir,SelectClimate){
   # plot_output<-grid.arrange(grobs = myplots, ncol=2)
   # setwd(here('www'))
   # ggsave("avg_change_BR.png",plot_output)
-  
 
   
   return(list(myplots[[1]],myplots[[2]],myplots[[3]],myplots[[4]],print("OWC-SWAT+ run complete"),  paste0('www/','avg_change_BR.png')))
