@@ -10,9 +10,9 @@ testPlot<-function(scenario_dir,SelectClimate){
   
   # x<-runif(n=10, min=1, max=20)
   # y<-runif(n=10, min=1, max=20)
-  
+  # 
   # my_table<-data.frame(x,y)
-  
+  # 
   # plot1<-ggplot(data=my_table,aes(x,y))+geom_point()
   
   # ggp_table <- ggplot() +                             # Create empty plot with table
@@ -78,17 +78,21 @@ testPlot<-function(scenario_dir,SelectClimate){
   # calculate % difference between baseline and scenario
   baseline_data$change_per<-(baseline_data$scenario-baseline_data$baseline) *100 / baseline_data$baseline
   
-  plot1<-ggplot(baseline_data,aes(x=variable,y=change_per))+geom_bar(stat = 'identity')+ylab("Change from baseline (%)")+
-    xlab("")+ ggtitle(climatemodel)+
+  baseline_data$legendkey<-climatemodel
+  
+
+  
+  }
+  
+  
+  BR_plot<-ggplot(baseline_data,aes(x=variable,y=change_per,fill=legendkey))+geom_bar(stat = 'identity')+ylab("Change from baseline (%)")+
+    xlab("")+ ggtitle("Change at Berlin Rd")+
     geom_text(size=16,aes(label=round(change_per)), position=position_dodge(width=0.9), vjust=-0.09,colour="black")+
     theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
           panel.background = element_blank(),text = element_text(size = 16),
           panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
   
-  myplots[[n]]<-plot1
-  n=n+1
-  
-  }
+
   
   
   
@@ -97,7 +101,7 @@ testPlot<-function(scenario_dir,SelectClimate){
   # ggsave("avg_change_BR.png",plot_output)
 
   
-  return(list(myplots[[1]],myplots[[2]],myplots[[3]],myplots[[4]],print("OWC-SWAT+ run complete"),  paste0('www/','avg_change_BR.png')))
+  return(list(BR_plot, print("OWC-SWAT+ run complete")))
   
   
   

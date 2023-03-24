@@ -105,7 +105,7 @@ ui <- fluidPage(
                    
 
                    #ditch widget
-                   fluidRow(column(4,sliderInput("ditch_rate", label = h3("Conservation ditches"), min = 0, 
+                   fluidRow(column(6,sliderInput("ditch_rate", label = h3("Conservation ditches"), min = 0, 
                                max = 100, value = 10),
                    p("This changes the rate of conservation ditches on streams of order 1-2. Changing to 100% only changes 128 km (80 mi) of stream"))) #,
                    
@@ -125,7 +125,7 @@ ui <- fluidPage(
                             
                   
                    checkboxGroupInput("SelectClimate", label = h5("Climate data to run:"), 
-                                      choices = list("Historical (2013-2020)"="hist","CNRM"="CNRM", "MIROC5"="MIROC", "IPSL-CM5A-MR"="IPSL","GFDL"="GFDL"),
+                                      choices = list("Recent observed climate (2013-2020)"="hist","CNRM"="CNRM", "MIROC5"="MIROC", "IPSL-CM5A-MR"="IPSL","GFDL"="GFDL"),
                                       selected = "hist"),
                    
                    #  going to remove this option for now and work to add it back in if needed
@@ -158,7 +158,7 @@ ui <- fluidPage(
                    
                    
                    
-                  , width = 6 ),
+                  , width = 8 ),
                    
       mainPanel(
         #### INPUTS ##################
@@ -203,13 +203,14 @@ ui <- fluidPage(
         
         
         #This is where you can place the output of the script, see https://shiny.rstudio.com/tutorial/written-tutorial/lesson5/ for details
-       width = 6) ) ),
+       width = 4) ) ),
 
 tabPanel("Visualize outputs",
-         br(),
+         # br(),
          
-         plotOutput("runningmodel2"),
-         imageOutput("runningmodel3")
+         # imageOutput("runningmodel2"),
+         plotOutput("runningmodeltest")
+         # imageOutput("runningmodel3")
 ),
 
 tabPanel("Documentation",
@@ -306,13 +307,6 @@ server <- function(input, output, session) {
    
   text_reactive <-eventReactive( input$runswat, {
   
-  # This isn't working but need to find way to stop code from running if user inputs incorrect totals
-  # if (input$CSNTcc == 10){
-  #   showModal(modalDialog("Soft Error", footer=NULL,easyClose=T))  
-  #   # removeModal()
-  #   
-  # } 
-    
    showModal(modalDialog("Running SWAT+", footer=NULL))
    RunAllScripts_SWATv60.5.2(scenario_dir,input$SelectClimate,input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
                              input$CSNTcc,input$CSWS,input$CSWcc,
@@ -330,32 +324,34 @@ server <- function(input, output, session) {
  
  # text output
  output$runningmodel1 <- renderUI({
- strong(text_reactive()[[5]])
+ strong(text_reactive()[[2]])
  })
+
+ #  # plot output
+ #  output$runningmodel2 <- renderPlot({
+ #  if(length(input$SelectClimate)==1){
+ #                text_reactive()[[1]]}
+ #    
+ #  if(length(input$SelectClimate)==2){
+ #  grid.arrange(text_reactive()[[1]],
+ #               text_reactive()[[2]])
+ #  }
+ #    
+ #  if(length(input$SelectClimate)==3){
+ #      grid.arrange(text_reactive()[[1]],
+ #                   text_reactive()[[2]],
+ #                   text_reactive()[[3]])
+ #  }
+ #    
+ #  if(length(input$SelectClimate)==4){
+ #      grid.arrange(text_reactive()[[1]],
+ #                   text_reactive()[[2]],
+ #                   text_reactive()[[3]],
+ #                   text_reactive()[[4]])
+ #    }
+ #  })
   
-  # plot output
-  output$runningmodel2 <- renderPlot({
-  if(length(input$SelectClimate)==1){
-  text_reactive()[[1]]}
-    
-  if(length(input$SelectClimate)==2){
-  grid.arrange(text_reactive()[[1]],
-  text_reactive()[[2]])
-  }
-    
-  if(length(input$SelectClimate)==3){
-      grid.arrange(text_reactive()[[1]],
-                   text_reactive()[[2]],
-                   text_reactive()[[3]])
-  }
-    
-  if(length(input$SelectClimate)==4){
-      grid.arrange(text_reactive()[[1]],
-                   text_reactive()[[2]],
-                   text_reactive()[[3]],
-                   text_reactive()[[4]])
-    }
-  })
+  output$runningmodeltest<-renderPlot({text_reactive()[[1]]})
   
   # This code isn't working when using text_reactive()[[]], unsure why
   # # # change to render img
