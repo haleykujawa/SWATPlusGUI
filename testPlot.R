@@ -25,10 +25,10 @@ testPlot<-function(scenario_dir,SelectClimate){
   # output_data<-plot1+ggp_table
   # setwd(here('www'))
   
-  myplots<-list('hist','CNRM','IPSL-CM5A-MR','MIROC5')
+  # myplots<-list('hist','CNRM','IPSL-CM5A-MR','MIROC5')
   
 # Calculate outputs here
-  headers<-c("jday",	"mon",	"day",	"yr",	"unit",	"gis_id",	"name",	"areaha",	"precipha.m",	"evapha.m",	
+  headers_ch<-c("jday",	"mon",	"day",	"yr",	"unit",	"gis_id",	"name",	"areaha",	"precipha.m",	"evapha.m",	
              "seepha.m",	"flo_storm.3.s",	"sed_stormtons",	"orgn_storkgN",	"sedp_storkgP",	"no3_storkgN",	"solp_storkgP",
              "chla_storkg",	"nh3_storkgN",	"no2_storkgN",	"cbod_storkg",	"dox_storkg",	"san_stortons",	"sil_stortons",	"cla_stortons",	"sag_stortons",
              "lag_stortons",	"grv_stortons",	"null1", "setl_stor",	"setlp_stor",	"flo_inm.3.s",	"sed_inmtons",	"orgn_inkgN",	"sedp_inkgP",	"no3_inkgN",
@@ -36,6 +36,14 @@ testPlot<-function(scenario_dir,SelectClimate){
              "sag_intons",	"lag_intons",	"grv_intons",	"null",	 "setl_in",	"setlp_in","flo_outm.3.s",	"sed_outmtons",	"orgn_outkgN",	"sedp_outkgP",	"no3_outkgN",
              "solp_outkgP",	"chla_outkg",	"nh3_outkgN",	"no2_outkgN",	"cbod_outkg",	"dox_outkg",	"san_outtons",	"sil_outtons",	"cla_outtons",
              "sag_outtons",	"lag_outtons",	"grv_outtons",	"null2", "setl_out",	"setlp_out", "water_tempdegC")#"null3","null4","null5","null6","null7")
+  
+  headers_hru<-c("jday",	"mon",	"day",	"yr",	"unit",	"gis_id",	"name",	"sedyld_tha","sedorgn_kgha","sedorgp_kgha",
+             "surqno3_kgha","lat3no3_kgha","surqsolp_kgha","usle_tons","sedmin","tileno3","lchlabp","tilelabp","satexn")
+  
+  #### Datat frames for final data #######
+  ch_loss<-c()
+  hru_loss<-c()
+  
   
   n=1 # counter for filling plots in list
   
@@ -55,7 +63,7 @@ testPlot<-function(scenario_dir,SelectClimate){
   DF<-strsplit(DF,split=" ") #split based on spacing
   DF<-lapply(DF, function(z){ z[z != ""]}) # remove empty spaces
   DF<-data.frame(do.call(rbind, DF)) #unlist
-  colnames(DF)<-headers
+  colnames(DF)<-headers_ch
   
   # Berlin Rd 
   DF<-DF%>%
@@ -68,7 +76,7 @@ testPlot<-function(scenario_dir,SelectClimate){
   #### Read in baseline data #####
   baseline_data<-read.csv("baseline_data_avg.csv")
   
-  ################ Summarize outputs and compare to baseline ############################################################
+  ################ Change at Berlin Rd. ############################################################
   baseline_data$scenario[baseline_data$variable=="discharge_cms"]<-mean(DF$flo_outm.3.s,na.rm=T)
   baseline_data$scenario[baseline_data$variable=="solp_kg"]<-sum(DF$solp_outkgP,na.rm=T)
   baseline_data$scenario[baseline_data$variable=="sedp_kg"]<-sum(DF$sedp_outkgP,na.rm=T)
@@ -80,17 +88,75 @@ testPlot<-function(scenario_dir,SelectClimate){
   
   baseline_data$legendkey<-climatemodel
   
+  ch_loss<-rbind(ch_loss,baseline_data)
+  
+  
+  ##### Management rotations / tile plot ######################
+  
+  hru_lookup<-read.csv(paste0(scenario_dir,"\\hru_lookup.csv"))
+  
+  
+  tmp <- file(here(scenario_dir,climatemodel,'hru_ls_yr.txt'))
+  open(tmp, "r") #read
+  
+  #read past headerlines
+  readLines(tmp, n = 3) 
+  
+  
+  
+  ###### read in simulated data columns #########
+  data<-readLines(tmp, n = -1)  
+  close(tmp)
+  DF<-strsplit(data,split=" ")
+  DF<-lapply(DF, function(z){ z[z != ""]}) 
+  DF<-data.frame(do.call(rbind, DF)) #unlist
+  colnames(DF)<-headers_hru
+  
+  
+  # DF$date<-as.Date(paste(DF$mon,DF$day,DF$yr,sep="/"), format="%m/%d/%Y")              # add date column
+  DF[,c(1:6,8:(ncol(DF)-1))]<-as.numeric(unlist(DF[,c(1:6,8:(ncol(DF)-1))]))           # convert to numerics
+  
+  DF_aghru<-left_join(DF,hru_lookup,by=c("name"))
+  # DF_aghru<-DF_aghru[grepl(paste0(c("CS","SC","CSW"), collapse="|"),DF_aghru$lu_mgt),]
+  
+  # index tile columns
+  DF_aghru$tile<-'no tile' 
+  DF_aghru$tile[grepl("_t",DF_aghru$lu_mgt)]<- 'tile'
+  
+  # index all mgt scenarios
+  DF_aghru$mgt<-NA
+  DF_aghru<-DF_aghru %>% 
+    mutate(mgt=replace(mgt, grepl(paste0(c("SC_FT","CS_FT"),collapse='|'),lu_mgt), "CS_FT")) %>% 
+    mutate(mgt=replace(mgt, grepl(paste0(c("SC_RT","CS_RT"),collapse='|'),lu_mgt), "CS_RT")) %>% 
+    mutate(mgt=replace(mgt, grepl(paste0(c("SC_RotT","CS_RotT"),collapse='|'),lu_mgt), "CS_RotT")) %>% 
+    mutate(mgt=replace(mgt, (grepl(paste0(c("SC_NT","CS_NT"),collapse='|'),lu_mgt) & !grepl(paste0(c("SC_NTcc","CS_NTcc"),collapse='|'),lu_mgt)), "CS_NT")) %>% 
+    mutate(mgt=replace(mgt, grepl(paste0(c("SC_NTcc","CS_NTcc"),collapse='|'),lu_mgt), "CS_NTcc")) %>% 
+    mutate(mgt=replace(mgt, grepl("CSWS",lu_mgt), "CSWS")) %>% 
+    mutate(mgt=replace(mgt, grepl("CSWcc",lu_mgt), "CSWcc")) %>% 
+    filter(!is.na(mgt)) %>% 
+    mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin+tilelabp) %>% 
+    select("mgt", "name" ,"sedyld_tha", "sedorgn_kgha", "sedorgp_kgha", "surqsolp_kgha",
+           "sedmin","tilelabp","totp","hyd_grp", "slp","tile") %>% 
+    mutate(scenario=climatemodel)
+
+  # Could use gather instead of melt
+  DF_aghru<-melt(DF_aghru,id=c('hyd_grp','mgt','name','tile','slp','scenario'))
+  
+  hru_loss<-rbind(hru_loss,DF_aghru)
+  
 
   
   }
   
   
-  BR_plot<-ggplot(baseline_data,aes(x=variable,y=change_per,fill=legendkey))+geom_bar(stat = 'identity')+ylab("Change from baseline (%)")+
+  BR_plot<-ggplot(ch_loss,aes(x=variable,y=change_per,fill=legendkey))+geom_bar(stat = 'identity')+ylab("Change from baseline (%)")+
     xlab("")+ ggtitle("Change at Berlin Rd")+
     geom_text(size=16,aes(label=round(change_per)), position=position_dodge(width=0.9), vjust=-0.09,colour="black")+
     theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
           panel.background = element_blank(),text = element_text(size = 16),
           panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
+  
+  HRU_plot<-ggplot(hru_loss,aes(x=mgt,y=value,fill=scenario))+geom_boxplot()+facet_wrap(vars(variable))
   
 
   
@@ -101,7 +167,7 @@ testPlot<-function(scenario_dir,SelectClimate){
   # ggsave("avg_change_BR.png",plot_output)
 
   
-  return(list(BR_plot, print("OWC-SWAT+ run complete")))
+  return(list(BR_plot,HRU_plot, print("OWC-SWAT+ run complete")))
   
   
   

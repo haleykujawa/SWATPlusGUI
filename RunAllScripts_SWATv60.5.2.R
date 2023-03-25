@@ -558,6 +558,10 @@ baseline <- paste0(here("baseline"))
   write.csv(mgt_check,paste0(scenario_dir,"\\mgt_check.csv"),row.names=F) #testing
   
   
+  ############ WRITE LOOKUP TABLE FOR PLOTTING OUTPUTS ############
+  write.csv(hru_data,paste0(scenario_dir,"\\hru_lookup.csv"),row.names=F)
+  
+  
   ############ WRITE NEW HRU-DATA.HRU #############################
   # convert table to characters and strip of whitespace
   hru_data[] <- lapply(hru_data, as.character)

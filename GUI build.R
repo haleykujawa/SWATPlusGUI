@@ -209,7 +209,8 @@ tabPanel("Visualize outputs",
          # br(),
          
          # imageOutput("runningmodel2"),
-         plotOutput("runningmodeltest")
+         plotOutput("BR_plot"),
+         plotOutput("HRU_plot")
          # imageOutput("runningmodel3")
 ),
 
@@ -324,7 +325,7 @@ server <- function(input, output, session) {
  
  # text output
  output$runningmodel1 <- renderUI({
- strong(text_reactive()[[2]])
+ strong(text_reactive()[[3]])
  })
 
  #  # plot output
@@ -351,7 +352,8 @@ server <- function(input, output, session) {
  #    }
  #  })
   
-  output$runningmodeltest<-renderPlot({text_reactive()[[1]]})
+  output$BR_plot<-renderPlot({text_reactive()[[1]]})
+  output$HRU_plot<-renderPlot({text_reactive()[[2]]})
   
   # This code isn't working when using text_reactive()[[]], unsure why
   # # # change to render img
