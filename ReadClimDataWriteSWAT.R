@@ -1,4 +1,5 @@
 ###### Read output from Jupyter notebook reading the climate data and write as SWAT+ pcp file #########
+# 3/26 - need to change average temp too min+max/2
 rm(list=ls())
 
 library("here")
@@ -30,6 +31,7 @@ ClimateSummary<-data.frame(matrix(ncol=4,nrow=0))
 colnames(ClimateSummary)<-c("dailypcp_mm", "tmp_avgC",    "model",       "time_period")
 
 climatemodels<-c('ACCESS','CNRM','IPSL') # exclude GFDL, see if all runs complete 3/23 8:43
+obs_hist<-c('NORWALK_WWTP')
 
 for (clim in climatemodels){ # for every time model
   
@@ -102,7 +104,7 @@ dailyClimData <- climdata %>%
   group_by(day_col) %>%
   # filter(year(time) != 2000) %>% # remove the one output for yr 2000
   mutate(pcp_mm = pcp*60*60) %>% # convert from kg /m-2 s-1 to mm
-  summarize(tmp_minC=min(temp),tmp_maxC=max(temp),dailypcp_mm=sum(pcp_mm),tmp_avgC=mean(temp)) %>%
+  summarize(tmp_minC=min(temp),tmp_maxC=max(temp),dailypcp_mm=sum(pcp_mm),tmp_avgC=((min(temp)+max(temp))/2)) %>%
   mutate(doy=yday(day_col)) %>%
   mutate(year=year(day_col)) %>%
   mutate(dailypcp_mm= format(round(dailypcp_mm,5))) %>% # I think these three lines could be better but leaving for now
@@ -230,20 +232,53 @@ if (timeperiod =='future'){
 setwd(here("UW Climate Data"))
 write.csv(ClimateSummary,"AnnualClimateSummary.csv",row.names=F)
 
-### Make plots of all climate data ####
+### Obs data Norwalk WWTP ######
 
+obs_data<-c()
+  
+  setwd(here("UW Climate Data", obs_hist))
+  
+  clim_files<-list.files()
+  
+  for (i in clim_files){
+    
+    obs_add<-read.csv(i)
+    obs_data<-rbind(obs_data,obs_add)
+    
+  }
+  
+  
+  ClimateSummary_add<-obs_data %>% 
+    mutate(DATE = ymd(DATE)) %>% 
+    group_by(year(DATE)) %>%
+    mutate(TAVG=(TMIN+TMAX)/2) %>% 
+    summarize(sum(PRCP,na.rm=T),mean(TAVG,na.rm=T)) %>% 
+    mutate(model = 'Observed hist',timeperiod='hist')
+
+  colnames(ClimateSummary_add)<-colnames(ClimateSummary)
+  
+  ClimateSummary<-rbind(ClimateSummary,ClimateSummary_add)
+  
+
+    
+
+
+
+### Make plots of all climate data ####
+setwd(here('UW Climate Data'))
 ClimateSummary<-ClimateSummary %>% 
   mutate(model =factor(model)) %>%
   mutate(time_period=factor(time_period,levels=c('hist','future'),ordered=T))
 
 pcp_plot<-ggplot(ClimateSummary, aes(x=model,y=annualpcp_mm,fill=time_period))+geom_boxplot()+
-  geom_hline(yintercept=1090,linetype='dashed')+geom_text(aes(x='CNRM',y=1200,label='Historical average annual (2013-2020)'))+
+  # geom_hline(yintercept=1090,linetype='dashed')+geom_text(aes(x='CNRM',y=1200,label='Historical average annual (2013-2020)'))+
   labs(x="",y="Annual precipitation (mm)")+
   scale_fill_discrete(labels=c("hist"="historical (1980-1999)","future"="future (2040-2059)"))+
   theme_bw()
 
 tmp_plot<-ggplot(ClimateSummary, aes(x=model,y=tmp_avgC,fill=time_period))+
-  geom_boxplot()+geom_hline(yintercept=10.9,linetype='dashed')+geom_text(aes(x='CNRM',y=11.5,label='Historical (2013-2020)'))+
+  geom_boxplot()+
+  # geom_hline(yintercept=10.9,linetype='dashed')+geom_text(aes(x='CNRM',y=11.5,label='Historical (2013-2020)'))+
   labs(x="",y="Annual average yearly temp (C)")+
   scale_fill_discrete(labels=c("hist"="historical (1980-1999)","future"="future (2040-2059)"))+
   theme_bw()

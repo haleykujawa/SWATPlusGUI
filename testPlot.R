@@ -1,9 +1,9 @@
 #test passing more than 1 plot/graph to the GUI interface
 
 testPlot<-function(scenario_dir,SelectClimate){
-  library("ggplot2")
-  library("patchwork")
-  library("ggpmisc")
+  # library("ggplot2")
+  # library("patchwork")
+  # library("ggpmisc")
   
   # May want to end up building one DF and making a plot with it--hard to compare the same results if multiple plots exist.
   # Will want to pass this script info on the inputs used to print in the 'visualize outputs' column.
@@ -79,7 +79,7 @@ testPlot<-function(scenario_dir,SelectClimate){
   ################ Change at Berlin Rd. ############################################################
   baseline_data$scenario[baseline_data$variable=="discharge_cms"]<-mean(DF$flo_outm.3.s,na.rm=T)
   baseline_data$scenario[baseline_data$variable=="solp_kg"]<-sum(DF$solp_outkgP,na.rm=T)
-  baseline_data$scenario[baseline_data$variable=="sedp_kg"]<-sum(DF$sedp_outkgP,na.rm=T)
+  # baseline_data$scenario[baseline_data$variable=="sedp_kg"]<-sum(DF$sedp_outkgP,na.rm=T)
   baseline_data$scenario[baseline_data$variable=="sediment_kg"]<-sum(DF$sed_outmtons,na.rm=T)
   baseline_data$scenario[baseline_data$variable=="totp_kg"]<-sum(DF$solp_outkgP + DF$sedp_outkgP,na.rm=T)
   
@@ -134,9 +134,8 @@ testPlot<-function(scenario_dir,SelectClimate){
     mutate(mgt=replace(mgt, grepl("CSWS",lu_mgt), "CSWS")) %>% 
     mutate(mgt=replace(mgt, grepl("CSWcc",lu_mgt), "CSWcc")) %>% 
     filter(!is.na(mgt)) %>% 
-    mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin+tilelabp) %>% 
-    select("mgt", "name" ,"sedyld_tha", "sedorgn_kgha", "sedorgp_kgha", "surqsolp_kgha",
-           "sedmin","tilelabp","totp","hyd_grp", "slp","tile") %>% 
+    mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin) %>% 
+    select("mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","hyd_grp", "slp","tile") %>% 
     mutate(scenario=climatemodel)
 
   # Could use gather instead of melt
@@ -149,17 +148,51 @@ testPlot<-function(scenario_dir,SelectClimate){
   }
   
   
+  ch_loss$variable<-factor(ch_loss$variable)
+  levels(ch_loss$variable)[levels(ch_loss$variable)=="discharge_cms"]<-"Discharge"
+  levels(ch_loss$variable)[levels(ch_loss$variable)=="sediment_kg"]<-"Sediment"
+  levels(ch_loss$variable)[levels(ch_loss$variable)=="solp_kg"]<-"Dissolved P"
+  levels(ch_loss$variable)[levels(ch_loss$variable)=="totp_kg"]<-"Total P"
+  
+  
   BR_plot<-ggplot(ch_loss,aes(x=variable,y=change_per,fill=legendkey))+geom_bar(stat = 'identity')+ylab("Change from baseline (%)")+
     xlab("")+ ggtitle("Change at Berlin Rd")+
     geom_text(size=16,aes(label=round(change_per)), position=position_dodge(width=0.9), vjust=-0.09,colour="black")+
     theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
           panel.background = element_blank(),text = element_text(size = 16),
           panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
+
+
+  hru_loss$variable<-factor(hru_loss$variable, levels=c("sedyld_tha","totp","surqsolp_kgha","tilelabp"),ordered = T)
   
-  HRU_plot<-ggplot(hru_loss,aes(x=mgt,y=value,fill=scenario))+geom_boxplot()+facet_wrap(vars(variable))
+  levels(hru_loss$variable)[levels(hru_loss$variable) == "sedyld_tha"] <- "Sediment loss (t/ha)"
+  levels(hru_loss$variable)[levels(hru_loss$variable) == "tilelabp"] <- "Soluble P (subsurface) (kg/ha)"
+  levels(hru_loss$variable)[levels(hru_loss$variable) == "surqsolp_kgha"] <- "Soluble P (surface) (kg/ha)"
+  levels(hru_loss$variable)[levels(hru_loss$variable) == "totp"] <- "Total P loss (surface + subsurface) (kg/ha)"
+  
+  hru_loss$mgt<-factor(hru_loss$mgt)
+  levels(hru_loss$mgt)[levels(hru_loss$mgt) == "CS_FT"] <- "CB - Full till"
+  levels(hru_loss$mgt)[levels(hru_loss$mgt) == "CS_RT"] <- "CB - Reduced Till"
+  levels(hru_loss$mgt)[levels(hru_loss$mgt) == "CS_RotT"] <- "CB - Rotational No Till"
+  levels(hru_loss$mgt)[levels(hru_loss$mgt) == "CS_NT"] <- "CB - No Till"
+  levels(hru_loss$mgt)[levels(hru_loss$mgt) == "CS_NTcc"] <- "CB - No Till with rye cover crop"
+  levels(hru_loss$mgt)[levels(hru_loss$mgt) == "CSWS"] <- "CBW / Double crop bean"
+  levels(hru_loss$mgt)[levels(hru_loss$mgt) == "CSWcc"] <- "CBW / rye cover crop"
   
 
   
+  HRU_plot<-hru_loss %>%  group_by(mgt,variable,scenario) %>%  summarize(value=mean(value)) %>%
+    ggplot(.,aes(x=mgt,y=value,fill=scenario))+geom_bar(stat='identity')+labs(y="Loss from fields", x="")+facet_wrap(vars(variable),scales="free_y",nrow=2)+
+    theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+    panel.background = element_blank(),text = element_text(size = 16),
+    panel.border = element_rect(colour = "black", fill=NA, linewidth=1),axis.text.x = element_text(angle = -90, vjust = 0.5, hjust=0))
+  
+
+  tile_plot<-hru_loss %>%  group_by(mgt,variable,tile) %>%  summarize(value=mean(value)) %>%
+    ggplot(.,aes(x=mgt,y=value,fill=tile))+geom_bar(stat='identity',position='dodge')+labs(y="Loss from fields", x="")+facet_wrap(vars(variable),scales="free_y",nrow=2)+
+    theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+    panel.background = element_blank(),text = element_text(size = 16),
+    panel.border = element_rect(colour = "black", fill=NA, linewidth=1),axis.text.x = element_text(angle = -90, vjust = 0.5, hjust=0))
   
   
   # plot_output<-grid.arrange(grobs = myplots, ncol=2)
@@ -167,7 +200,7 @@ testPlot<-function(scenario_dir,SelectClimate){
   # ggsave("avg_change_BR.png",plot_output)
 
   
-  return(list(BR_plot,HRU_plot, print("OWC-SWAT+ run complete")))
+  return(list(print("OWC-SWAT+ run complete"), BR_plot,HRU_plot, tile_plot))
   
   
   

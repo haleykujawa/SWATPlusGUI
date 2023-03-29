@@ -48,14 +48,19 @@ ui <- fluidPage(
     titlePanel("OWC-SWAT+"),
     tabsetPanel(
       
-      tabPanel("About OWC-SWAT+", br(),br(), p("Information about OWC-SWAT+ here"),br(),br(),
+      tabPanel("About OWC-SWAT+", br(),strong("Welcome to the Old Woman Creek Soil and Water Assessment Tool! (OWC-SWAT+)"),
+               br(),br(),
+               p("This tool was designed to aid conservation efforts in the Old Woman Creek watershed to improve water quality and remove OWC from the 303d list of impaired waters.
+                 OWC-SWAT+ summarizes the potential impacts of climate and agricultural land management on changes in water quality."),
+               
                img(src="owc_map.png",width=1430/2,height=1105/2),br(),p('Figure 1. Map of Old Woman Creek watershed and estuary'),
                br(),br(),br(),br(),
                img(src="old-woman-creek.png",height=503/4,width=800/4),
                img(src="davidson.png",height=117/2,width=432/2),
-               img(src="osu.png",height=88/2,width=569/2)),
+               img(src="osu.png",height=88/2,width=569/2),
+               img(src='erie_swcd.png')),
       
-      tabPanel("Change inputs",
+      tabPanel("Change inputs and run OWC-SWAT+",
 
     sidebarLayout(                   
       sidebarPanel(#actionButton("cleardir", "Clear scenario"),
@@ -63,35 +68,39 @@ ui <- fluidPage(
                    
                    
                    tabsetPanel(
-                     tabPanel("Management and conservation practices",br(),br(),
+                     tabPanel("Management and conservation practices",br(),
+                              tags$div(tags$p('Total rate of all seven management scenarios needs to add up to 100%'),
+                                tags$p('Rate of buffers + grassed waterways on each management scenario cannot total greater than 100%'), 
+                                tags$p('e.g. buffers 50% & grassed waterways 50% = OK, buffers = 100% & grassed waterways = 100% = model will crash')),
+                              br(),
                    #management widgets       
                    fluidRow(column(4,numericInput("CSFT", label = "Corn Bean - Full Tillage", value = 21)), 
-                            column(4,numericInput("CSFT_B", label = "Vegetated buffer rate", value = 10)),
-                            column(4,numericInput("CSFT_GW", label = "Grassed waterway rate", value = 10))),
+                            column(4,numericInput("CSFT_B", label = "Vegetated buffer rate", value = 21)),
+                            column(4,numericInput("CSFT_GW", label = "Grassed waterway rate", value = 35))),
                    
                    fluidRow(column(4,numericInput("CSNT", label = "Corn Bean - No Till", value = 40)),
-                            column(4,numericInput("CSNT_B", label = "Vegetated buffer rate", value = 10)),
-                            column(4,numericInput("CSNT_GW", label = "Grassed waterway rate", value = 10))),
+                            column(4,numericInput("CSNT_B", label = "Vegetated buffer rate", value = 21)),
+                            column(4,numericInput("CSNT_GW", label = "Grassed waterway rate", value = 35))),
                    
                    fluidRow(column(4,numericInput("CSRot", label = "Corn Bean - Rotational No Till", value = 15)),
-                            column(4,numericInput("CSRot_B", label = "Vegetated buffer rate", value = 10)),
-                            column(4,numericInput("CSRot_GW", label = "Grassed waterway rate", value = 10))),
+                            column(4,numericInput("CSRot_B", label = "Vegetated buffer rate", value = 21)),
+                            column(4,numericInput("CSRot_GW", label = "Grassed waterway rate", value = 35))),
                    
                    fluidRow(column(4,numericInput("CSRT", label = "Corn Bean - Reduced Till", value = 4)),
-                            column(4,numericInput("CSRT_B", label = "Vegetated buffer rate", value = 10)),
-                            column(4,numericInput("CSRT_GW", label = "Grassed waterway rate", value = 10))),
+                            column(4,numericInput("CSRT_B", label = "Vegetated buffer rate", value = 21)),
+                            column(4,numericInput("CSRT_GW", label = "Grassed waterway rate", value = 35))),
                    
                    fluidRow(column(4,numericInput("CSNTcc", label = "Corn Bean - No Till with rye cover crop", value = 10)),
-                            column(4,numericInput("CSNTcc_B", label = "Vegetated buffer rate", value = 10)),
-                            column(4,numericInput("CSNTcc_GW", label = "Grassed waterway rate", value = 10))),
+                            column(4,numericInput("CSNTcc_B", label = "Vegetated buffer rate", value = 21)),
+                            column(4,numericInput("CSNTcc_GW", label = "Grassed waterway rate", value = 35))),
                    
                    fluidRow(column(4,numericInput("CSWS", label = "Corn Bean Wheat /Double crop bean", value = 9)),
-                            column(4,numericInput("CSWS_B", label = "Vegetated buffer rate", value = 10)),
-                            column(4,numericInput("CSWS_GW", label = "Grassed waterway rate", value = 10))),
+                            column(4,numericInput("CSWS_B", label = "Vegetated buffer rate", value = 21)),
+                            column(4,numericInput("CSWS_GW", label = "Grassed waterway rate", value = 35))),
                    
                    fluidRow(column(4,numericInput("CSWcc", label = "Corn Bean Wheat /rye cover crop", value = 1)),
-                            column(4,numericInput("CSWcc_B", label = "Vegetated buffer rate", value = 10)),
-                            column(4,numericInput("CSWcc_GW", label = "Grassed waterway rate", value = 10))),
+                            column(4,numericInput("CSWcc_B", label = "Vegetated buffer rate", value = 21)),
+                            column(4,numericInput("CSWcc_GW", label = "Grassed waterway rate", value = 35))),
         
                    
                    # h5("Baseline rates of management:"),
@@ -106,7 +115,7 @@ ui <- fluidPage(
 
                    #ditch widget
                    fluidRow(column(6,sliderInput("ditch_rate", label = h3("Conservation ditches"), min = 0, 
-                               max = 100, value = 10),
+                               max = 100, value = 0),
                    p("This changes the rate of conservation ditches on streams of order 1-2. Changing to 100% only changes 128 km (80 mi) of stream"))) #,
                    
                    
@@ -117,13 +126,48 @@ ui <- fluidPage(
                    
                    
                    tabPanel("Climate data",  
-                            p("put climate inputs here"),  
+                            p(""),  
                    
                     # selectInput("SelectClimateOption", label = h3("Choose climate data to run:"), 
                     # choices = list("Baseline climate (2013-2020)" = "nochange", "Climate models" = "climmod", "Current climate beyond 2020" = "extended"), 
                                         # selected = "nochange"),
                             
                   
+
+                   p("You can run up to three climate scenarios. Select combined precipitation and temperature change:"),
+                   br(),br(),
+                   
+                   strong("Climate scenario 1:"),
+                   
+                   fluidRow(column(6,selectInput("SelectTemp1", label = h5("Change in average annual temperature (C):"), 
+                                      choices = list("0","+0.5","+1", "+1.5", "+2","+2.5","+3","+3,5"),
+                                      selected = "0")),
+                   
+                   column(6,selectInput("SelectPrecip1", label = h5("Change in average annual precipitation (%):"), 
+                                      choices = list("-5","0", "+5", "+10","+15","+20","+25"),
+                                      selected = "0"))),
+                   
+                   strong("Climate scenario 2:"),
+                   
+                   fluidRow(column(6,selectInput("SelectTemp2", label = h5("Change in average annual temperature (C):"), 
+                                                 choices = list("0","+0.5","+1", "+1.5", "+2","+2.5","+3","+3,5"),
+                                                 selected = "0")),
+                            
+                            column(6,selectInput("SelectPrecip2", label = h5("Change in average annual precipitation (%):"), 
+                                                 choices = list("-5","0", "+5", "+10","+15","+20","+25"),
+                                                 selected = "0"))),
+                   
+                   strong("Climate scenario 3:"),
+                   
+                   fluidRow(column(6,selectInput("SelectTemp3", label = h5("Change in average annual temperature (C):"), 
+                                                 choices = list("0","+0.5","+1", "+1.5", "+2","+2.5","+3","+3,5"),
+                                                 selected = "0")),
+                            
+                            column(6,selectInput("SelectPrecip3", label = h5("Change in average annual precipitation (%):"), 
+                                                 choices = list("-5","0", "+5", "+10","+15","+20","+25"),
+                                                 selected = "0"))),
+                   
+                   br(),br(),br(),
                    checkboxGroupInput("SelectClimate", label = h5("Climate data to run:"), 
                                       choices = list("Recent observed climate (2013-2020)"="hist","CNRM"="CNRM", "MIROC5"="MIROC", "IPSL-CM5A-MR"="IPSL","GFDL"="GFDL"),
                                       selected = "hist"),
@@ -167,14 +211,27 @@ ui <- fluidPage(
         br(),
         strong("Rates of management on row crop lands:"),
         span(textOutput("total_rate"),style='color:green'),
-        span(textOutput("buff_grw_rate"),style='color:black'),
         
+        br(),
+        strong("Physical conservation practices:"),
+        span(textOutput("buff_grw_rate"),style='color:black'),
+        #ditches
+        textOutput("selected_ditch_rate"),
+        
+        br(),
+        strong("Winter cover rate:"),
         textOutput("cc_rate"),
         textOutput("winter_cover_rate"),
+        
+        br(),
+        strong("Tillage rates:"),
         textOutput("FT_rate"),
         textOutput("NT_rate"), 
         textOutput("RT_rate"),
         textOutput("Rot_rate"),
+        
+        br(),
+        strong("Fertilizer application:"),
         textOutput("N_incorp"),
         textOutput("P_incorp"),
         textOutput("N_applied"),
@@ -182,9 +239,7 @@ ui <- fluidPage(
 
         
         p(),
-        
-        #ditches
-        textOutput("selected_ditch_rate"),
+      
         
         p(),p(),p(),
         
@@ -210,7 +265,11 @@ tabPanel("Visualize outputs",
          
          # imageOutput("runningmodel2"),
          plotOutput("BR_plot"),
-         plotOutput("HRU_plot")
+         plotOutput("HRU_plot"),
+         plotOutput("tile_plot"),
+         p("+Changes in crop yields"),
+         p("+Changes in water balance"),
+         p("+Estuary P and sediment accumulation")
          # imageOutput("runningmodel3")
 ),
 
@@ -325,7 +384,7 @@ server <- function(input, output, session) {
  
  # text output
  output$runningmodel1 <- renderUI({
- strong(text_reactive()[[3]])
+ strong(text_reactive()[[1]])
  })
 
  #  # plot output
@@ -352,8 +411,9 @@ server <- function(input, output, session) {
  #    }
  #  })
   
-  output$BR_plot<-renderPlot({text_reactive()[[1]]})
-  output$HRU_plot<-renderPlot({text_reactive()[[2]]})
+  output$BR_plot<-renderPlot({text_reactive()[[2]]})
+  output$HRU_plot<-renderPlot({text_reactive()[[3]]})
+  output$tile_plot<-renderPlot({text_reactive()[[4]]})
   
   # This code isn't working when using text_reactive()[[]], unsure why
   # # # change to render img

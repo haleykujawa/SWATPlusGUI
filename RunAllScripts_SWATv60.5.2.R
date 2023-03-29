@@ -23,7 +23,7 @@ if (CSFT+CSNT+CSRT+CSRot+CSNTcc+CSWS+CSWcc > 100 | CSFT+CSNT+CSRT+CSRot+CSNTcc+C
 }
 
 ### folders ########
-baseline <- paste0(here("baseline"))  
+baseline <- paste0(here("Baseline"))  
 # scenario <- paste0(here("Scenarios"))
   
 ### functions ######
@@ -168,7 +168,10 @@ baseline <- paste0(here("baseline"))
   if(stream_rate > 0){
     #stream order 1 or 2
     ind<- grepl(paste0(c("1","2"),collapse="|"),DF$order)
-    DF$erod_fact[ChangeHRU(DF,ind,sum(DF$len_num), stream_rate,DF$len_num)]<-"0.00010" #Testing to find what this should be
+    change_ind<-ChangeHRU(DF,ind,sum(DF$len_num), stream_rate,DF$len_num)
+    
+    DF$erod_fact[change_ind]<-"0.00000" # Based on BOA runs
+    DF$bed_load[change_ind] <-"0.85000" # Based on BOA runs
     
     
   }
@@ -759,7 +762,7 @@ baseline <- paste0(here("baseline"))
                               # to = file.path(paste0(scenario_dir,'/climate','/',climatemodel,'/historical',"/", my_files)))
       
                               file.copy(from = file.path(paste0(scenario_dir,"/", mgt_files)),   # Copy files
-                              to = file.path(paste0(scenario_dir,'/',climatemodel,"/", mgt_files)))
+                              to = file.path(paste0(scenario_dir,'/',climatemodel,"/", mgt_files)),overwrite=T)
                               
                               print(paste0("running ",climatemodel))
                               
@@ -1013,60 +1016,6 @@ baseline <- paste0(here("baseline"))
   
   # headers<-c("jday",	"mon",	"day",	"yr",	"unit",	"gis_id",	"name",	"sedyld_tha","sedorgn_kgha","sedorgp_kgha",
              # "surqno3_kgha","lat3no3_kgha","surqsolp_kgha","usle_tons","sedmin","tileno3","lchlabp","tilelabp","satexn")
-  
-  ################# Read in HRU lookup ###########################################
-
-  # lookup<-read.csv("hru_lookup.csv") #This not longer relevant with changing management. Will have to write an hru lookup for each run.
-  
-  
-  ################## Read in hru output ##########################################
-  
-  
-  
-  # tmp <- file('hru_ls_yr.txt')
-  # open(tmp, "r") #read
-  
-  #read past headerlines
-  # readLines(tmp, n = 3) 
-  
-  
-  
-  ###### read in simulated data columns #########
-  
-  
-
-  # data<-readLines(tmp, n = -1)  
-  # close(tmp)
-  # DF<-strsplit(data,split=" ")
-  # DF<-lapply(DF, function(z){ z[z != ""]}) 
-  # DF<-data.frame(do.call(rbind, DF)) #unlist
-  # colnames(DF)<-headers
-  
-  
-  # DF$date<-as.Date(paste(DF$mon,DF$day,DF$yr,sep="/"), format="%m/%d/%Y")              # add date column
-  # DF[,c(1:6,8:(ncol(DF)-1))]<-as.numeric(unlist(DF[,c(1:6,8:(ncol(DF)-1))]))           # convert to numerics
-  
-
-  
-  
-  # DF_aghru<-left_join(DF,lookup,by=c("name"))
-  # DF_aghru<-DF_aghru[grepl(paste0(c("CS","SC","CSW"), collapse="|"),DF_aghru$lu_mgt),]
-  # 
-  # #remove all variables except year and output
-  # DF_aghru<-select(DF_aghru, -c("yr","jday","mon","day","unit","gis_id","name","date","id",
-  #                               "topo","hydro","soil","lu_mgt","soil_plant_init","surf_stor","snow","field"))
-  # 
-  # #Sum loss from all years and then come up with average annual loss
-  # DF_aghru<-colMeans(DF_aghru,na.rm=T)
-  # DF_aghru<-data.frame(as.list(DF_aghru))
-  # DF_aghru<-reshape2::melt(DF_aghru)
-  # 
-  # 
-  # return(list(DF_aghru,print("testing")))
-  # 
-  # #write.table(DF_aghru,"hruLoss_summary.csv",row.names=F,col.names=F,sep="," )
-  
-  
   
 }     
 
