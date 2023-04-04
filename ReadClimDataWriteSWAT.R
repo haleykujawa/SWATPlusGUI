@@ -30,28 +30,30 @@ spaceOutput_spacesecond<-function(data,nspaces){
 ClimateSummary<-data.frame(matrix(ncol=4,nrow=0))
 colnames(ClimateSummary)<-c("dailypcp_mm", "tmp_avgC",    "model",       "time_period")
 
-climatemodels<-c('ACCESS','CNRM','IPSL') # exclude GFDL, see if all runs complete 3/23 8:43
+climatemodels<-c('MIROC','GFDL','IPSL','MRI-CGCM','CNRM','ACCESS') # exclude GFDL, see if all runs complete 3/23 8:43
 obs_hist<-c('NORWALK_WWTP')
 
 for (clim in climatemodels){ # for every time model
   
-  for (timeperiod in c('hist','future')){ # for each time period
+  for (timeperiod in c('hist','future')){ # for each time period #Add future back --waiting on data
     
     if (timeperiod == 'hist'){
       
       yr_start=1980
       yr_end=1999
+      pt<-'hist' #for reading csv
       
     }else{
       
       yr_start=2040
       yr_end=2059
+      pt<-'fut'  #for reading csv
       
     }
    
   setwd(here("UW Climate Data",clim, timeperiod))
 
-clim_file<-file.path(paste0(clim,'_',timeperiod,'.csv'))
+clim_file<-dir(pattern=pt)
 climdata<-read.csv(clim_file)
 
 # Use conversion of 1 kg/m -2 s-1 --> mm / s -1 using std volume of water = 1 g / cm-3
@@ -83,8 +85,9 @@ ClimateSummary_add <- climdata %>%
   mutate(day_col = date(time)) %>%
   group_by(day_col) %>%
   filter(year(time) >= yr_start & year(time) <= yr_end) %>% # remove the one output for yr 2000
-  mutate(pcp_mm = pcp*60*60) %>% # convert from kg /m-2 s-1 to mm
-  summarize(tmp_minC=min(temp),tmp_maxC=max(temp),dailypcp_mm=sum(pcp_mm),tmp_avgC=mean(temp))
+  # mutate(owc_pcp = owc_pcp*60*60) %>% # convert from kg /m-2 s-1 to mm -- this is now done in processing script 'ReadUWData'
+  # had to change the column names 
+  summarize(tmp_minC=min(owc_airtemp),tmp_maxC=max(owc_airtemp),dailypcp_mm=sum(owc_pcp),tmp_avgC=mean(owc_airtemp))
 
 # annual average
 ClimateSummary_add <- ClimateSummary_add %>%
@@ -103,8 +106,8 @@ dailyClimData <- climdata %>%
   mutate(day_col = date(time)) %>%
   group_by(day_col) %>%
   # filter(year(time) != 2000) %>% # remove the one output for yr 2000
-  mutate(pcp_mm = pcp*60*60) %>% # convert from kg /m-2 s-1 to mm
-  summarize(tmp_minC=min(temp),tmp_maxC=max(temp),dailypcp_mm=sum(pcp_mm),tmp_avgC=((min(temp)+max(temp))/2)) %>%
+  # mutate(pcp_mm = pcp*60*60) %>% # convert from kg /m-2 s-1 to mm -- not needed since processed with 'ReadUWData'
+  summarize(tmp_minC=min(owc_airtemp),tmp_maxC=max(owc_airtemp),dailypcp_mm=sum(owc_pcp),tmp_avgC=((min(owc_airtemp)+max(owc_airtemp))/2)) %>% # Change column names to match ReadUWClimate output
   mutate(doy=yday(day_col)) %>%
   mutate(year=year(day_col)) %>%
   mutate(dailypcp_mm= format(round(dailypcp_mm,5))) %>% # I think these three lines could be better but leaving for now
@@ -274,7 +277,7 @@ pcp_plot<-ggplot(ClimateSummary, aes(x=model,y=annualpcp_mm,fill=time_period))+g
   # geom_hline(yintercept=1090,linetype='dashed')+geom_text(aes(x='CNRM',y=1200,label='Historical average annual (2013-2020)'))+
   labs(x="",y="Annual precipitation (mm)")+
   scale_fill_discrete(labels=c("hist"="historical (1980-1999)","future"="future (2040-2059)"))+
-  theme_bw()
+  theme(panel.background = element_blank(),panel.border=element_rect(fill=NA))
 
 tmp_plot<-ggplot(ClimateSummary, aes(x=model,y=tmp_avgC,fill=time_period))+
   geom_boxplot()+
@@ -335,7 +338,7 @@ label = list(final_table))
 # output_data<-plot1+ggp_table
 
 finalPlot<-grid.arrange(pcp_plot,tmp_plot,ggp_table)
-ggsave("ClimateSummary.png",finalPlot,height=200,width=150,units="mm")
+ggsave("ClimateSummary.png",finalPlot,height=250,width=200,units="mm")
 
 #### Run SWAT for all historical runs and get averages ######
 
