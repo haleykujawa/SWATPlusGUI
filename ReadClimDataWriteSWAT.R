@@ -30,7 +30,10 @@ spaceOutput_spacesecond<-function(data,nspaces){
 ClimateSummary<-data.frame(matrix(ncol=4,nrow=0))
 colnames(ClimateSummary)<-c("dailypcp_mm", "tmp_avgC",    "model",       "time_period")
 
-climatemodels<-c('MIROC','GFDL','IPSL','MRI-CGCM','CNRM','ACCESS') # exclude GFDL, see if all runs complete 3/23 8:43
+ClimateSummary_monthly<-c()
+
+# climatemodels<-c('MIROC','GFDL','IPSL','MRI-CGCM','CNRM','ACCESS') # exclude GFDL, see if all runs complete 3/23 8:43
+climatemodels<-c('IPSL')
 obs_hist<-c('NORWALK_WWTP')
 
 for (clim in climatemodels){ # for every time model
@@ -89,6 +92,16 @@ ClimateSummary_add <- climdata %>%
   # had to change the column names 
   summarize(tmp_minC=min(owc_airtemp),tmp_maxC=max(owc_airtemp),dailypcp_mm=sum(owc_pcp),tmp_avgC=mean(owc_airtemp))
 
+# monthly summary
+ClimateSummary_monthlyadd <- ClimateSummary_add %>% 
+  group_by(month=month(day_col),year=year(day_col)) %>% 
+  summarize(TMP_C=mean(tmp_avgC),PCP_mm=sum(dailypcp_mm)) %>% 
+  # group_by(month) %>% 
+  # summarize(PCP_mm=mean(PCP_mm),TMP_C=mean(TMP_C)) %>% 
+  mutate(model = clim,timeperiod=pt)
+
+ClimateSummary_monthly<-rbind(ClimateSummary_monthly,ClimateSummary_monthlyadd)
+
 # annual average
 ClimateSummary_add <- ClimateSummary_add %>%
   group_by(year(day_col)) %>%
@@ -118,6 +131,10 @@ dailyClimData <- climdata %>%
   mutate(tmp_minC=spaceOutput(tmp_minC,12)) %>%
   mutate(dailypcp_mm=spaceOutput(dailypcp_mm,11)) %>%
   mutate(doy=spaceOutput(doy,5))
+
+
+
+  
 
 
 
@@ -250,17 +267,28 @@ obs_data<-c()
     
   }
   
-  
+ #annual 
   ClimateSummary_add<-obs_data %>% 
     mutate(DATE = ymd(DATE)) %>% 
+    mutate(TAVG=(TMIN+TMAX)/2) %>%
     group_by(year(DATE)) %>%
-    mutate(TAVG=(TMIN+TMAX)/2) %>% 
     summarize(sum(PRCP,na.rm=T),mean(TAVG,na.rm=T)) %>% 
     mutate(model = 'Observed hist',timeperiod='hist')
 
   colnames(ClimateSummary_add)<-colnames(ClimateSummary)
-  
   ClimateSummary<-rbind(ClimateSummary,ClimateSummary_add)
+  
+  #monthly
+  ClimateSummary_monthlyadd<-obs_data %>% 
+    mutate(DATE = ymd(DATE)) %>% 
+    mutate(TAVG=(TMIN+TMAX)/2) %>% 
+    group_by(year=year(DATE),month=month(DATE)) %>%
+    summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T)) %>% 
+    # group_by(month) %>% 
+    # summarize(PCP_mm=mean(PCP_mm,na.rm=T),TMP_C=mean(TMP_C,na.rm=T)) %>% 
+    mutate(model = 'Observed hist',timeperiod='hist')
+  
+  ClimateSummary_monthly<-rbind(ClimateSummary_monthly,ClimateSummary_monthlyadd)
   
 
     
@@ -339,6 +367,22 @@ label = list(final_table))
 
 finalPlot<-grid.arrange(pcp_plot,tmp_plot,ggp_table)
 ggsave("ClimateSummary.png",finalPlot,height=250,width=200,units="mm")
+
+## monthly plots, hist only ##
+
+tmp_monthly_plot<-ClimateSummary_monthly %>%
+  filter(timeperiod=='hist') %>% 
+  ggplot(., aes(x=factor(month),y=TMP_C,fill=model))+geom_boxplot()+xlab("")+
+  theme(panel.background = element_blank(),panel.border=element_rect(fill=NA))
+
+pcp_monthly_plot<-ClimateSummary_monthly %>%
+  filter(timeperiod=='hist') %>% 
+  ggplot(., aes(x=factor(month),y=PCP_mm,fill=model))+geom_boxplot()+xlab("")+
+  theme(panel.background = element_blank(),panel.border=element_rect(fill=NA))
+
+finalPlot<-grid.arrange(pcp_monthly_plot,tmp_monthly_plot)
+ggsave("ClimateSummary_monthly.png",finalPlot,height=200,width=200,units="mm")
+
 
 #### Run SWAT for all historical runs and get averages ######
 
