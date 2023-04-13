@@ -34,6 +34,14 @@ for (i in clim_files){
 # Temp rank #1 = coldest
 # sum of the precip + temp rank, high= drought year, low = flood, extreme wet/cold
 
+####### daily climate data #######
+
+dailyClim<-obs_data %>%
+  mutate(DATE=ymd(DATE)) %>% 
+  complete(DATE=seq.Date(as.Date(min(DATE)),as.Date(max(DATE)),by='day')) %>% 
+  select(DATE,PRCP,TMIN,TMAX)
+  
+
 ####### annual ############
 ClimateSummary_annual<-obs_data %>% 
   mutate(DATE = ymd(DATE), MONTH=month(ymd(DATE))) %>% 
@@ -47,13 +55,14 @@ ClimateSummary_annual<-obs_data %>%
   summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T),
             n_pcp_missing = sum(is.na(PRCP)),n_tmp_missing = sum(is.na(TAVG))) %>% 
   filter(n_pcp_missing < 30 & n_tmp_missing < 30, WY >= 1990) %>%  #Exclude years with more than a month of missing data %>% 
-  mutate(PCP_rank=rank(-PCP_mm),TMP_rank=rank(TMP_C),Overall_rank=(TMP_rank+PCP_rank)) %>% 
+  mutate(PCP_rank=rank(-PCP_mm),TMP_rank=rank(-TMP_C),Overall_rank=(TMP_rank+PCP_rank)) %>% 
   mutate(PCP_cat= NA, TMP_cat = NA) %>% #category for rankings
   mutate(PCP_cat=replace(PCP_cat,PCP_mm >= quantile(PCP_mm,c(0.9)), '90th percentile')) %>% 
   mutate(PCP_cat=replace(PCP_cat,PCP_mm <= quantile(PCP_mm,c(0.1)), '10th percentile')) %>% 
   mutate(PCP_cat=replace(PCP_cat,PCP_mm >= quantile(PCP_mm,c(0.5)) & PCP_mm < quantile(PCP_mm,c(0.9)), '50th percentile')) %>% 
   mutate(TMP_cat=replace(TMP_cat,TMP_C >= quantile(TMP_C,c(0.9)), '90th percentile')) %>% 
-  mutate(TMP_cat=replace(TMP_cat,TMP_C >= quantile(TMP_C,c(0.5)) & TMP_C < quantile(TMP_C,c(0.9)), '50th percentile')) # remove cold years bc we only want years warmer than avg
+  mutate(TMP_cat=replace(TMP_cat,TMP_C >= quantile(TMP_C,c(0.5)) & TMP_C < quantile(TMP_C,c(0.9)), '50th percentile'))  # remove cold years bc we only want years warmer than avg
+
   
   
 
@@ -93,7 +102,7 @@ ClimateSummary_seasonal<-obs_data %>%
   mutate(TMIN = replace(TMIN,is.na(TMAX),NA)) %>% # Don't calculate average daily temp if min or max is missing
   mutate(TMAX = replace(TMAX,is.na(TMIN),NA)) %>%  
   group_by(WY,season) %>%
-  mutate(TAVG=sum(TMIN,TMAX, na.rm=T)/2) %>%  # make value NA if max or min is missing
+  mutate(TAVG=(TMIN+TMAX)/2) %>%  # make value NA if max or min is missing
   summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T),
             n_pcp_missing = sum(is.na(PRCP)),n_tmp_missing = sum(is.na(TAVG))) %>% 
   filter(n_pcp_missing <= 30 & n_tmp_missing <= 30, WY >= 1990) %>%  #Exclude months with more than 10 days of missing data %>% 
@@ -276,7 +285,7 @@ ggsave('WaterYearSummary_new.png',last_plot(),height=300,width=600,units='mm')
 # AnnualComp<-ggarrange(pcpvdis,tmpvdis)
 # ggsave("ClimvsDis_seasonal.png",AnnualComp,height=200,width=400,units='mm')
 
-###### Select extreme climate years #####
+##### Climate generator #####
 
 # Climate generator
 # --> hot + dry summer year
@@ -300,21 +309,56 @@ wet_winter<-ClimateSummary_seasonal %>%
 # Keep randomly replacing data with years above average until % change achieved?
 
 # deltaT<-1  # C
-deltaP<-10 # %
+deltaP<-200 # %
 
 WY <- data.frame(AnnualData[,c(1:3)])
 
 # select based on pcp and tmp > 50 percentile
-WY_fut<-c(2007,2012,2017) # testing
 
-#select these first, but if they all get replaced replace other years
-#OR, replace by rank?
-WY_hist<-AnnualData %>% 
-  filter(TMP_C < quantile(TMP_C, c(0.5),na.rm=T) & PCP_mm < quantile(PCP_mm, c(0.5),na.rm=T)) %>% 
-  select('WY') %>% 
-  as.vector() %>% 
-  unlist() %>% 
+# wet and avg temp
+# WY_fut<-AnnualData %>%
+#   filter(TMP_C > mean(TMP_C,na.rm=T) ) %>%
+#   filter(PCP_rank == min(PCP_rank,na.rm=T)) %>%
+#   select('WY') %>%
+#   as.vector() %>%
+#   unlist() %>%
+#   unname()
+
+# Hot and dry temp
+WY_fut<-AnnualData %>%
+  filter(TMP_rank == min(TMP_rank,na.rm=T)) %>% 
+  filter(PCP_rank == max(PCP_rank,na.rm=T)) %>% 
+  select('WY') %>%
+  as.vector() %>%
+  unlist() %>%
   unname()
+
+  # filter(TMP_C >= quantile(TMP_C, c(0.5),na.rm=T) & PCP_mm >= quantile(PCP_mm, c(0.90),na.rm=T)) %>%
+
+
+# WY_fut<-2014 # Highest pcp with highest temp by rank, this decreases temp slightly
+
+
+
+# select these first, but if they all get replaced replace other years
+# OR, replace by rank?
+# WY_hist<-AnnualData %>% 
+#   filter(TMP_C < quantile(TMP_C, c(0.4),na.rm=T) & PCP_mm < quantile(PCP_mm, c(0.75),na.rm=T)) %>% 
+#   select('WY') %>% 
+#   as.vector() %>% 
+#   unlist() %>% 
+#   unname()
+
+# Other option is to replace any years that aren't in the future scenario, replacing the coldest years first 
+WY_hist<-AnnualData %>%
+  filter(!WY %in% WY_fut) %>%
+  select('WY') %>%
+  as.vector() %>%
+  unlist() %>%
+  unname()
+
+# remove future years from historical period
+# WY_hist<-WY_hist[-WY_fut]
 
 #This function generates random rows to replace in the HRU table where the index is true and will meet replacing 
 #enough are to constitute a certain % of the total acres
@@ -334,7 +378,7 @@ WY_hist<-AnnualData %>%
 
   
   # futT<- avgT_hist + deltaT
-  futP<- avgPCP_hist + ((deltaP/100)*avgPCP_hist)
+  futP<- avgP_hist + ((deltaP/100)*avgP_hist)
   
   WY$rep_year<-NA
 
@@ -348,7 +392,13 @@ WY_hist<-AnnualData %>%
     
     #randomly sample per_change value where they are true
     #sampling without replacement has to occur within the one go
+    
+    if (length(WY_fut) > 1){
     sample_fut <- sample(WY_fut,1) #select future climate year
+    } else {
+      sample_fut = WY_fut
+    }
+    
     sample_hist <- sample(WY_hist,1) #select average historical year to replace
     
 
@@ -372,8 +422,119 @@ WY_hist<-AnnualData %>%
   }
     
   }
+  
+  (mean(WY[,2],na.rm=T)-avgP_hist)*100/avgP_hist
+  (mean(WY[,3],na.rm=T)-avgT_hist)
 
-#   return(WY)
-#   
-# }
+# Build daily data with new years in WY data frame
+  
+dailyClim_final<-c()
+  
+  for (i in c(1:length(WY$WY))){
+    
+    
+    if (!is.na(WY$rep_year[i])){
+      
+      # replace year with other data
+      
+      # grab new data
+      dailyClim_add<- dailyClim %>% 
+        filter(year(DATE) == WY$rep_year[i]) %>% 
+        mutate(DAY_MONTH = format(as.Date(DATE),'%m-%d'))
+      
+      #grab original dates
+      dailyClim_dates<- dailyClim %>%
+        filter(year(DATE) == WY$WY[i]) %>%
+        select(DATE) %>%
+        mutate(DAY_MONTH = format(as.Date(DATE),'%m-%d')) %>%
+        mutate(YEAR= year(DATE)) # year as original year
+      
+      
+      dailyClim_add <- left_join(dailyClim_dates,dailyClim_add,by='DAY_MONTH') %>% 
+        mutate(DATE = ymd(paste0(YEAR,"-",DAY_MONTH))) %>% 
+        select(DATE,PRCP,TMIN,TMAX)
+      
+      dailyClim_final<-rbind(dailyClim_final,dailyClim_add)
+      
+      
+    } else {
+      
+      # keep original year
+      dailyClim_add<- dailyClim %>% 
+        filter(year(DATE) == WY$WY[i])
+      
+      dailyClim_final<-rbind(dailyClim_final,dailyClim_add)
+      
+      
+    }
+    
+    
+  }
+  
+### Compare old and new seasonal and annual data ###
 
+### annual ###
+ClimateSummary_annual$data<-'hist'
+
+ClimateSummary_annual_fut<-dailyClim_final %>% 
+  mutate(DATE = ymd(DATE), MONTH=month(ymd(DATE))) %>% 
+  mutate(WY=year(DATE)) %>% 
+  mutate(WY=ifelse(c(MONTH == 10 |MONTH == 11 | MONTH ==12), WY+1,WY)) %>% # do function only on selected rows
+  filter(WY > min(WY) & WY < max(WY)) %>% 
+  mutate(TMIN = replace(TMIN,is.na(TMAX),NA)) %>% # Don't calculate average daily temp if min or max is missing
+  mutate(TMAX = replace(TMAX,is.na(TMIN),NA)) %>%  
+  group_by(WY) %>%
+  mutate(TAVG=(TMIN+TMAX)/2) %>% 
+  summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T),
+            n_pcp_missing = sum(is.na(PRCP)),n_tmp_missing = sum(is.na(TAVG))) %>% 
+  filter(n_pcp_missing < 30 & n_tmp_missing < 30, WY >= 1990) %>%  #Exclude years with more than a month of missing data %>% 
+  mutate(PCP_rank=rank(-PCP_mm),TMP_rank=rank(-TMP_C),Overall_rank=(TMP_rank+PCP_rank)) %>% 
+  mutate(PCP_cat= NA, TMP_cat = NA) %>% #category for rankings
+  mutate(data= 'fut') 
+  # mutate(PCP_cat=replace(PCP_cat,PCP_mm >= quantile(PCP_mm,c(0.9)), '90th percentile')) %>% 
+  # mutate(PCP_cat=replace(PCP_cat,PCP_mm <= quantile(PCP_mm,c(0.1)), '10th percentile')) %>% 
+  # mutate(PCP_cat=replace(PCP_cat,PCP_mm >= quantile(PCP_mm,c(0.5)) & PCP_mm < quantile(PCP_mm,c(0.9)), '50th percentile')) %>% 
+  # mutate(TMP_cat=replace(TMP_cat,TMP_C >= quantile(TMP_C,c(0.9)), '90th percentile')) %>% 
+  # mutate(TMP_cat=replace(TMP_cat,TMP_C >= quantile(TMP_C,c(0.5)) & TMP_C < quantile(TMP_C,c(0.9)), '50th percentile'))  # remove cold years bc we only want years warmer than avg
+  
+FinalAnnualSummary<-rbind(ClimateSummary_annual,ClimateSummary_annual_fut)
+FinalAnnualSummary$data<-factor(FinalAnnualSummary$data, ordered=T,levels=c('hist','fut'))
+
+ggplot(FinalAnnualSummary,aes(y=PCP_mm,x=data))+geom_boxplot()
+ggplot(FinalAnnualSummary,aes(y=TMP_C,x=data))+geom_boxplot()
+
+### seasonal ###
+ClimateSummary_seasonal$data<-'hist'
+
+ClimateSummary_seasonal_fut<-dailyClim_final %>% 
+  mutate(DATE = ymd(DATE)) %>% 
+  mutate(WY=year(DATE),MONTH=month(DATE)) %>% 
+  mutate(WY=ifelse(c(MONTH == 10 |MONTH == 11 | MONTH ==12), WY+1,WY)) %>% # do function only on selected rows
+  mutate(season=NA) %>% 
+  mutate(season = replace(season, c(MONTH == 12 |MONTH == 1 | MONTH ==2), 'winter')) %>% 
+  mutate(season = replace(season, c(MONTH == 3 |MONTH == 4 | MONTH ==5), 'spring')) %>% 
+  mutate(season = replace(season, c(MONTH == 6 |MONTH == 7 | MONTH ==8), 'summer')) %>% 
+  mutate(season = replace(season, c(MONTH == 9 |MONTH == 10 | MONTH ==11), 'fall')) %>% 
+  mutate(TMIN = replace(TMIN,is.na(TMAX),NA)) %>% # Don't calculate average daily temp if min or max is missing
+  mutate(TMAX = replace(TMAX,is.na(TMIN),NA)) %>%  
+  group_by(WY,season) %>%
+  mutate(TAVG=(TMIN+TMAX)/2) %>%  # make value NA if max or min is missing
+  summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T),
+            n_pcp_missing = sum(is.na(PRCP)),n_tmp_missing = sum(is.na(TAVG))) %>% 
+  filter(n_pcp_missing <= 30 & n_tmp_missing <= 30, WY >= 1990) %>%  #Exclude months with more than 10 days of missing data %>% 
+  ungroup() %>% #This allows them to be ranked overall rather than with the group of year and month, should potentially just do rankings for group
+  group_by(season) %>% 
+  mutate(PCP_rank=rank(-PCP_mm),TMP_rank=rank(TMP_C)) %>% 
+  mutate(PCP_cat= NA, TMP_cat = NA) %>%   #catergory for rankings
+  mutate(data='fut')
+  # mutate(PCP_cat=replace(PCP_cat,PCP_mm >= quantile(PCP_mm,c(0.9)), '90th percentile')) %>% 
+  # mutate(PCP_cat=replace(PCP_cat,PCP_mm <= quantile(PCP_mm,c(0.1)), '10th percentile')) %>% 
+  # mutate(PCP_cat=replace(PCP_cat,PCP_mm >= quantile(PCP_mm,c(0.5)) & PCP_mm < quantile(PCP_mm,c(0.9)), '50th percentile')) %>%
+  # mutate(TMP_cat=replace(TMP_cat,TMP_C >= quantile(TMP_C,c(0.9)), '90th percentile')) %>% 
+  # mutate(TMP_cat=replace(TMP_cat,TMP_C >= quantile(TMP_C,c(0.5)) & TMP_C < quantile(TMP_C,c(0.9)), '50th percentile')) 
+
+FinalSeasonalSummary<-rbind(ClimateSummary_seasonal,ClimateSummary_seasonal_fut)
+FinalSeasonalSummary$data<-factor(FinalSeasonalSummary$data, ordered=T,levels=c('hist','fut'))
+
+ggplot(FinalSeasonalSummary,aes(y=PCP_mm,x=data))+geom_boxplot()+facet_wrap(vars(season),scales='free_y')
+ggplot(FinalSeasonalSummary,aes(y=TMP_C,x=data))+geom_boxplot()+facet_wrap(vars(season),scales='free_y')
