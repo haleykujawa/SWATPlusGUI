@@ -1,13 +1,11 @@
 # Gil's method for developing climate change scenarios
 
-# 4/5 May need to add in method for filtering out discharge if too many missing dates, 
-# manually excluded a period between 1994 and 1995 where there was a year of missing data
+# manually excluded a period between 1994 and 1995 where there was a year of missing data in discharge
 # Also didn't clean norwalk data for flags, may need to go back and do that
 
-# Need to find why using na.rm / na.omit = T returns a value consistently larger than what the value should be? (4 or 1 depending on which time period)
-# Just checked this again and it's a non-issue with the water year summaries... 4/7
-# Cross checked value with excel, matches the value without using na.rm=T for SUM
-# If doing the mean, setting na.rm=F returns NA anytime there is a value of NA..
+# 4/14 need to find a way to prioritize replacing historical years from colder --> warmer
+# Finish summarizing change in seasonal data with new climate data
+
 
 rm(list=ls())
 library(tidyverse)
@@ -324,34 +322,52 @@ WY <- data.frame(AnnualData[,c(1:3)])
 #   unlist() %>%
 #   unname()
 
+select_LOWPCP_HIGHTMP<-1
+select_HIGHPCP_AVGTMP<-1
+select_AVGPCP_HIGHTMP<-1
+
+nyrs_LOWPCP_HIGHTMP<-8
+nyrs_HIGHPCP_AVGTMP<-6
+nyrs_AVGPCP_HIGHTMP<-5
+
+
+WY_LOWPCP_HIGHTMP<-c()
 # Hot and dry temp
-WY_fut<-AnnualData %>%
-  filter(TMP_rank == min(TMP_rank,na.rm=T)) %>% 
-  filter(PCP_rank == max(PCP_rank,na.rm=T)) %>% 
+if (select_LOWPCP_HIGHTMP == 1){
+WY_LOWPCP_HIGHTMP<-AnnualData %>%
+  filter(TMP_C >= quantile(TMP_C, 0.75,na.rm=T) & TMP_C > mean(TMP_C,na.rm=T) & PCP_mm <= quantile(PCP_mm, 0.25,na.rm=T)) %>%
   select('WY') %>%
   as.vector() %>%
   unlist() %>%
   unname()
 
-  # filter(TMP_C >= quantile(TMP_C, c(0.5),na.rm=T) & PCP_mm >= quantile(PCP_mm, c(0.90),na.rm=T)) %>%
+}
 
+WY_HIGHPCP_AVGTMP<-c()
+# Wet but not particularly hot
+if (select_HIGHPCP_AVGTMP==1) {
+WY_HIGHPCP_AVGTMP<-AnnualData %>%
+  filter(TMP_C > mean(TMP_C,na.rm=T) & PCP_mm >= quantile(PCP_mm, 0.75,na.rm=T)) %>%
+  select('WY') %>%
+  as.vector() %>%
+  unlist() %>%
+  unname()
+}
 
-# WY_fut<-2014 # Highest pcp with highest temp by rank, this decreases temp slightly
-
-
-
-# select these first, but if they all get replaced replace other years
-# OR, replace by rank?
-# WY_hist<-AnnualData %>% 
-#   filter(TMP_C < quantile(TMP_C, c(0.4),na.rm=T) & PCP_mm < quantile(PCP_mm, c(0.75),na.rm=T)) %>% 
-#   select('WY') %>% 
-#   as.vector() %>% 
-#   unlist() %>% 
-#   unname()
+WY_AVGPCP_HIGHTMP<-c()
+# Wet, warmer
+if (select_AVGPCP_HIGHTMP == 1){
+WY_AVGPCP_HIGHTMP<-AnnualData %>%
+  filter(TMP_C >= quantile(TMP_C, 0.75,na.rm=T) & TMP_C > mean(TMP_C,na.rm=T) & PCP_mm >= mean(PCP_mm,na.rm=T)) %>%
+  select('WY') %>%
+  as.vector() %>%
+  unlist() %>%
+  unname()
+}
 
 # Other option is to replace any years that aren't in the future scenario, replacing the coldest years first 
 WY_hist<-AnnualData %>%
-  filter(!WY %in% WY_fut) %>%
+  filter(!WY %in% c(WY_LOWPCP_HIGHTMP,WY_HIGHPCP_AVGTMP,WY_AVGPCP_HIGHTMP)) %>%
   select('WY') %>%
   as.vector() %>%
   unlist() %>%
@@ -382,46 +398,117 @@ WY_hist<-AnnualData %>%
   
   WY$rep_year<-NA
 
-  spot<-c()
   
-  i<-1
-  #sample until the % area of cropland is met
-  #ASSUMING ONCE THE AREA GOES OVER IT DOESN'T EXECUTE THAT LOOP AND JUST EXITS THE LOOP, THAT'S WHY SOME OF MY PERCENTAGES I INPUT ARE SLIGHTLY LOWER THAN INPUT (1-2%)
-  #THAN THE OUTPUT
-  while( avgP <= futP  ){ #change to x*1.015 to get closer to the actual input number
-    
-    #randomly sample per_change value where they are true
-    #sampling without replacement has to occur within the one go
-    
-    if (length(WY_fut) > 1){
-    sample_fut <- sample(WY_fut,1) #select future climate year
-    } else {
-      sample_fut = WY_fut
-    }
-    
-    sample_hist <- sample(WY_hist,1) #select average historical year to replace
+  # i<-1
+
+  #randomly replace years until desired pcp goal is achieved
+  # while( avgP <= futP  ){ #change to x*1.015 to get closer to the actual input number
     
 
+    # replace n number of dry years beyond what's already in the data set
+    # AVGPCP_HIGHTMP
+    if (nyrs_AVGPCP_HIGHTMP > length(WY_AVGPCP_HIGHTMP)){
+      
+      n_yr_replace <- nyrs_AVGPCP_HIGHTMP-length(WY_AVGPCP_HIGHTMP) #future - historical, don't replace already existing years
+      
+      sample_fut <- sample(WY_AVGPCP_HIGHTMP, nyrs_AVGPCP_HIGHTMP,replace=T) #select future climate year
+      sample_hist <- sample(WY_hist, nyrs_AVGPCP_HIGHTMP) #select average historical year to replace
+      
+      i<-1
+      
+      for (yr_fut in sample_fut){
+        
+      yr_hist <-sample_hist[i]   
+      
+      WY[WY[,1] %in% yr_hist, c(2:4)]<- cbind(WY[WY[,1] %in% yr_fut,c(2,3)],yr_fut)
+      
+      i<-i+1
+      
+      #remove historical year selected from sample vector 
+      WY_hist <- WY_hist[!(WY_hist %in% sample_hist)]
+      
+      }
+    }
+  
+  # HIGHPCP_AVGTMP
+  if (nyrs_HIGHPCP_AVGTMP > length(WY_HIGHPCP_AVGTMP)){
     
-    # Replace fut WY with hist WY of random selection
-    WY[WY[,1]==sample_hist, c(2:4)]<- cbind(WY[WY[,1]==sample_fut,c(2,3)],sample_fut)
+    n_yr_replace <- nyrs_HIGHPCP_AVGTMP-length(WY_HIGHPCP_AVGTMP) #future - historical, don't replace already existing years
+    
+    sample_fut <- sample(WY_HIGHPCP_AVGTMP, nyrs_HIGHPCP_AVGTMP,replace=T) #select future climate year
+    sample_hist <- sample(WY_hist, nyrs_HIGHPCP_AVGTMP) #select average historical year to replace
+    
+    i<-1
+    
+    for (yr_fut in sample_fut){
+      
+      yr_hist <-sample_hist[i]   
+      
+      WY[WY[,1] %in% yr_hist, c(2:4)]<- cbind(WY[WY[,1] %in% yr_fut,c(2,3)],yr_fut)
+      
+      i<-i+1
+    
+    }
     
     #remove historical year selected from sample vector 
-    WY_hist <- WY_hist[!(WY_hist == sample_hist)]
+    WY_hist <- WY_hist[!(WY_hist %in% sample_hist)]
+    
+  }
+  
+  # LOWPCP_HIGHTMP
+  if (nyrs_LOWPCP_HIGHTMP > length(WY_LOWPCP_HIGHTMP)){
+    
+    n_yr_replace <- nyrs_LOWPCP_HIGHTMP-length(WY_LOWPCP_HIGHTMP) #future - historical, don't replace already existing years
+    
+    sample_fut <- sample(WY_LOWPCP_HIGHTMP, nyrs_LOWPCP_HIGHTMP,replace=T) #select future climate year
+    sample_hist <- sample(WY_hist, nyrs_LOWPCP_HIGHTMP) #select average historical year to replace
+    
+    i<-1
+    
+    for (yr_fut in sample_fut){
+      
+      yr_hist <-sample_hist[i]   
+      
+      WY[WY[,1] %in% yr_hist, c(2:4)]<- cbind(WY[WY[,1] %in% yr_fut,c(2,3)],yr_fut)
+      
+      i<-i+1
+      
+      #remove historical year selected from sample vector 
+      WY_hist <- WY_hist[!(WY_hist %in% sample_hist)]
+      
+    }
+  }
+    
+    
+    
+    # if (length(WY_fut) > 1){
+    # sample_fut <- sample(WY_fut,1) #select future climate year
+    # } else {
+    #   sample_fut = WY_fut
+    # }
+    # 
+    # sample_hist <- sample(WY_hist,1) #select average historical year to replace
+    # 
+    # 
+    # 
+    # # Replace fut WY with hist WY of random selection
+    # WY[WY[,1]==sample_hist, c(2:4)]<- cbind(WY[WY[,1]==sample_fut,c(2,3)],sample_fut)
+    # 
+
     
     # Calculate futT and futP
     avgP<-mean(WY[,2],na.rm=T)
     avgT<-mean(WY[,3],na.rm=T)
     
     
-  i=i+1  
-  if (length(WY_hist)==0){
+  # i=i+1  
+  # if (length(WY_hist)==0){
+  #   
+  #   break()
+  #   
+  # }
     
-    break()
-    
-  }
-    
-  }
+  # }
   
   (mean(WY[,2],na.rm=T)-avgP_hist)*100/avgP_hist
   (mean(WY[,3],na.rm=T)-avgT_hist)
@@ -472,6 +559,7 @@ dailyClim_final<-c()
   }
   
 ### Compare old and new seasonal and annual data ###
+#outliers are partial water years (1990, 2020), need to remove
 
 ### annual ###
 ClimateSummary_annual$data<-'hist'
@@ -500,8 +588,59 @@ ClimateSummary_annual_fut<-dailyClim_final %>%
 FinalAnnualSummary<-rbind(ClimateSummary_annual,ClimateSummary_annual_fut)
 FinalAnnualSummary$data<-factor(FinalAnnualSummary$data, ordered=T,levels=c('hist','fut'))
 
-ggplot(FinalAnnualSummary,aes(y=PCP_mm,x=data))+geom_boxplot()
-ggplot(FinalAnnualSummary,aes(y=TMP_C,x=data))+geom_boxplot()
+PCP_ANNUAL_PLOT<-ggplot(FinalAnnualSummary,aes(y=PCP_mm,x=data))+geom_boxplot()
+TMP_ANNUAL_PLOT<-ggplot(FinalAnnualSummary,aes(y=TMP_C,x=data))+geom_boxplot()
+
+# Table
+final_table<-data.frame(matrix(nrow=1,ncol=0))
+
+fut_pcp<-FinalAnnualSummary %>%
+  filter(data=='fut') %>%
+  summarize(PCP_mm = sum(PCP_mm,na.rm=T)) %>% 
+  getElement('PCP_mm')
+
+hist_pcp<-FinalAnnualSummary %>%
+  filter(data=='hist') %>%
+  summarize(PCP_mm = sum(PCP_mm,na.rm=T)) %>% 
+  getElement('PCP_mm')
+
+# future - hist / hist 
+final_table$`Change in precipitation (%)`<- round((fut_pcp-hist_pcp)*100/hist_pcp,2)
+
+fut_tmp<-FinalAnnualSummary %>%
+  filter(data=='fut') %>%
+  summarize(TMP_C = mean(TMP_C,na.rm=T)) %>% 
+  getElement('TMP_C')
+
+hist_tmp<-FinalAnnualSummary %>%
+  filter(data=='hist') %>%
+  summarize(TMP_C = mean(TMP_C,na.rm=T)) %>% 
+  getElement('TMP_C')
+
+final_table$`Change in temperature (C)` <- round((fut_tmp-hist_tmp),2)
+
+ANNUAL_TABLE <- ggplot() +                             
+  theme_void() +
+  annotate(geom = "table",
+           x = 1,
+           y = 1,
+           label = list(final_table))
+
+nyr_change<-data.frame(matrix(nrow=3,ncol=0))
+nyr_change$description<-c('high tmp, low pcp (drought)','high tmp, avg pcp (warm)', 'high pcp, avg tmp (wet)')
+nyr_change$HIST_YRS<-c(length(WY_LOWPCP_HIGHTMP),length(WY_AVGPCP_HIGHTMP),length(WY_HIGHPCP_AVGTMP))
+nyr_change$FUT_YRS<-c(nyrs_LOWPCP_HIGHTMP,nyrs_AVGPCP_HIGHTMP,nyrs_HIGHPCP_AVGTMP)
+nyr_change$CHANGE<-paste0('+', nyr_change$FUT_YRS-nyr_change$HIST_YRS)
+
+NYR_TABLE <- ggplot() +                             
+  theme_void() +
+  annotate(geom = "table",
+           x = 1,
+           y = 1,
+           label = list(nyr_change))
+
+ggarrange(PCP_ANNUAL_PLOT,TMP_ANNUAL_PLOT,ANNUAL_TABLE,NYR_TABLE,nrow=4,ncol=1)
+
 
 ### seasonal ###
 ClimateSummary_seasonal$data<-'hist'
@@ -536,5 +675,32 @@ ClimateSummary_seasonal_fut<-dailyClim_final %>%
 FinalSeasonalSummary<-rbind(ClimateSummary_seasonal,ClimateSummary_seasonal_fut)
 FinalSeasonalSummary$data<-factor(FinalSeasonalSummary$data, ordered=T,levels=c('hist','fut'))
 
-ggplot(FinalSeasonalSummary,aes(y=PCP_mm,x=data))+geom_boxplot()+facet_wrap(vars(season),scales='free_y')
-ggplot(FinalSeasonalSummary,aes(y=TMP_C,x=data))+geom_boxplot()+facet_wrap(vars(season),scales='free_y')
+PCP_SEASON_PLOT<-ggplot(FinalSeasonalSummary,aes(y=PCP_mm,x=data))+geom_boxplot()+facet_wrap(vars(season),scales='free_y')
+TMP_SEASON_PLOT<-ggplot(FinalSeasonalSummary,aes(y=TMP_C,x=data))+geom_boxplot()+facet_wrap(vars(season),scales='free_y')
+
+for (season in unique(FinalSeasonalSummary$season)) {
+  
+  
+  fut_pcp<-climate_data_table %>%
+    filter(model==clim,time_period=='future') %>%
+    getElement('annual_pcp_avg')
+  
+  hist_pcp<-climate_data_table %>%
+    filter(model==clim,time_period=='hist') %>%
+    getElement('annual_pcp_avg')
+  
+  # future - hist / hist 
+  final_table$`Change in precipitation (%)`[final_table$`Climate model` == clim] <- round((fut_pcp-hist_pcp)*100/hist_pcp,2)
+  
+  fut_tmp<-climate_data_table %>%
+    filter(model==clim,time_period=='future') %>%
+    getElement('annual_tmp_avg')
+  
+  hist_tmp<-climate_data_table %>%
+    filter(model==clim,time_period=='hist') %>%
+    getElement('annual_tmp_avg')
+  
+  final_table$`Change in temperature (C)`[final_table$`Climate model` == clim] <- round((fut_tmp-hist_tmp),2)
+  
+  
+}
