@@ -1,11 +1,12 @@
 # Gil's method for developing climate change scenarios
 
 # manually excluded a period between 1994 and 1995 where there was a year of missing data in discharge
-# Also didn't clean norwalk data for flags, may need to go back and do that
+
 
 # To dos
-# Replace missing 2008 temp data with OWC data
-# Linear addition of temperature or pcp increase
+# Replace missing 2008 temp data with OWC data -- done 4/18/23
+# Clean Norwalk and OWC data for data flags?
+# Move winter to be cohesive-- currently summarizing jan/feb, dec of same year, need dec previous year + jan/feb current year
 
 
 rm(list=ls())
@@ -39,10 +40,59 @@ dailyClim<-obs_data %>%
   mutate(DATE=ymd(DATE)) %>% 
   complete(DATE=seq.Date(as.Date(min(DATE)),as.Date(max(DATE)),by='day')) %>% 
   select(DATE,PRCP,TMIN,TMAX)
+
+
+####### OWC GAP FILL #####
+# Read in data from OWC to fill any significant gaps in temperature, e.g., 2008
+
+#OWCOMET_edit is removing the top few lines off the excel file
+#also edited the header names
+tmp <- file(here::here('UW Climate Data','NORWALK_WWTP','OWCOWMET.csv'))
+open(tmp, "r") #read
+
+#read past headerline and save to rewrite the file
+readLines(tmp, n = 2) 
+
+
+headers<-readLines(tmp, n = 1) 
+headers<-strsplit(headers,split=",")
+headers<-data.frame(do.call(rbind, headers)) #unlist
+headers<-as.character(headers[1,])
+headers<-gsub("[^[:alnum:]]", "", headers)
+
+DF<-readLines(tmp, n = -1) 
+#remove legend at bottom of file
+DF<-DF[-c(grep("Legend",DF):length(DF))]
+
+
+DF<-strsplit(DF,split=",")
+DF<-data.frame(do.call(rbind, DF)) #unlist
+
+colnames(DF)<-headers
+
+
+# summarize minimum and maximum daily temperatures
+
+OWC_temps<-DF %>% 
+  mutate(ATemp=as.numeric(ATemp),DATE=as.Date(DateTimeStamp,format="%m/%d/%Y %H:%M")) %>% 
+  complete(DATE=seq.Date(as.Date(min(DATE)),as.Date(max(DATE)),by='day')) %>% 
+  group_by(DATE) %>% 
+  summarize(TMP_MIN_OWC=min(ATemp,na.rm=T), TMP_MAX_OWC=max(ATemp,na.rm=T)) %>% 
+  mutate(TMP_MIN_OWC=ifelse(is.infinite(TMP_MIN_OWC),NA,TMP_MIN_OWC)) %>% 
+  mutate(TMP_MAX_OWC=ifelse(is.infinite(TMP_MAX_OWC),NA,TMP_MAX_OWC))
+
+# gap fill dailyClim with OWC_data, remove OWC data
+dailyClim<-left_join(dailyClim,OWC_temps,by=c('DATE'))
+
+dailyClim <- dailyClim %>% 
+  mutate(TMIN=ifelse(is.na(TMIN),TMP_MIN_OWC,TMIN)) %>% 
+  mutate(TMAX=ifelse(is.na(TMAX),TMP_MAX_OWC,TMAX)) %>% 
+  select('DATE','PRCP','TMIN','TMAX')
+  
   
 
 ####### annual ############
-ClimateSummary_annual<-obs_data %>% 
+ClimateSummary_annual<-dailyClim %>% #change from obs_data to daily_clim
   mutate(DATE = ymd(DATE), MONTH=month(ymd(DATE))) %>% 
   mutate(WY=year(DATE)) %>% 
   mutate(WY=ifelse(c(MONTH == 10 |MONTH == 11 | MONTH ==12), WY+1,WY)) %>% # do function only on selected rows
@@ -89,9 +139,11 @@ ClimateSummary_annual<-obs_data %>%
 #   mutate(season = replace(season, c(MONTH == 9 |MONTH == 10 | MONTH ==11), 'fall'))  
 
 ######## seasonal ################
-ClimateSummary_seasonal<-obs_data %>% 
+
+# Do seasonal summaries for each year
+ClimateSummary_seasonal<-dailyClim %>% 
   mutate(DATE = ymd(DATE)) %>% 
-  mutate(WY=year(DATE),MONTH=month(DATE)) %>% 
+  mutate(WY=year(DATE),MONTH=month(DATE),YEAR=year(DATE)) %>% 
   mutate(WY=ifelse(c(MONTH == 10 |MONTH == 11 | MONTH ==12), WY+1,WY)) %>% # do function only on selected rows
   mutate(season=NA) %>% 
   mutate(season = replace(season, c(MONTH == 12 |MONTH == 1 | MONTH ==2), 'winter')) %>% 
@@ -100,11 +152,12 @@ ClimateSummary_seasonal<-obs_data %>%
   mutate(season = replace(season, c(MONTH == 9 |MONTH == 10 | MONTH ==11), 'fall')) %>% 
   mutate(TMIN = replace(TMIN,is.na(TMAX),NA)) %>% # Don't calculate average daily temp if min or max is missing
   mutate(TMAX = replace(TMAX,is.na(TMIN),NA)) %>%  
-  group_by(WY,season) %>%
+  group_by(YEAR,season) %>%
   mutate(TAVG=(TMIN+TMAX)/2) %>%  # make value NA if max or min is missing
   summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T),
             n_pcp_missing = sum(is.na(PRCP)),n_tmp_missing = sum(is.na(TAVG))) %>% 
-  filter(n_pcp_missing <= 30 & n_tmp_missing <= 30, WY >= 1990) %>%  #Exclude months with more than 10 days of missing data %>% 
+  filter(n_pcp_missing <= 30 & n_tmp_missing <= 30, YEAR >= 1989) %>%  #Exclude months with more than 10 days of missing data %>% 
+  filter(!(YEAR == 1989 & season =='fall'), !(YEAR == 2019 & season %in% c('fall','winter'))) %>%  # have to exclude these bc water years don't follow the seasons
   ungroup() %>% #This allows them to be ranked overall rather than with the group of year and month, should potentially just do rankings for group
   group_by(season) %>% 
   mutate(PCP_rank=rank(-PCP_mm),TMP_rank=rank(TMP_C)) %>% 
@@ -202,73 +255,74 @@ DIS_annual<-ggplot(AnnualData, aes(x=WY,y=DIS_CMS,fill=DIS_cat))+geom_bar(stat='
   theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
         panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
 
-TMP_winter<-ClimateSummary_seasonal %>% filter(season=='winter') %>% 
-  ggplot(., aes(x=WY,y=TMP_C,fill=TMP_cat))+geom_bar(stat='identity')+ggtitle("winter tmp")+
-  labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
-  theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
-        panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
-
-PCP_winter<-ClimateSummary_seasonal %>% filter(season=='winter') %>% 
-  ggplot(.,aes(x=WY,y=PCP_mm,fill=PCP_cat))+geom_bar(stat='identity')+ggtitle("winter pcp")+
-  labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
-  theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
-        panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
-
-
-TMP_summer<-ClimateSummary_seasonal %>% filter(season=='summer') %>% 
-  ggplot(., aes(x=WY,y=TMP_C,fill=TMP_cat))+geom_bar(stat='identity')+ggtitle("summer tmp")+
-  labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
-  theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
-        panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
-
-PCP_summer<-ClimateSummary_seasonal %>% filter(season=='summer') %>%  filter(WY >= 1990) %>% 
-  ggplot(.,aes(x=WY,y=PCP_mm,fill=PCP_cat))+geom_bar(stat='identity')+ggtitle("summer pcp")+
-  labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
-  theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
-        panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
-
-
-TMP_spring<-ClimateSummary_seasonal %>% filter(season=='spring') %>% 
-  ggplot(., aes(x=WY,y=TMP_C,fill=TMP_cat))+geom_bar(stat='identity')+ggtitle("spring tmp")+
-  labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
-  theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
-        panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
-
-PCP_spring<-ClimateSummary_seasonal %>% filter(season=='spring') %>%  filter(WY >= 1990) %>% 
-  ggplot(.,aes(x=WY,y=PCP_mm,fill=PCP_cat))+geom_bar(stat='identity')+ggtitle("spring")+
-  labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
-  theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
-        panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
-
-TMP_fall<-ClimateSummary_seasonal %>% filter(season=='fall') %>% 
-  ggplot(., aes(x=WY,y=TMP_C,fill=TMP_cat))+geom_bar(stat='identity')+ggtitle("fall tmp")+
-  labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
-  theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
-        panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
-
-PCP_fall<-ClimateSummary_seasonal %>% filter(season=='fall') %>%  filter(WY >= 1990) %>% 
-  ggplot(.,aes(x=WY,y=PCP_mm,fill=PCP_cat))+geom_bar(stat='identity')+ggtitle("fall pcp")+
-  labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
-  theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
-        panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
+# These all used water year x season to plot, would need to be fixed to be used
+# TMP_winter<-ClimateSummary_seasonal %>% filter(season=='winter') %>% 
+#   ggplot(., aes(x=WY,y=TMP_C,fill=TMP_cat))+geom_bar(stat='identity')+ggtitle("winter tmp")+
+#   labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
+#   theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
+#         panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
+# 
+# PCP_winter<-ClimateSummary_seasonal %>% filter(season=='winter') %>% 
+#   ggplot(.,aes(x=WY,y=PCP_mm,fill=PCP_cat))+geom_bar(stat='identity')+ggtitle("winter pcp")+
+#   labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
+#   theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
+#         panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
+# 
+# 
+# TMP_summer<-ClimateSummary_seasonal %>% filter(season=='summer') %>% 
+#   ggplot(., aes(x=WY,y=TMP_C,fill=TMP_cat))+geom_bar(stat='identity')+ggtitle("summer tmp")+
+#   labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
+#   theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
+#         panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
+# 
+# PCP_summer<-ClimateSummary_seasonal %>% filter(season=='summer') %>%  filter(WY >= 1990) %>% 
+#   ggplot(.,aes(x=WY,y=PCP_mm,fill=PCP_cat))+geom_bar(stat='identity')+ggtitle("summer pcp")+
+#   labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
+#   theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
+#         panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
+# 
+# 
+# TMP_spring<-ClimateSummary_seasonal %>% filter(season=='spring') %>% 
+#   ggplot(., aes(x=WY,y=TMP_C,fill=TMP_cat))+geom_bar(stat='identity')+ggtitle("spring tmp")+
+#   labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
+#   theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
+#         panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
+# 
+# PCP_spring<-ClimateSummary_seasonal %>% filter(season=='spring') %>%  filter(WY >= 1990) %>% 
+#   ggplot(.,aes(x=WY,y=PCP_mm,fill=PCP_cat))+geom_bar(stat='identity')+ggtitle("spring")+
+#   labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
+#   theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
+#         panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
+# 
+# TMP_fall<-ClimateSummary_seasonal %>% filter(season=='fall') %>% 
+#   ggplot(., aes(x=WY,y=TMP_C,fill=TMP_cat))+geom_bar(stat='identity')+ggtitle("fall tmp")+
+#   labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
+#   theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
+#         panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
+# 
+# PCP_fall<-ClimateSummary_seasonal %>% filter(season=='fall') %>%  filter(WY >= 1990) %>% 
+#   ggplot(.,aes(x=WY,y=PCP_mm,fill=PCP_cat))+geom_bar(stat='identity')+ggtitle("fall pcp")+
+#   labs(x="")+scale_x_reverse(breaks=seq(1990,2019,by=1),limits =c(2020,1989) )+coord_flip()+
+#   theme(panel.grid.major =   element_blank(),panel.grid.minor=element_blank(),panel.background=element_blank(),
+#         panel.border=element_rect(fill='transparent'),axis.text.x=element_text(angle=90,vjust = 0.5, hjust=1),legend.title=element_blank())
 
 
 
 ggarrange(DIS_annual,
           TMP_annual,
-          TMP_fall,
-          TMP_winter,
-          TMP_spring,
-          TMP_summer,
+          # TMP_fall,
+          # TMP_winter,
+          # TMP_spring,
+          # TMP_summer,
           PCP_annual,
-          PCP_fall,
-          PCP_winter,
-          PCP_summer,
-          PCP_spring,
+          # PCP_fall,
+          # PCP_winter,
+          # PCP_summer,
+          # PCP_spring,
           
           nrow=1,ncol=11,align='hv',common.legend = T)
 
-ggsave('WaterYearSummary_new.png',last_plot(),height=300,width=600,units='mm')
+# ggsave('WaterYearSummary_new.png',last_plot(),height=300,width=600,units='mm')
 
 # # Seasonal plots
 # pcpvdis<-SeasonalData %>%
@@ -291,52 +345,30 @@ ggsave('WaterYearSummary_new.png',last_plot(),height=300,width=600,units='mm')
 # --> hot + wet winter year
 # --> wet but not particularly hot (cold-ish)
 
-
-
-#Index val would be a combination of these years
-hot_dry_summer<-ClimateSummary_seasonal %>% 
-  filter(season == 'summer',PCP_mm >= quantile(PCP_mm,c(0.9)) & TMP_C >= quantile(TMP_C, c(0.5)))
-
-warm_wet_winter<-ClimateSummary_seasonal %>% 
-  filter(season == 'winter',PCP_mm >= quantile(PCP_mm,c(0.9)) & TMP_C >= quantile(TMP_C, c(0.5)))
-
-wet_winter<-ClimateSummary_seasonal %>% 
-  filter(season == 'winter',PCP_mm >= quantile(PCP_mm,c(0.75)) & TMP_C >= quantile(TMP_C, c(0.5)))
-
-
-
-# Keep randomly replacing data with years above average until % change achieved?
-
-# deltaT<-1  # C
-deltaP<-200 # %
-
 WY <- data.frame(AnnualData[,c(1:3)])
 
-# select based on pcp and tmp > 50 percentile
+### GUI inputs ###
+# select_LOWPCP_HIGHTMP<-1
+# select_HIGHPCP_AVGTMP<-1
+# select_AVGPCP_HIGHTMP<-1
 
-# wet and avg temp
-# WY_fut<-AnnualData %>%
-#   filter(TMP_C > mean(TMP_C,na.rm=T) ) %>%
-#   filter(PCP_rank == min(PCP_rank,na.rm=T)) %>%
-#   select('WY') %>%
-#   as.vector() %>%
-#   unlist() %>%
-#   unname()
-
-select_LOWPCP_HIGHTMP<-1
-select_HIGHPCP_AVGTMP<-1
-select_AVGPCP_HIGHTMP<-1
-
+# Number of years to add to existing data set
 nyrs_LOWPCP_HIGHTMP<-0
-nyrs_HIGHPCP_AVGTMP<-18
-nyrs_AVGPCP_HIGHTMP<-0
+nyrs_HIGHPCP_AVGTMP<-0
+nyrs_AVGPCP_HIGHTMP<-25
+
+# Changes to the annual
+deltaC<-1  # C
+deltaP<-5 # %
+
+deltaP <-deltaP/100 # %
 
 
-## Currently have so these are included in the final analysis and always removed from the potential historical years
+## if the number of years selected is 0, these become historical years that can be replaced
 
 WY_LOWPCP_HIGHTMP<-c()
 # Hot and dry temp
-# if (nyrs_LOWPCP_HIGHTMP > length(WY_LOWPCP_HIGHTMP)){
+if (nyrs_LOWPCP_HIGHTMP > 0){
 WY_LOWPCP_HIGHTMP<-AnnualData %>%
   filter(TMP_C >= quantile(TMP_C, 0.75,na.rm=T) & TMP_C > mean(TMP_C,na.rm=T) & PCP_mm <= quantile(PCP_mm, 0.4,na.rm=T)) %>%
   select('WY') %>%
@@ -344,78 +376,53 @@ WY_LOWPCP_HIGHTMP<-AnnualData %>%
   unlist() %>%
   unname()
 
-# }
+ }
 
 WY_HIGHPCP_AVGTMP<-c()
 # Wet but not particularly hot
-# if (nyrs_HIGHPCP_AVGTMP > length(WY_HIGHPCP_AVGTMP)) { 
+if (nyrs_HIGHPCP_AVGTMP > 0) { 
 WY_HIGHPCP_AVGTMP<-AnnualData %>%
   filter(TMP_C > mean(TMP_C,na.rm=T) & PCP_mm >= quantile(PCP_mm, 0.75,na.rm=T)) %>%
   select('WY') %>%
   as.vector() %>%
   unlist() %>%
   unname()
-# }
+ }
 
 WY_AVGPCP_HIGHTMP<-c()
 # Wet, warmer
-# if (nyrs_AVGPCP_HIGHTMP > length(WY_AVGPCP_HIGHTMP)){
+if (nyrs_AVGPCP_HIGHTMP > 0){
 WY_AVGPCP_HIGHTMP<-AnnualData %>%
   filter(TMP_C >= quantile(TMP_C, 0.70,na.rm=T) & TMP_C > mean(TMP_C,na.rm=T) & PCP_mm >= mean(PCP_mm,na.rm=T)) %>%
   select('WY') %>%
   as.vector() %>%
   unlist() %>%
   unname()
-# }
+ }
 
 # Other option is to replace any years that aren't in the future scenario, replacing the coldest years first 
 WY_hist<-AnnualData %>%
   filter(!WY %in% c(WY_LOWPCP_HIGHTMP,WY_HIGHPCP_AVGTMP,WY_AVGPCP_HIGHTMP)) %>%
   select('WY','TMP_rank')
-  # as.matrix() %>%
-  # unlist()
 
-# remove future years from historical period
-# WY_hist<-WY_hist[-WY_fut]
-
-#This function generates random rows to replace in the HRU table where the index is true and will meet replacing 
-#enough are to constitute a certain % of the total acres
-#if you sample too large a portion this loop will run forever because it has difficulty reaching the area standard 
-# ChangeHRU<-function(WY,WY_fut,WY_hist,deltaT,deltaP){
-   
   # WY = WY / pcp (sum) / tmp (avg) 
-  # WY_fut-- vector of water years to be a replacement
+  # WY_fut -- vector of water years to be a replacement
   # WY_hist -- vector of water years to be replaced
   
   avgP_hist<-mean(WY[,2],na.rm=T) 
   avgT_hist<-mean(WY[,3],na.rm=T)
-  
-  #initialize variable for loop
-  # avgT<- avgT_hist
-  # avgP <- avgP_hist
 
-  
-  # futT<- avgT_hist + deltaT
-  # futP<- avgP_hist + ((deltaP/100)*avgP_hist)
-  
   WY$rep_year<-NA
-
-  
-  # i<-1
-
-  #randomly replace years until desired pcp goal is achieved
-  # while( avgP <= futP  ){ #change to x*1.015 to get closer to the actual input number
-    
 
     # replace n number of dry years beyond what's already in the data set
     # AVGPCP_HIGHTMP
-    if (nyrs_AVGPCP_HIGHTMP > length(WY_AVGPCP_HIGHTMP)){
+    if (nyrs_AVGPCP_HIGHTMP > 0){
       
-      n_yr_replace <- nyrs_AVGPCP_HIGHTMP-length(WY_AVGPCP_HIGHTMP) #future - historical, don't replace already existing years
+      n_yr_replace <- nyrs_AVGPCP_HIGHTMP
       
       WY_select <- WY_hist %>%  # select colder years first
         arrange(desc(TMP_rank)) %>% 
-        slice(1:(n_yr_replace+2)) %>% # Sample a few extra to randomly select from
+        slice(1:(n_yr_replace)) %>% 
         select('WY') %>% 
         as.vector() %>%
         unlist() %>%
@@ -442,13 +449,13 @@ WY_hist<-AnnualData %>%
     }
   
   # HIGHPCP_AVGTMP
-  if (nyrs_HIGHPCP_AVGTMP > length(WY_HIGHPCP_AVGTMP)){
+  if (nyrs_HIGHPCP_AVGTMP > 0){
     
-    n_yr_replace <- nyrs_HIGHPCP_AVGTMP-length(WY_HIGHPCP_AVGTMP) #future - historical, don't replace already existing years
+    n_yr_replace <- nyrs_HIGHPCP_AVGTMP
     
     WY_select <- WY_hist %>%  # select colder years first
       arrange(desc(TMP_rank)) %>% 
-      slice(1:n_yr_replace+2) %>% # Sample a few extra to randomly select from
+      slice(1:n_yr_replace) %>% 
       select('WY')%>% 
       as.vector() %>%
       unlist() %>%
@@ -475,13 +482,13 @@ WY_hist<-AnnualData %>%
   }
   
   # LOWPCP_HIGHTMP
-  if (nyrs_LOWPCP_HIGHTMP > length(WY_LOWPCP_HIGHTMP)){
+  if (nyrs_LOWPCP_HIGHTMP > 0){
     
-    n_yr_replace <- nyrs_LOWPCP_HIGHTMP-length(WY_LOWPCP_HIGHTMP) #future - historical, don't replace already existing years
+    n_yr_replace <- nyrs_LOWPCP_HIGHTMP
     
     WY_select <- WY_hist %>%  # select colder years first
       arrange(desc(TMP_rank)) %>% 
-      slice(1:n_yr_replace+2) %>% # Sample a few extra to randomly select from
+      slice(1:n_yr_replace) %>% 
       select('WY')%>% 
       as.vector() %>%
       unlist() %>%
@@ -506,23 +513,6 @@ WY_hist<-AnnualData %>%
     }
   }
     
-    
-    
-    # if (length(WY_fut) > 1){
-    # sample_fut <- sample(WY_fut,1) #select future climate year
-    # } else {
-    #   sample_fut = WY_fut
-    # }
-    # 
-    # sample_hist <- sample(WY_hist,1) #select average historical year to replace
-    # 
-    # 
-    # 
-    # # Replace fut WY with hist WY of random selection
-    # WY[WY[,1]==sample_hist, c(2:4)]<- cbind(WY[WY[,1]==sample_fut,c(2,3)],sample_fut)
-    # 
-
-    
     # Calculate futT and futP
     avgP<-mean(WY[,2],na.rm=T)
     avgT<-mean(WY[,3],na.rm=T)
@@ -543,6 +533,9 @@ WY_hist<-AnnualData %>%
 # Build daily data with new years in WY data frame
   
 dailyClim_final<-c()
+WY<-WY[order(WY$WY),]
+temp_add<-deltaC/length(WY$WY)
+pcp_add<-deltaP/length(WY$WY)
   
   for (i in c(1:length(WY$WY))){
     
@@ -567,6 +560,13 @@ dailyClim_final<-c()
       dailyClim_add <- left_join(dailyClim_dates,dailyClim_add,by='DAY_MONTH') %>% 
         mutate(DATE = ymd(paste0(YEAR,"-",DAY_MONTH))) %>% 
         select(DATE,PRCP,TMIN,TMAX)
+      
+      # add linear change to delta C and delta P based on year
+      dailyClim_add$TMIN<- dailyClim_add$TMIN + i*temp_add
+      dailyClim_add$TMAX<- dailyClim_add$TMAX + i*temp_add
+      
+      dailyClim_add$PRCP<- dailyClim_add$PRCP + (i*pcp_add)*dailyClim_add$PRCP
+      
       
       dailyClim_final<-rbind(dailyClim_final,dailyClim_add)
       
@@ -602,7 +602,7 @@ ClimateSummary_annual_fut<-dailyClim_final %>%
   mutate(TAVG=(TMIN+TMAX)/2) %>% 
   summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T),
             n_pcp_missing = sum(is.na(PRCP)),n_tmp_missing = sum(is.na(TAVG))) %>% 
-  filter(n_pcp_missing < 30 & n_tmp_missing < 30, WY >= 1990) %>%  #Exclude years with more than a month of missing data %>% 
+  filter(n_pcp_missing < 30 & n_tmp_missing < 30, WY >= 1990 & WY <= 2019) %>%  #Exclude years with more than a month of missing data %>% 
   mutate(PCP_rank=rank(-PCP_mm),TMP_rank=rank(-TMP_C),Overall_rank=(TMP_rank+PCP_rank)) %>% 
   mutate(PCP_cat= NA, TMP_cat = NA) %>% #category for rankings
   mutate(data= 'fut') 
@@ -656,8 +656,8 @@ ANNUAL_TABLE <- ggplot() +
 nyr_change<-data.frame(matrix(nrow=3,ncol=0))
 nyr_change$description<-c('high tmp, low pcp (drought)','high tmp, avg pcp (warm)', 'high pcp, avg tmp (wet)')
 nyr_change$HIST_YRS<-c(length(WY_LOWPCP_HIGHTMP),length(WY_AVGPCP_HIGHTMP),length(WY_HIGHPCP_AVGTMP))
-nyr_change$FUT_YRS<-c(nyrs_LOWPCP_HIGHTMP,nyrs_AVGPCP_HIGHTMP,nyrs_HIGHPCP_AVGTMP)
-nyr_change$CHANGE<-paste0('+', nyr_change$FUT_YRS-nyr_change$HIST_YRS)
+nyr_change$FUT_YRS<-c(nyrs_LOWPCP_HIGHTMP+ length(WY_LOWPCP_HIGHTMP),nyrs_AVGPCP_HIGHTMP+length(WY_AVGPCP_HIGHTMP),nyrs_HIGHPCP_AVGTMP+length(WY_HIGHPCP_AVGTMP))
+nyr_change$CHANGE<-nyr_change$FUT_YRS-nyr_change$HIST_YRS
 
 NYR_TABLE <- ggplot() +                             
   theme_void() +
@@ -674,7 +674,7 @@ ClimateSummary_seasonal$data<-'hist'
 
 ClimateSummary_seasonal_fut<-dailyClim_final %>% 
   mutate(DATE = ymd(DATE)) %>% 
-  mutate(WY=year(DATE),MONTH=month(DATE)) %>% 
+  mutate(WY=year(DATE),MONTH=month(DATE),YEAR=year(DATE)) %>% 
   mutate(WY=ifelse(c(MONTH == 10 |MONTH == 11 | MONTH ==12), WY+1,WY)) %>% # do function only on selected rows
   mutate(season=NA) %>% 
   mutate(season = replace(season, c(MONTH == 12 |MONTH == 1 | MONTH ==2), 'winter')) %>% 
@@ -683,11 +683,12 @@ ClimateSummary_seasonal_fut<-dailyClim_final %>%
   mutate(season = replace(season, c(MONTH == 9 |MONTH == 10 | MONTH ==11), 'fall')) %>% 
   mutate(TMIN = replace(TMIN,is.na(TMAX),NA)) %>% # Don't calculate average daily temp if min or max is missing
   mutate(TMAX = replace(TMAX,is.na(TMIN),NA)) %>%  
-  group_by(WY,season) %>%
+  group_by(YEAR,season) %>%
   mutate(TAVG=(TMIN+TMAX)/2) %>%  # make value NA if max or min is missing
   summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T),
             n_pcp_missing = sum(is.na(PRCP)),n_tmp_missing = sum(is.na(TAVG))) %>% 
-  filter(n_pcp_missing <= 30 & n_tmp_missing <= 30, WY >= 1990) %>%  #Exclude months with more than 10 days of missing data %>% 
+  filter(n_pcp_missing <= 30 & n_tmp_missing <= 30, YEAR >= 1989 & YEAR <= 2019) %>%  #Exclude months with more than 10 days of missing data %>% 
+  filter(!(YEAR == 1989 & season =='fall'), !(YEAR == 2019 & season %in% c('fall','winter'))) %>%  # have to exclude these bc water years don't follow the seasons
   ungroup() %>% #This allows them to be ranked overall rather than with the group of year and month, should potentially just do rankings for group
   group_by(season) %>% 
   mutate(PCP_rank=rank(-PCP_mm),TMP_rank=rank(TMP_C)) %>% 
