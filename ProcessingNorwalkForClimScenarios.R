@@ -8,6 +8,11 @@
 # Clean Norwalk and OWC data for data flags?
 # Move winter to be cohesive-- currently summarizing jan/feb, dec of same year, need dec previous year + jan/feb current year
 
+# Did small spot checks to see that data was being calculated correctly
+# dailyClim_final --> tmin never greater than tmax
+# historical data (dailyClim, seasonal summaries) matches what's from obs
+# Proper change in years (e.g., shift 1990 --> 2002 and add delta P and T, proper addition of delta if a historical year)
+
 
 rm(list=ls())
 library(tidyverse)
@@ -17,6 +22,21 @@ library(ggpubr)
 library(ggpmisc)
 
 setwd(here::here('UW Climate Data','NORWALK_WWTP'))
+
+
+### inputs for climate generator #########
+
+# Number of years to add to existing data set
+# add in statement to downsize selection if years too high, e.g., input yr has to be max 30, then do 30 - nyrs existing in dataset
+nyrs_LOWPCP_HIGHTMP<-25 # 1991 1999 2010 2012 2016
+nyrs_HIGHPCP_AVGTMP<-2 # 2000 2007 2008 2013 2019
+nyrs_AVGPCP_HIGHTMP<-3 # 1998 2002 2018
+
+# Changes to the annual
+deltaC<-1  # C
+deltaP<-5 # %
+
+deltaP <-deltaP/100 # %
 
 clim_files<-c('3282969.csv','3282971.csv','3295661.csv','3295676.csv')
 # 2020-2023 file, although the number of columns is different, would need to bind in a different way
@@ -88,6 +108,9 @@ dailyClim <- dailyClim %>%
   mutate(TMIN=ifelse(is.na(TMIN),TMP_MIN_OWC,TMIN)) %>% 
   mutate(TMAX=ifelse(is.na(TMAX),TMP_MAX_OWC,TMAX)) %>% 
   select('DATE','PRCP','TMIN','TMAX')
+
+# Write daily clim here for GUI inputs
+write.csv(dailyClim,'dailyClim_hist.csv', row.names=F)
   
   
 
@@ -113,7 +136,8 @@ ClimateSummary_annual<-dailyClim %>% #change from obs_data to daily_clim
   mutate(TMP_cat=replace(TMP_cat,TMP_C >= quantile(TMP_C,c(0.5)) & TMP_C < quantile(TMP_C,c(0.9)), '50th percentile'))  # remove cold years bc we only want years warmer than avg
 
   
-  
+# Write seasonal historical summary
+write.csv(ClimateSummary_annual,'AnnualSummary_hist.csv', row.names=F) 
 
 
 
@@ -143,21 +167,22 @@ ClimateSummary_annual<-dailyClim %>% #change from obs_data to daily_clim
 # Do seasonal summaries for each year
 ClimateSummary_seasonal<-dailyClim %>% 
   mutate(DATE = ymd(DATE)) %>% 
-  mutate(WY=year(DATE),MONTH=month(DATE),YEAR=year(DATE)) %>% 
+  mutate(WY=year(DATE),MONTH=month(DATE),YEAR=year(DATE),SZNYR=year(DATE)) %>% 
   mutate(WY=ifelse(c(MONTH == 10 |MONTH == 11 | MONTH ==12), WY+1,WY)) %>% # do function only on selected rows
   mutate(season=NA) %>% 
   mutate(season = replace(season, c(MONTH == 12 |MONTH == 1 | MONTH ==2), 'winter')) %>% 
   mutate(season = replace(season, c(MONTH == 3 |MONTH == 4 | MONTH ==5), 'spring')) %>% 
   mutate(season = replace(season, c(MONTH == 6 |MONTH == 7 | MONTH ==8), 'summer')) %>% 
   mutate(season = replace(season, c(MONTH == 9 |MONTH == 10 | MONTH ==11), 'fall')) %>% 
+  mutate(SZNYR=ifelse(MONTH == 12, SZNYR+1,SZNYR)) %>% # do function only on selected rows
   mutate(TMIN = replace(TMIN,is.na(TMAX),NA)) %>% # Don't calculate average daily temp if min or max is missing
   mutate(TMAX = replace(TMAX,is.na(TMIN),NA)) %>%  
-  group_by(YEAR,season) %>%
+  group_by(SZNYR,season) %>%
   mutate(TAVG=(TMIN+TMAX)/2) %>%  # make value NA if max or min is missing
   summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T),
             n_pcp_missing = sum(is.na(PRCP)),n_tmp_missing = sum(is.na(TAVG))) %>% 
-  filter(n_pcp_missing <= 30 & n_tmp_missing <= 30, YEAR >= 1989) %>%  #Exclude months with more than 10 days of missing data %>% 
-  filter(!(YEAR == 1989 & season =='fall'), !(YEAR == 2019 & season %in% c('fall','winter'))) %>%  # have to exclude these bc water years don't follow the seasons
+  filter(n_pcp_missing <= 30 & n_tmp_missing <= 30,
+         SZNYR >= 1990 & SZNYR <= 2019 , !(SZNYR == 1990 & season =='winter') , !(SZNYR ==2019 & season == 'winter') ) %>%  #Exclude months with more than 10 days of missing data, also have to exclude beginning and ending year winters bc using consecutive winters
   ungroup() %>% #This allows them to be ranked overall rather than with the group of year and month, should potentially just do rankings for group
   group_by(season) %>% 
   mutate(PCP_rank=rank(-PCP_mm),TMP_rank=rank(TMP_C)) %>% 
@@ -168,6 +193,8 @@ ClimateSummary_seasonal<-dailyClim %>%
   mutate(TMP_cat=replace(TMP_cat,TMP_C >= quantile(TMP_C,c(0.9)), '90th percentile')) %>% 
   mutate(TMP_cat=replace(TMP_cat,TMP_C >= quantile(TMP_C,c(0.5)) & TMP_C < quantile(TMP_C,c(0.9)), '50th percentile')) 
 
+# Write seasonal historical summary
+write.csv(ClimateSummary_seasonal,'SeasonalSummary_hist.csv', row.names=F)
 
 
 ##### OWC Discharge  ##############
@@ -352,16 +379,7 @@ WY <- data.frame(AnnualData[,c(1:3)])
 # select_HIGHPCP_AVGTMP<-1
 # select_AVGPCP_HIGHTMP<-1
 
-# Number of years to add to existing data set
-nyrs_LOWPCP_HIGHTMP<-0
-nyrs_HIGHPCP_AVGTMP<-0
-nyrs_AVGPCP_HIGHTMP<-25
 
-# Changes to the annual
-deltaC<-1  # C
-deltaP<-5 # %
-
-deltaP <-deltaP/100 # %
 
 
 ## if the number of years selected is 0, these become historical years that can be replaced
@@ -376,6 +394,15 @@ WY_LOWPCP_HIGHTMP<-AnnualData %>%
   unlist() %>%
   unname()
 
+LOWPCP_HIGHTMP_origNyrs <- length(WY_LOWPCP_HIGHTMP) 
+
+# If number of years wanted less than those in the dataset, sub sample what years to use so the others can be replaced as historical years
+if (nyrs_LOWPCP_HIGHTMP < length(WY_LOWPCP_HIGHTMP)) {
+  
+  WY_LOWPCP_HIGHTMP<-sample(WY_LOWPCP_HIGHTMP, nyrs_LOWPCP_HIGHTMP, replace=F)
+  
+}
+
  }
 
 WY_HIGHPCP_AVGTMP<-c()
@@ -386,7 +413,17 @@ WY_HIGHPCP_AVGTMP<-AnnualData %>%
   select('WY') %>%
   as.vector() %>%
   unlist() %>%
-  unname()
+  unname() 
+
+HIGHPCP_AVGTMP_origNyrs <- length(WY_HIGHPCP_AVGTMP) 
+
+# If number of years wanted less than those in the dataset, sub sample what years to use so the others can be replaced as historical years
+if (nyrs_HIGHPCP_AVGTMP < length(WY_HIGHPCP_AVGTMP)) {
+ 
+  WY_HIGHPCP_AVGTMP<-sample(WY_HIGHPCP_AVGTMP, nyrs_HIGHPCP_AVGTMP, replace=F)
+  
+}
+
  }
 
 WY_AVGPCP_HIGHTMP<-c()
@@ -398,6 +435,17 @@ WY_AVGPCP_HIGHTMP<-AnnualData %>%
   as.vector() %>%
   unlist() %>%
   unname()
+
+AVGPCP_HIGHTMP_origNyrs <- length(WY_AVGPCP_HIGHTMP) 
+
+# If number of years wanted less than those in the dataset, sub sample what years to use so the others can be replaced as historical years
+if (nyrs_AVGPCP_HIGHTMP < length(WY_AVGPCP_HIGHTMP)) {
+  
+  WY_AVGPCP_HIGHTMP<-sample(WY_AVGPCP_HIGHTMP, nyrs_AVGPCP_HIGHTMP, replace=F)
+  
+}
+
+
  }
 
 # Other option is to replace any years that aren't in the future scenario, replacing the coldest years first 
@@ -414,11 +462,11 @@ WY_hist<-AnnualData %>%
 
   WY$rep_year<-NA
 
-    # replace n number of dry years beyond what's already in the data set
+    # if years are greater than the original number, replace n number of dry years beyond what's already in the data set
     # AVGPCP_HIGHTMP
-    if (nyrs_AVGPCP_HIGHTMP > 0){
+    if (nyrs_AVGPCP_HIGHTMP > LOWPCP_HIGHTMP_origNyrs){
       
-      n_yr_replace <- nyrs_AVGPCP_HIGHTMP
+      n_yr_replace <- nyrs_AVGPCP_HIGHTMP - length(WY_AVGPCP_HIGHTMP)
       
       WY_select <- WY_hist %>%  # select colder years first
         arrange(desc(TMP_rank)) %>% 
@@ -449,9 +497,9 @@ WY_hist<-AnnualData %>%
     }
   
   # HIGHPCP_AVGTMP
-  if (nyrs_HIGHPCP_AVGTMP > 0){
+  if (nyrs_HIGHPCP_AVGTMP > HIGHPCP_AVGTMP_origNyrs){
     
-    n_yr_replace <- nyrs_HIGHPCP_AVGTMP
+    n_yr_replace <- nyrs_HIGHPCP_AVGTMP - length(WY_HIGHPCP_AVGTMP)
     
     WY_select <- WY_hist %>%  # select colder years first
       arrange(desc(TMP_rank)) %>% 
@@ -482,9 +530,9 @@ WY_hist<-AnnualData %>%
   }
   
   # LOWPCP_HIGHTMP
-  if (nyrs_LOWPCP_HIGHTMP > 0){
+  if (nyrs_LOWPCP_HIGHTMP > LOWPCP_HIGHTMP_origNyrs){
     
-    n_yr_replace <- nyrs_LOWPCP_HIGHTMP
+    n_yr_replace <- nyrs_LOWPCP_HIGHTMP - length(WY_LOWPCP_HIGHTMP)
     
     WY_select <- WY_hist %>%  # select colder years first
       arrange(desc(TMP_rank)) %>% 
@@ -576,6 +624,12 @@ pcp_add<-deltaP/length(WY$WY)
       # keep original year
       dailyClim_add<- dailyClim %>% 
         filter(year(DATE) == WY$WY[i])
+      
+      # add linear change to delta C and delta P based on year
+      dailyClim_add$TMIN<- dailyClim_add$TMIN + i*temp_add
+      dailyClim_add$TMAX<- dailyClim_add$TMAX + i*temp_add
+      
+      dailyClim_add$PRCP<- dailyClim_add$PRCP + (i*pcp_add)*dailyClim_add$PRCP
       
       dailyClim_final<-rbind(dailyClim_final,dailyClim_add)
       
@@ -674,8 +728,9 @@ ClimateSummary_seasonal$data<-'hist'
 
 ClimateSummary_seasonal_fut<-dailyClim_final %>% 
   mutate(DATE = ymd(DATE)) %>% 
-  mutate(WY=year(DATE),MONTH=month(DATE),YEAR=year(DATE)) %>% 
+  mutate(WY=year(DATE),MONTH=month(DATE),YEAR=year(DATE),SZNYR=year(DATE)) %>% 
   mutate(WY=ifelse(c(MONTH == 10 |MONTH == 11 | MONTH ==12), WY+1,WY)) %>% # do function only on selected rows
+  mutate(SZNYR=ifelse(MONTH == 12, SZNYR+1,SZNYR)) %>% # do function only on selected rows
   mutate(season=NA) %>% 
   mutate(season = replace(season, c(MONTH == 12 |MONTH == 1 | MONTH ==2), 'winter')) %>% 
   mutate(season = replace(season, c(MONTH == 3 |MONTH == 4 | MONTH ==5), 'spring')) %>% 
@@ -683,12 +738,12 @@ ClimateSummary_seasonal_fut<-dailyClim_final %>%
   mutate(season = replace(season, c(MONTH == 9 |MONTH == 10 | MONTH ==11), 'fall')) %>% 
   mutate(TMIN = replace(TMIN,is.na(TMAX),NA)) %>% # Don't calculate average daily temp if min or max is missing
   mutate(TMAX = replace(TMAX,is.na(TMIN),NA)) %>%  
-  group_by(YEAR,season) %>%
+  group_by(SZNYR,season) %>%
   mutate(TAVG=(TMIN+TMAX)/2) %>%  # make value NA if max or min is missing
   summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T),
             n_pcp_missing = sum(is.na(PRCP)),n_tmp_missing = sum(is.na(TAVG))) %>% 
-  filter(n_pcp_missing <= 30 & n_tmp_missing <= 30, YEAR >= 1989 & YEAR <= 2019) %>%  #Exclude months with more than 10 days of missing data %>% 
-  filter(!(YEAR == 1989 & season =='fall'), !(YEAR == 2019 & season %in% c('fall','winter'))) %>%  # have to exclude these bc water years don't follow the seasons
+  filter(n_pcp_missing <= 30 & n_tmp_missing <= 30,
+         SZNYR >= 1990 & SZNYR <= 2019 , !(SZNYR == 1990 & season =='winter') , !(SZNYR ==2019 & season == 'winter') ) %>% # have to exclude these bc water years don't follow the seasons
   ungroup() %>% #This allows them to be ranked overall rather than with the group of year and month, should potentially just do rankings for group
   group_by(season) %>% 
   mutate(PCP_rank=rank(-PCP_mm),TMP_rank=rank(TMP_C)) %>% 
