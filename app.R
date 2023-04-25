@@ -14,6 +14,9 @@ library(ggpmisc) #for testPlot to combine table with plot
 library(patchwork)
 library(gridExtra) #arranges variable number of plots as "grobs"
 library(tidyverse) # commenting out all packages contained in the tidyverse
+library(ggpubr)
+library(magrittr)
+
 # library(ggplot2)
 # library(tidyr)
 # library(stringr)
@@ -30,6 +33,7 @@ source("ReadHRU_losses.R")
 source("ReadChannel_daily2.R")
 source("testPlot.R")
 source("ChangeSWATClimate.R")
+source("ClimateChange.R")
 
 run_yrs<-c(2009)
 
@@ -125,7 +129,7 @@ ui <- fluidPage(
                    
                    
                    
-                   tabPanel("Climate data",  
+                   tabPanel("Climate change scenario",  
                             p(""),  
                    
                     # selectInput("SelectClimateOption", label = h3("Choose climate data to run:"), 
@@ -134,13 +138,10 @@ ui <- fluidPage(
                             
                   
 
-                   p("You can run up to three climate scenarios. Select combined precipitation and temperature change:"),
+                   p("You can create a climate scenario based off historical climatic events. You can increase the number of 'extreme' climatic
+                     water years to see the response of discharge, nutrient, and sediment loss."),
                    br(),br(),
                    
-                   checkboxGroupInput("SelectClimate", label = h5("Climate data to run:"), 
-                                      choices = list("Recent observed climate (2013-2020)"="hist","New scenario"="makeclim"), selected = "hist"),
-                   
-                   strong("New scenario:"),
                    
                    # nyrs_LOWPCP_HIGHTMP 1991 1999 2010 2012 2016
                    # nyrs_HIGHPCP_AVGTMP 2000 2007 2008 2013 2019
@@ -149,7 +150,8 @@ ui <- fluidPage(
                   fluidRow(
                   
                   column(6,numericInput("LOWPCP_HIGHTMP", label = h5("Years with low precip, high temp:"),
-                                      value = "5")),br(),br(),br(),
+                                      value = "5")),br(),br(),
+                  p('  These years include 1991 1999 2010 2012 2016 (5 years)'),
                   column(6, textOutput("LOWPCP_HIGHTMP"))
                    
 
@@ -158,7 +160,8 @@ ui <- fluidPage(
                   fluidRow(
                     
                     column(6,numericInput("HIGHPCP_AVGTMP", label = h5("Years with high precip, average temp:"),
-                                          value = "5")),br(),br(),br(),
+                                          value = "5")),br(),br(),
+                    p('  These years include 2000 2007 2008 2013 2019 (5 years)'),
                     column(6, textOutput("HIGHPCP_AVGTMP"))
                     
                     
@@ -167,11 +170,16 @@ ui <- fluidPage(
                   fluidRow(
                     
                     column(6,numericInput("AVGPCP_HIGHTMP", label = h5("Years with average precip, high temp:"),
-                                          value = "3")),br(),br(),br(),
+                                          value = "3")),br(),br(),
+                    p('  These years include 1998 2002 2018 (3 years)'),
                     column(6, textOutput("AVGPCP_HIGHTMP"))
                     
                     
                   ),  br(),br(),br(),
+                
+                  p('Add a change to the "future" climate data that is added to the dataset in a linear fashion:
+                    e.g., year 1 will change by applied amount divided by total number of years, and the final year will
+                    be changed by the total amount'),
                   
                   fluidRow(
                     
@@ -189,6 +197,9 @@ ui <- fluidPage(
 
                    
                    br(),br(),br(),
+                  
+                  # plotOutput("ClimatePlot"),
+                  tableOutput("ClimateTable"),
 
                    
                    #  going to remove this option for now and work to add it back in if needed
@@ -217,17 +228,24 @@ ui <- fluidPage(
                    
                    # actionButton("simulate", "Apply changes"),
                    
-                   actionButton("runswat", "Run OWC-SWAT+")
+
                    
                    
                    
-                  , width = 8 ),
+                   width = 8 ),
                    
       mainPanel(
         #### INPUTS ##################
         #Don't know if I need all this printed to the UI if it's already in the left hand panel, consider removing...
         #management scenarios
         br(),
+        
+        checkboxGroupInput("SelectClimate", label = h5("Climate data to run:"), 
+                           choices = list("Recent observed climate (2013-2020)"="hist","Climate change scenario"="makeclim"), selected = "hist"),
+        
+        actionButton("runswat", "Run OWC-SWAT+"),
+        
+        br(),br(),br(),
         strong("Rates of management on row crop lands:"),
         span(textOutput("total_rate"),style='color:green'),
         
@@ -262,7 +280,7 @@ ui <- fluidPage(
         
         p(),p(),p(),
         
-        textOutput("ClimateOut"),
+        # textOutput("ClimateOut"),
         
 
         
@@ -405,6 +423,47 @@ server <- function(input, output, session) {
  # text output
  output$runningmodel1 <- renderUI({
  strong(text_reactive()[[1]])
+ })
+ 
+ ##### Climate graphs for user #######
+ ClimateDataInput <-reactive({
+   
+   # recalculate climate here 
+   ClimateChange(input$LOWPCP_HIGHTMP,input$HIGHPCP_AVGTMP,input$AVGPCP_HIGHTMP,
+                 input$DELTAT, input$DELTAP)
+   
+ })
+ 
+ # output$ClimatePlot<- renderPlot({
+ #   
+ #     req(ClimateDataInput()[[1]])
+ #   
+ #   # ClimateDataInput is returned in a list, have to rebuild data frame
+ #   
+ #   AnnualClimateData<-data.frame(ClimateDataInput()[[1]]$WY,ClimateDataInput()[[1]]$PCP_mm, 
+ #                                 ClimateDataInput()[[1]]$TMP_C,ClimateDataInput()[[1]]$data)
+ #   colnames(AnnualClimateData)<-c('WY','PCP_mm','TMP_C','data')
+ #   
+ #   AnnualClimateData
+ #   
+ #   # This goes into reactive plot
+ #     PCP_ANNUAL_PLOT<-ggplot(AnnualClimateData,aes(y=PCP_mm,x=data))+geom_boxplot()
+ # 
+ #   
+ #   
+ # })
+ 
+ output$ClimateTable<- renderTable({
+   
+   # AnnualClimateData<-data.frame(ClimateDataInput()[[1]]$WY,ClimateDataInput()[[1]]$PCP_mm, 
+   #                               ClimateDataInput()[[1]]$TMP_C,ClimateDataInput()[[1]]$data)
+   # colnames(AnnualClimateData)<-c('WY','PCP_mm','TMP_C','data')
+   # 
+   # AnnualClimateData
+   
+   ClimateDataInput()[[1]]
+   
+   
  })
 
  #  # plot output

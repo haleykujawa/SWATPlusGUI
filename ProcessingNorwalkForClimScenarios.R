@@ -32,7 +32,7 @@ setwd(here::here('UW Climate Data','NORWALK_WWTP'))
 # add in statement to downsize selection if years too high, e.g., input yr has to be max 30, then do 30 - nyrs existing in dataset
 nyrs_LOWPCP_HIGHTMP<-5 # 1991 1999 2010 2012 2016
 nyrs_HIGHPCP_AVGTMP<-5 # 2000 2007 2008 2013 2019
-nyrs_AVGPCP_HIGHTMP<-3 # 1998 2002 2018
+nyrs_AVGPCP_HIGHTMP<-10 # 1998 2002 2018
 
 # Changes to the annual
 deltaC<-0  # C
@@ -184,7 +184,7 @@ ClimateSummary_seasonal<-dailyClim %>%
   summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T),
             n_pcp_missing = sum(is.na(PRCP)),n_tmp_missing = sum(is.na(TAVG))) %>% 
   filter(n_pcp_missing <= 30 & n_tmp_missing <= 30,
-         SZNYR >= 1990 & SZNYR <= 2019 , !(SZNYR == 1990 & season =='winter') , !(SZNYR ==2019 & season == 'fall') ) %>%  #Exclude months with more than 10 days of missing data, also have to exclude beginning and ending year winters bc using consecutive winters
+         SZNYR >= 1990 & SZNYR <= 2019 ,  !(SZNYR ==2019 & season == 'fall') ) %>%  #Exclude months with more than 10 days of missing data, also have to exclude beginning and ending year winters bc using consecutive winters
   ungroup() %>% #This allows them to be ranked overall rather than with the group of year and month, should potentially just do rankings for group
   group_by(season) %>% 
   mutate(PCP_rank=rank(-PCP_mm),TMP_rank=rank(TMP_C)) %>% 
@@ -754,7 +754,7 @@ ClimateSummary_seasonal_fut<-dailyClim_final %>%
   summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T),
             n_pcp_missing = sum(is.na(PRCP)),n_tmp_missing = sum(is.na(TAVG))) %>% 
   filter(n_pcp_missing <= 30 & n_tmp_missing <= 30,
-         SZNYR >= 1990 & SZNYR <= 2019 , !(SZNYR == 1990 & season =='winter'), !(SZNYR ==2019 & season == 'fall') ) %>% # have to exclude these bc water years don't follow the seasons
+         SZNYR >= 1990 & SZNYR <= 2019 ,  !(SZNYR ==2019 & season == 'fall') ) %>% # have to exclude these bc water years don't follow the seasons
   ungroup() %>% #This allows them to be ranked overall rather than with the group of year and month, should potentially just do rankings for group
   group_by(season) %>% 
   mutate(PCP_rank=rank(-PCP_mm),TMP_rank=rank(TMP_C)) %>% 
@@ -797,3 +797,6 @@ TMP_SEASON_PLOT<-ggplot(FinalSeasonalSummary,aes(y=TMP_C,x=data))+geom_boxplot()
   
   ggarrange(PCP_SEASON_PLOT,TMP_SEASON_PLOT,SEASONAL_TABLE,nrow=3,ncol=1)
   ggsave("Seasonal_changes.png",last_plot(),height=200,width=225,units='mm')
+
+  #!(SZNYR == 1990 & season =='winter') ,
+  #!(SZNYR == 1990 & season =='winter'),
