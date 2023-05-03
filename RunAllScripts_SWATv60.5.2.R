@@ -724,7 +724,7 @@ baseline <- paste0(here("Baseline"))
   
   
   ######### Run all selected climate options ################################################
-  if (any(grep(paste(c("CNRM","MIROC5","IPSL-CM5A-MR","hist"),collapse="|"),SelectClimate))){
+  if (any(grep(paste(c("userClimScen","hist"),collapse="|"),SelectClimate))){
     
     
     # for (climatemodel in ClimateModels){
@@ -754,6 +754,8 @@ baseline <- paste0(here("Baseline"))
                 # lapply(SelectClimate,function(climatemodel){
       # Change to for loop because plotting function not working, if wanting to get working in parallel may want to use lapply
       for (climatemodel in SelectClimate){
+        
+        # 4/25 ideally, would move code from ClimateChange to here for if userClimScen selected, put together daily clim and write swat files here
       
                   # Instead of running the baseline historical with the new mgt--only compare with baseline climate run (1980-1999) with historical management (2013-2020)
                   # In Likely Adoption project we got weird % changes if we compared LA historical with LA future. The absolute change was smaller than the baseline, but the % change would be larger
@@ -841,182 +843,6 @@ baseline <- paste0(here("Baseline"))
       
     }
 
-  
-  ################# Extend data beyond 2020 and write to scenario folder ###############################################
-  # the code below does not work with the current GUI, there is no option for "extended". Not sure if I'm going to keep.
-  if (any(grep("extended",SelectClimate))){
-    
-    print(pcpFile[[4]])
-    
-    ##### Read in extended climate data and fill gaps ##############
-    # col 1 = date as dd/mm/YY and col 2 as data (pcp = mm, tmp = C)
-    # could add option to input units and convert here
-    new_pcp<-read.csv(pcpFile[[4]])
-    colnames(new_pcp)<-c("date","tmp")
-    
-    # new_pcp<-read.csv(pcpFile)
-    # colnames(new_pcp)<-c("date","tmp")
-    
-    #add date 03/02/2022 to start if it doesn't already exist
-    #pcp data goes until 03/01/2022
-    if (new_pcp$date[1] != c("3/2/2022")){
-    new_pcp<-rbind(c("3/2/2022",NA),new_pcp)
-    }
-    
-    
-    new_pcp$date<-as.Date(new_pcp$date,format='%m/%d/%Y')
-    
-    # fill missing dates and remove dates before 03/02/2022
-    # this dates function isn't working, need to come back and fix this 3/15/23
-    # new_pcp<-new_pcp %>%
-      # mutate(date = as.Date(date),format="%m/%d/%Y") %>%
-      # complete(date = seq.Date(min(date), max(date), by="day")) %>%
-      # filter(date > as.Date("2022-03-01"))
-    
-    # replace empty NA data with -99
-    new_pcp$tmp[is.na(new_pcp$tmp)]<-"-99"
-    
-    ###### format and append data to tmp and pcp ###############
-    # pcp = total rainfall per day
-    # tmp = daily min and max temp
-    # SWAT+ pcp file is year / doy / pcp (mm)
-      
-    new_pcp$year<-format(new_pcp$date, format="%Y")%>%
-      as.character()
-    
-    new_pcp$doy<- yday(new_pcp$date)     %>%
-          as.character()
-    
-    #make all numbers have five decimal places
-     new_pcp$tmp<-as.numeric(new_pcp$tmp) %>%
-     sprintf(fmt = '%#.5f') %>%
-     as.character() 
-
-    new_pcp$year<-spaceOutput_spacesecond(new_pcp$year,6) 
-    new_pcp$doy<-spaceOutput_spacesecond(new_pcp$doy,5) 
-    new_pcp$tmp<-spaceOutput(new_pcp$tmp,9)
-
-    # find last date to change time.sim file
-    # 15 years of pcp in original SWAT file
-    nbyr <- max(as.numeric(new_pcp$year))-min(as.numeric(new_pcp$year))+1+15
-    
-    day_last<-str_trim(new_pcp$doy[length(new_pcp$doy)])
-    year_last<-max(as.numeric(new_pcp$year))
-    
-    DF<-paste0(new_pcp$year,new_pcp$doy,new_pcp$tmp)
-    
-    # open file for reading and writing
-    file_dir<-file.path(scenario_dir,'owcmet_pcp.pcp')
-    tmp<-readLines(file_dir,-1)
-    # read first down first two lines of tmp file
-    
-    #Replace years 
-    tmp[3]<-paste0(nbyr,"         0    41.378   -82.508   184.000")
-    
-    close( file( file_dir, open="w" ) ) 
-    sink(file_dir, type=c("output"), append = T)
-    write(tmp,file_dir,sep = "\n",append=T)
-    write(DF,file_dir,sep = "\n",append=T)
-    sink()
-    
-    # open time.sim and rewrite end of simulation based on tmp and pcp data
-    # assume tmp and pcp have same end date -- may have to compare the two and see which is smaller 
-    file_dir<-file.path(scenario_dir,'time.sim')
-    tmp<-readLines(file_dir,n=-1)
-  
-    substr(tmp[[3]],24,30)<-spaceOutput(day_last,7)
-    substr(tmp[[3]],34,40)<-spaceOutput(year_last,7) 
-    
-    close( file( file_dir, open="w" ) ) 
-    sink(file_dir, type=c("output"), append = T)
-    write(tmp,file_dir,sep = "\n",append=T)
-    sink()
-    
-    setwd(scenario_dir)
-    system('SWATPlus_60.5.5.exe') #run executable 
-  
-  }
-  
-  
- 
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  setwd(scenario_dir)
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ####### Read HRU losses #########################################################
-  
-  # headers<-c("jday",	"mon",	"day",	"yr",	"unit",	"gis_id",	"name",	"sedyld_tha","sedorgn_kgha","sedorgp_kgha",
-             # "surqno3_kgha","lat3no3_kgha","surqsolp_kgha","usle_tons","sedmin","tileno3","lchlabp","tilelabp","satexn")
-  
 }     
 
 
