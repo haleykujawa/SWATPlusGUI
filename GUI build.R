@@ -139,13 +139,36 @@ ui <- fluidPage(
                    
                    strong("Climate scenario 1:"),
                    
-                   fluidRow(column(6,selectInput("SelectTemp1", label = h5("Change in average annual temperature (C):"), 
+                   fluidRow(
+                     
+                  
+                  column(4,selectInput("AnnualTemp1", label = h5("Change average annual temperature (C):"), 
                                       choices = list("0","+0.5","+1", "+1.5", "+2","+2.5","+3","+3,5"),
                                       selected = "0")),
                    
-                   column(6,selectInput("SelectPrecip1", label = h5("Change in average annual precipitation (%):"), 
+                   column(4,selectInput("AnnualPrecip1", label = h5("Change average annual precipitation (%):"), 
                                       choices = list("-5","0", "+5", "+10","+15","+20","+25"),
                                       selected = "0"))),
+                   
+                  fluidRow(
+                    
+                   column(2,numericInput("WinterExtreme1", label = h5("Number of years with winter extreme (warm, wet, high runoff):"), 
+                                                 value = "0")),
+                   
+                   column(2,numericInput("SummerExtreme1", label = h5("Number of years with summer extreme (drought):"), 
+                                        value="0")),
+                  
+                  column(2,numericInput("SummerExtreme2", label = h5("Number of years with summer extreme (cold, wet, high runoff):"), 
+                                        value="0")),
+                  
+                  column(2,numericInput("SpringExtreme1", label = h5("Number of years with spring extreme (wet):"), 
+                                        value="0")),
+                  
+                  column(2,numericInput("SpringExtreme2", label = h5("Number of years with fall extreme (wet):"), 
+                                        value="0"))
+                  
+                  
+                   ),
                    
                    strong("Climate scenario 2:"),
                    
