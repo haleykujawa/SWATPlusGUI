@@ -81,6 +81,18 @@ climdata<-read.csv(clim_file)
 # relabel all 0:00 as the day before
 ind<-grep("00",substr(climdata$time,12,13))
 climdata$time[ind]<-as.character(ymd_hms(climdata$time[ind])-1)
+
+#### some of the future data has an 'na' at 2 pm on daylight savings time days in March 7/11/2023 ###
+#### will just interpolate for now but it probably has to do with the processing on the lab computer ###
+
+na_date<-which(is.na(climdata$time))
+
+for (i in na_date){
+  
+# force same hourly time for these points since hourly not being used--just daily avg
+climdata$time[i]<-as.character(as.POSIXct(mean(as.numeric(as.POSIXct(climdata$time[i+1])),as.numeric(as.POSIXct(climdata$time[i-1]))),
+                          origin='1970-01-01'))
+}
   
 
 # Summary table for comparing historical and future outputs
@@ -131,7 +143,6 @@ dailyClimData <- climdata %>%
   mutate(tmp_minC=spaceOutput(tmp_minC,12)) %>%
   mutate(dailypcp_mm=spaceOutput(dailypcp_mm,11)) %>%
   mutate(doy=spaceOutput(doy,5))
-
 
 
   
@@ -258,7 +269,7 @@ obs_data<-c()
   
   setwd(here("UW Climate Data", obs_hist))
   
-  clim_files<-list.files()
+  clim_files<-c('3396481.csv','3282969.csv','3282971.csv')
   
   for (i in clim_files){
     
@@ -267,8 +278,166 @@ obs_data<-c()
     
   }
   
+  
+  obs_data<-obs_data %>% 
+    mutate(DATE = parse_date_time(DATE, orders = c("ymd", "mdy"))) 
+  
+  ##### Write daily Norwalk WWTP files for running in SWAT+ #########
+  dailyClimData<-obs_data %>% 
+    mutate(day_col = parse_date_time(DATE, orders = c("ymd", "mdy"))) %>%
+    group_by(day_col) %>%
+    # filter(year(time) != 2000) %>% # remove the one output for yr 2000
+    # mutate(pcp_mm = pcp*60*60) %>% # convert from kg /m-2 s-1 to mm -- not needed since processed with 'ReadUWData'
+    summarize(tmp_minC=min(TMIN),tmp_maxC=max(TMAX),dailypcp_mm=sum(PRCP,na.rm=T)) %>% # Change column names to match ReadUWClimate output
+    mutate(across(c('tmp_minC','tmp_maxC','dailypcp_mm'), ~if_else(is.na(.), -99, .))) %>% 
+    mutate(doy=yday(day_col)) %>%
+    mutate(year=year(day_col)) %>%
+    mutate(dailypcp_mm= format(round(dailypcp_mm,5))) %>% # I think these three lines could be better but leaving for now
+    mutate(tmp_maxC= format(round(tmp_maxC,5))) %>%
+    mutate(tmp_minC=format(round(tmp_minC,5))) %>%
+    mutate(across(everything(), as.character)) %>%
+    mutate(tmp_maxC=spaceOutput(tmp_maxC,11)) %>%
+    mutate(tmp_minC=spaceOutput(tmp_minC,12)) %>%
+    mutate(dailypcp_mm=spaceOutput(dailypcp_mm,11)) %>%
+    mutate(doy=spaceOutput(doy,5))
+  
+  ### Write SWAT+ climate files ####
+  TxtInOut<-file.path(here("UW Climate Data",'NORWALK TxtInOut'))
+  
+  if (dir.exists(TxtInOut)){
+    
+    setwd(TxtInOut)
+    # unlink(dir(TxtInOut)) # erase all files
+    
+  }else{
+    
+    dir.create(TxtInOut)
+    setwd(TxtInOut)
+    
+  }
+  
+  nbyr<-max(as.numeric(dailyClimData$year))-min(as.numeric(dailyClimData$year))+1
+  
+  ### Write tmp file to current folder UW Climate Data ####
+  # head of tmp file 
+  tmp_header<- c('owcmet_tmp.tmp: Temperature data - file written by SWAT+ editor 2022-01-21 12:20:49.114642\nnbyr     tstep       lat       lon      elev')
+  
+  tmp_header1<-paste0(spaceOutput(as.character(nbyr),4), c('         0    41.378   -82.508   184.000'))
+  
+  DF<-paste0(dailyClimData$year,dailyClimData$doy, dailyClimData$tmp_maxC,dailyClimData$tmp_minC,'  ') # add 2 empty spaces to see if this is causing the issue w temp file
+  
+  climFile<-file.path('owcmet_tmp.tmp')
+  if (file.exists(climFile)){
+    
+    # wipe file clean 
+    close( file( climFile, open="w" ) ) 
+    
+  }else{
+    
+    # create file
+    file.create(climFile) 
+    
+  }
+  
+  
+  
+  sink(climFile, type=c("output"), append = T)
+  write(tmp_header,climFile,sep = "\n",append=T)
+  write(tmp_header1,climFile,sep = "\n",append=T)
+  write(DF,climFile,sep = "\n",append=T)
+  sink()
+  
+  ### Copy future tmp file to scenarios folder ####
+  if (timeperiod =='future'){
+    
+    climFile<-file.path(here('Scenarios',clim,'owcmet_tmp.tmp'))
+    
+    close( file( climFile, open="w" )) # wipe current file
+    
+    sink(climFile, type=c("output"), append = T) # write new output to file
+    write(tmp_header,climFile,sep = "\n",append=T)
+    write(tmp_header1,climFile,sep = "\n",append=T)
+    write(DF,climFile,sep = "\n",append=T)
+    sink()
+    
+    
+  }
+  
+  ### Write pcp file to current folder UW Climate Data ####
+  
+  # head of pcp file 
+  tmp_header<- c('owcmet_pcp.pcp: Precipitation data - file written by SWAT+ editor 2022-01-21 12:20:49.028861\nnbyr     tstep       lat       lon      elev')
+  
+  DF<-paste0(dailyClimData$year,dailyClimData$doy, dailyClimData$dailypcp_mm)
+  
+  climFile<-file.path('owcmet_pcp.pcp')
+  if (file.exists(climFile)){
+    
+    # wipe file clean 
+    close( file( climFile, open="w" ) ) 
+    
+  }else{
+    
+    # create file
+    file.create(climFile) 
+    
+  }
+  
+  
+  climFile<-file.path('owcmet_pcp.pcp')
+  sink(climFile, type=c("output"), append = T)
+  write(tmp_header,climFile,sep = "\n",append=T)
+  write(tmp_header1,climFile,sep = "\n",append=T)
+  write(DF,climFile,sep = "\n",append=T)
+  sink()
+  
+  ### Copy future pcp file to scenarios folder ####
+  if (timeperiod =='future'){
+    
+    climFile<-file.path(here('Scenarios',clim,'owcmet_pcp.pcp'))
+    
+    close( file( climFile, open="w" )) # wipe current file
+    
+    sink(climFile, type=c("output"), append = T) # write new output to file
+    write(tmp_header,climFile,sep = "\n",append=T)
+    write(tmp_header1,climFile,sep = "\n",append=T)
+    write(DF,climFile,sep = "\n",append=T)
+    sink()
+    
+    
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  # rm(dailyClimData)
+  # note dailyClimData from this point forward would be the Norwalk WWTP
+  
+  
+  
  #annual 
   ClimateSummary_add<-obs_data %>% 
+    filter(year(DATE)>=1980) %>% 
     mutate(DATE = ymd(DATE)) %>% 
     mutate(TAVG=(TMIN+TMAX)/2) %>%
     group_by(year(DATE)) %>%
@@ -280,6 +449,7 @@ obs_data<-c()
   
   #monthly
   ClimateSummary_monthlyadd<-obs_data %>% 
+    filter(year(DATE)>=1980) %>% 
     mutate(DATE = ymd(DATE)) %>% 
     mutate(TAVG=(TMIN+TMAX)/2) %>% 
     group_by(year=year(DATE),month=month(DATE)) %>%
@@ -368,7 +538,7 @@ label = list(final_table))
 finalPlot<-grid.arrange(pcp_plot,tmp_plot,ggp_table)
 ggsave("ClimateSummary.png",finalPlot,height=250,width=200,units="mm")
 
-## monthly plots, hist only ##
+### monthly plots, hist only ###
 
 tmp_monthly_plot<-ClimateSummary_monthly %>%
   filter(timeperiod=='hist') %>% 
@@ -383,6 +553,36 @@ pcp_monthly_plot<-ClimateSummary_monthly %>%
 finalPlot<-grid.arrange(pcp_monthly_plot,tmp_monthly_plot)
 ggsave("ClimateSummary_monthly.png",finalPlot,height=200,width=200,units="mm")
 
+#### Monthly plots - time series historical, future, observed #####
+
+ClimateSummary_monthly_timeseries <- ClimateSummary_monthly %>% 
+  unite(model_timeperiod, model, timeperiod, sep = " ") %>% 
+  group_by(month,model_timeperiod) %>% 
+  summarize(TMP_C=mean(TMP_C,na.rm=T),PCP_mm=mean(PCP_mm,na.rm=T)) %>% 
+  gather(variable,value,-model_timeperiod,-month) %>% 
+  mutate(month=factor(month,levels=c(1,2,3,4,5,6,7,8,9,10,11,12),ordered=T))
+
+variable_labs<-c("Precipitation (mm)", "Temperature (C)")
+names(variable_labs)<-c("PCP_mm","TMP_C")
+
+ggplot(ClimateSummary_monthly_timeseries, aes(x=month,y=value,group=model_timeperiod,color=model_timeperiod))+
+  geom_line(size=1.5)+facet_wrap(~variable,labeller=labeller(variable=variable_labs),scales='free_y')+
+  scale_color_manual(values=c("Observed hist hist"="black","IPSL fut"="blue","IPSL hist"="orange"),
+                     labels=c("Observed hist hist"="Norwalk WWTP (observed)","IPSL fut"="IPSL - 2049-2050","IPSL hist"="IPSL - 1980-1999"))+
+  # scale_linetype_manual(values=c("Observed hist hist"="dotted","IPSL fut"="solid","IPSL hist"="solid"),
+  #                       labels=c("Observed hist hist"="Norwalk WWTP (observed)","IPSL fut"="IPSL - 2049-2050","IPSL hist"="IPSL - 1980-1999"))+
+  labs(x="",y="")+
+  theme(strip.background=element_rect(color="black", fill="white"),panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+        panel.background = element_blank(),text = element_text(size = 16),
+        panel.border = element_rect(colour = "black", fill=NA, linewidth=1),legend.key=element_rect(fill="white"),legend.position='bottom',
+        legend.title=element_blank())
+
+ggsave("Monthly_comparison_IPSL.png",last_plot(),height=100,width=200,units='mm')
+
+ClimateSummary_monthly_timeseries <- ClimateSummary_monthly_timeseries %>% 
+  pivot_wider(names_from=c(model_timeperiod,variable),values_from=value)
+
+write.csv(ClimateSummary_monthly_timeseries,'ClimateSummary_monthly_timeseries.csv',row.names=F)
 
 #### Run SWAT for all historical runs and get averages ######
 
