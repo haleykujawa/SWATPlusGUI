@@ -4,6 +4,7 @@ RunAllScripts_SWATv60.5.2<-function(scenario_dir,SelectClimate,stream_rate,CSFT,
 
 #if going at add changing management into this file, maybe also add copying over the baseline directory here
 print('im here')
+  set.seed(1)
 ### ADD CODE BELOW ####
   # copy over orginal files from baseline --done 3/20
   # make changes with ChangeSWATInputs --done 3/20
@@ -15,12 +16,14 @@ mgt_files<-c('hru-data.hru','hyd-sed-lte.cha','hydrology.hyd')
 myplots<-list()
 
 if (is.null(SelectClimate)){
- stop('Error: No climate data selected') 
+ stop('No climate data selected') 
 }
 
 if (CSFT+CSNT+CSRT+CSRot+CSNTcc+CSWS+CSWcc > 100 | CSFT+CSNT+CSRT+CSRot+CSNTcc+CSWS+CSWcc < 100){
-  stop('Error: Management rates do not total 100%')
+  stop('Management rates do not total 100%')
 }
+
+# add error for buffers + grww?
 
 ### folders ########
 baseline <- paste0(here("Baseline"))  
@@ -153,6 +156,11 @@ baseline <- paste0(here("Baseline"))
         
         i<-i+1
         
+        # after so many samples (the number of hrus, although this isn't a guarantee all hrus were sampled)
+        if(i > 9409){
+          next
+        }
+        
       }
       
       
@@ -171,7 +179,7 @@ baseline <- paste0(here("Baseline"))
     change_ind<-ChangeHRU(DF,ind,sum(DF$len_num), stream_rate,DF$len_num)
     
     DF$erod_fact[change_ind]<-"0.00000" # Based on BOA runs
-    DF$bed_load[change_ind] <-"0.85000" # Based on BOA runs
+    DF$bed_load[change_ind] <-"0.3000" # Based on BOA runs # previously had as 0.85 but unsure where I got that number from
     
     
   }
@@ -363,7 +371,7 @@ baseline <- paste0(here("Baseline"))
   readLines(tmp, n = 2) 
   
   HRUarea<-readLines(tmp, n = -1) 
-  HRUarea<-tibble(substr(HRUarea,11,17),substr(HRUarea,44,50))
+  HRUarea<-tibble(substr(HRUarea,11,17),substr(HRUarea,37,50)) # space 44-50 to 37-50, fixed 9/14/23
   colnames(HRUarea)<-c("name","area_ha")
   
   close(tmp)
@@ -519,7 +527,7 @@ baseline <- paste0(here("Baseline"))
   
   mgt_check<-data.frame(matrix(nrow=7,ncol=4))
   colnames(mgt_check)<-c("rot","rate","buffers","grww")
-  mgt_check$rot<-c("CSFT","CSNT","CSRT","CSRotT","CSNTcc","CSWS","CSWcc")
+  mgt_check$rot<-c("CSFT","CSNT","CSRotT","CSRT","CSNTcc","CSWS","CSWcc")
   
   area_CSFT<-sum(hru_data$area_ha[grepl(paste(c("CS_FT","SC_FT"),collapse="|"),hru_data$lu_mgt)])
   area_CSNT<-sum(hru_data$area_ha[grepl(paste(c("CS_NT","SC_NT"),collapse="|") ,hru_data$lu_mgt) & !grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|") ,hru_data$lu_mgt)])
@@ -724,7 +732,7 @@ baseline <- paste0(here("Baseline"))
   
   
   ######### Run all selected climate options ################################################
-  if (any(grep(paste(c("CNRM","MIROC5","IPSL-CM5A-MR","hist"),collapse="|"),SelectClimate))){
+  if (any(grep(paste(c("userClimScen","hist"),collapse="|"),SelectClimate))){
     
     
     # for (climatemodel in ClimateModels){
@@ -754,6 +762,8 @@ baseline <- paste0(here("Baseline"))
                 # lapply(SelectClimate,function(climatemodel){
       # Change to for loop because plotting function not working, if wanting to get working in parallel may want to use lapply
       for (climatemodel in SelectClimate){
+        
+        # 4/25 ideally, would move code from ClimateChange to here for if userClimScen selected, put together daily clim and write swat files here
       
                   # Instead of running the baseline historical with the new mgt--only compare with baseline climate run (1980-1999) with historical management (2013-2020)
                   # In Likely Adoption project we got weird % changes if we compared LA historical with LA future. The absolute change was smaller than the baseline, but the % change would be larger
@@ -841,182 +851,6 @@ baseline <- paste0(here("Baseline"))
       
     }
 
-  
-  ################# Extend data beyond 2020 and write to scenario folder ###############################################
-  # the code below does not work with the current GUI, there is no option for "extended". Not sure if I'm going to keep.
-  if (any(grep("extended",SelectClimate))){
-    
-    print(pcpFile[[4]])
-    
-    ##### Read in extended climate data and fill gaps ##############
-    # col 1 = date as dd/mm/YY and col 2 as data (pcp = mm, tmp = C)
-    # could add option to input units and convert here
-    new_pcp<-read.csv(pcpFile[[4]])
-    colnames(new_pcp)<-c("date","tmp")
-    
-    # new_pcp<-read.csv(pcpFile)
-    # colnames(new_pcp)<-c("date","tmp")
-    
-    #add date 03/02/2022 to start if it doesn't already exist
-    #pcp data goes until 03/01/2022
-    if (new_pcp$date[1] != c("3/2/2022")){
-    new_pcp<-rbind(c("3/2/2022",NA),new_pcp)
-    }
-    
-    
-    new_pcp$date<-as.Date(new_pcp$date,format='%m/%d/%Y')
-    
-    # fill missing dates and remove dates before 03/02/2022
-    # this dates function isn't working, need to come back and fix this 3/15/23
-    # new_pcp<-new_pcp %>%
-      # mutate(date = as.Date(date),format="%m/%d/%Y") %>%
-      # complete(date = seq.Date(min(date), max(date), by="day")) %>%
-      # filter(date > as.Date("2022-03-01"))
-    
-    # replace empty NA data with -99
-    new_pcp$tmp[is.na(new_pcp$tmp)]<-"-99"
-    
-    ###### format and append data to tmp and pcp ###############
-    # pcp = total rainfall per day
-    # tmp = daily min and max temp
-    # SWAT+ pcp file is year / doy / pcp (mm)
-      
-    new_pcp$year<-format(new_pcp$date, format="%Y")%>%
-      as.character()
-    
-    new_pcp$doy<- yday(new_pcp$date)     %>%
-          as.character()
-    
-    #make all numbers have five decimal places
-     new_pcp$tmp<-as.numeric(new_pcp$tmp) %>%
-     sprintf(fmt = '%#.5f') %>%
-     as.character() 
-
-    new_pcp$year<-spaceOutput_spacesecond(new_pcp$year,6) 
-    new_pcp$doy<-spaceOutput_spacesecond(new_pcp$doy,5) 
-    new_pcp$tmp<-spaceOutput(new_pcp$tmp,9)
-
-    # find last date to change time.sim file
-    # 15 years of pcp in original SWAT file
-    nbyr <- max(as.numeric(new_pcp$year))-min(as.numeric(new_pcp$year))+1+15
-    
-    day_last<-str_trim(new_pcp$doy[length(new_pcp$doy)])
-    year_last<-max(as.numeric(new_pcp$year))
-    
-    DF<-paste0(new_pcp$year,new_pcp$doy,new_pcp$tmp)
-    
-    # open file for reading and writing
-    file_dir<-file.path(scenario_dir,'owcmet_pcp.pcp')
-    tmp<-readLines(file_dir,-1)
-    # read first down first two lines of tmp file
-    
-    #Replace years 
-    tmp[3]<-paste0(nbyr,"         0    41.378   -82.508   184.000")
-    
-    close( file( file_dir, open="w" ) ) 
-    sink(file_dir, type=c("output"), append = T)
-    write(tmp,file_dir,sep = "\n",append=T)
-    write(DF,file_dir,sep = "\n",append=T)
-    sink()
-    
-    # open time.sim and rewrite end of simulation based on tmp and pcp data
-    # assume tmp and pcp have same end date -- may have to compare the two and see which is smaller 
-    file_dir<-file.path(scenario_dir,'time.sim')
-    tmp<-readLines(file_dir,n=-1)
-  
-    substr(tmp[[3]],24,30)<-spaceOutput(day_last,7)
-    substr(tmp[[3]],34,40)<-spaceOutput(year_last,7) 
-    
-    close( file( file_dir, open="w" ) ) 
-    sink(file_dir, type=c("output"), append = T)
-    write(tmp,file_dir,sep = "\n",append=T)
-    sink()
-    
-    setwd(scenario_dir)
-    system('SWATPlus_60.5.5.exe') #run executable 
-  
-  }
-  
-  
- 
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  setwd(scenario_dir)
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ####### Read HRU losses #########################################################
-  
-  # headers<-c("jday",	"mon",	"day",	"yr",	"unit",	"gis_id",	"name",	"sedyld_tha","sedorgn_kgha","sedorgp_kgha",
-             # "surqno3_kgha","lat3no3_kgha","surqsolp_kgha","usle_tons","sedmin","tileno3","lchlabp","tilelabp","satexn")
-  
 }     
 
 
