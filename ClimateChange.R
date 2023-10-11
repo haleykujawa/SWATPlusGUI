@@ -17,7 +17,30 @@
 # it will also only replace years if the number of years selected is greater than what's in the baseline.
 # Hence, selecting the exact years that are in the baseline will not allow the function to be applied
 
+# Calculating daily climate needs to be removed-- can replace the recalculated WY with the WY data frame
+# that is used to replace years 4/25/23
+
+#Full seasons that are within the 1990-2019 WY are included. This excludes fall 2019
+
 ClimateChange<-function(nyrs_LOWPCP_HIGHTMP,nyrs_HIGHPCP_AVGTMP,nyrs_AVGPCP_HIGHTMP,deltaC, deltaP){
+
+  set.seed(1)
+  
+    
+  ### functions ######
+  spaceOutput<-function(data,nspaces){
+    
+    newData<-paste0(str_dup(" ",(nspaces-nchar(data))),data)
+    return(newData)
+    
+  }
+  
+  spaceOutput_spacesecond<-function(data,nspaces){
+    
+    newData<-paste0(data,str_dup(" ",(nspaces-nchar(data))))
+    return(newData)
+    
+  }
 
 
 # rm(list=ls())
@@ -416,6 +439,23 @@ dailyClim <- dailyClim %>%
   mutate(WY=year(DATE)) %>% 
   mutate(WY=ifelse(c(month(DATE) == 10 |month(DATE) == 11 | month(DATE) ==12), WY+1,WY))
 
+#### Copy first 3 years as warm-up years to daily data set #####
+
+
+
+  # keep original year
+  dailyClim_add<- dailyClim %>% 
+    filter(WY %in% c(1990,1991,1992)) %>% 
+    mutate(warmup='yes',DATE=ymd(DATE)-years(3)) %>% 
+    filter(!is.na(DATE)) %>%  # issue where date doesn't exists bc year replaced with is a leap year
+    mutate(DATE=as.character(DATE)) %>% 
+    select(DATE,PRCP,TMIN,TMAX,warmup)
+  
+  dailyClim_final<-rbind(dailyClim_final,dailyClim_add)
+
+
+
+
   
   for (i in c(1:length(WY$WY))){
     
@@ -441,8 +481,8 @@ dailyClim <- dailyClim %>%
       
       
       dailyClim_add <- left_join(dailyClim_dates,dailyClim_add,by='DAY_MONTH') %>% 
-        mutate(DATE = as.Date(paste0(YEAR,"-",DAY_MONTH),format='%Y-%m-%d')) %>% 
-        select(DATE,PRCP,TMIN,TMAX)
+        mutate(DATE = paste0(YEAR,"-",DAY_MONTH),warmup='no') %>% 
+        select(DATE,PRCP,TMIN,TMAX,warmup)
       
       # add linear change to delta C and delta P based on year
       dailyClim_add$TMIN<- dailyClim_add$TMIN + i*temp_add
@@ -450,10 +490,8 @@ dailyClim <- dailyClim %>%
       
       dailyClim_add$PRCP<- dailyClim_add$PRCP + (i*pcp_add)*dailyClim_add$PRCP
       
-      
       dailyClim_final<-rbind(dailyClim_final,dailyClim_add)
-      
-      
+
     } else {
       
       wateryear<-WY$WY[i]
@@ -461,7 +499,8 @@ dailyClim <- dailyClim %>%
       # keep original year
       dailyClim_add<- dailyClim %>% 
         filter(WY == wateryear) %>% 
-        select(DATE,PRCP,TMIN,TMAX)
+        mutate(warmup='no') %>% 
+        select(DATE,PRCP,TMIN,TMAX,warmup)
       
       # add linear change to delta C and delta P based on year
       dailyClim_add$TMIN<- dailyClim_add$TMIN + i*temp_add
@@ -476,14 +515,17 @@ dailyClim <- dailyClim %>%
     
     
   }
+
+### Write SWAT pcp and tmp files to ClimateChange scenario folder #####
   
-### Compare old and new seasonal and annual data ###
+#### Compare old and new seasonal and annual data ####
 #outliers are partial water years (1990, 2020), need to remove
 
 ### annual ###
 ClimateSummary_annual$data<-'hist'
 
 ClimateSummary_annual_fut<-dailyClim_final %>% 
+  filter(warmup=='no') %>% 
   mutate(DATE = ymd(DATE), MONTH=month(ymd(DATE))) %>% 
   mutate(WY=year(DATE)) %>% 
   mutate(WY=ifelse(c(MONTH == 10 |MONTH == 11 | MONTH ==12), WY+1,WY)) %>% # do function only on selected rows
@@ -512,12 +554,15 @@ FUT_CLIM_WY<-FinalAnnualSummary %>%
   summarize(TMP_C=mean(TMP_C,na.rm=T),PCP_mm=mean(PCP_mm,na.rm=T)) 
 
 FUT_CLIM_ADD<-data.frame(matrix(nrow=1,ncol=0))
-FUT_CLIM_ADD$data[1]<-'Change'
+FUT_CLIM_ADD$data[1]<-'Change (C, %)'
 FUT_CLIM_ADD$TMP_C[1]<- FUT_CLIM_WY$TMP_C[FUT_CLIM_WY$data=='fut'] - FUT_CLIM_WY$TMP_C[FUT_CLIM_WY$data=='hist']
 FUT_CLIM_ADD$PCP_mm[1]<-( FUT_CLIM_WY$PCP_mm[FUT_CLIM_WY$data=='fut'] - FUT_CLIM_WY$PCP_mm[FUT_CLIM_WY$data=='hist'] ) *100 / FUT_CLIM_WY$PCP_mm[FUT_CLIM_WY$data=='hist']
 
 FUT_CLIM_WY<-rbind(FUT_CLIM_ADD,FUT_CLIM_WY)
 rm(FUT_CLIM_ADD)
+
+colnames(FUT_CLIM_WY)<-c('Data','Temperature (C)', 'Precipitation (mm)')
+FUT_CLIM_WY[,1]<-c('Change (C, %)','Future climate (user generated)','Historical (1990-2019)')
 
 # This goes into reactive plot
 # PCP_ANNUAL_PLOT<-ggplot(FinalAnnualSummary,aes(y=PCP_mm,x=data))+geom_boxplot()
@@ -578,6 +623,7 @@ rm(FUT_CLIM_ADD)
 ClimateSummary_seasonal$data<-'hist'
 
 ClimateSummary_seasonal_fut<-dailyClim_final %>% 
+  filter(warmup=='no') %>% 
   mutate(DATE = ymd(DATE)) %>% 
   mutate(WY=year(DATE),MONTH=month(DATE),YEAR=year(DATE),SZNYR=year(DATE)) %>% 
   mutate(WY=ifelse(c(MONTH == 10 |MONTH == 11 | MONTH ==12), WY+1,WY)) %>% # do function only on selected rows
@@ -594,7 +640,7 @@ ClimateSummary_seasonal_fut<-dailyClim_final %>%
   summarize(PCP_mm=sum(PRCP,na.rm=T),TMP_C=mean(TAVG,na.rm=T),
             n_pcp_missing = sum(is.na(PRCP)),n_tmp_missing = sum(is.na(TAVG))) %>% 
   filter(n_pcp_missing <= 30 & n_tmp_missing <= 30,
-         SZNYR >= 1990 & SZNYR <= 2019 , !(SZNYR ==2019 & season == 'fall') ) %>% # have to exclude these bc water years don't follow the seasons
+         SZNYR >= 1990 & SZNYR <= 2019 , !(SZNYR ==2019 & season == 'fall')) %>% # have to exclude these bc water years don't follow the seasons
   ungroup() %>% #This allows them to be ranked overall rather than with the group of year and month, should potentially just do rankings for group
   group_by(season) %>% 
   mutate(PCP_rank=rank(-PCP_mm),TMP_rank=rank(TMP_C)) %>% 
@@ -638,6 +684,104 @@ FinalSeasonalSummary$data<-factor(FinalSeasonalSummary$data, ordered=T,levels=c(
 #   
 #   ggarrange(PCP_SEASON_PLOT,TMP_SEASON_PLOT,SEASONAL_TABLE,nrow=3,ncol=1)
 #   ggsave("Seasonal_changes.png",last_plot(),height=200,width=225,units='mm')
+
+##### Write SWAT+ pcp and tmp files ##############
+
+# Summarize daily min and max tmp, set up date outputs and spacing needed for SWAT climate files
+# don't filter any data for writing the climate files because need excess data as a warm up period
+dailyClimData <- dailyClim_final %>% 
+  # group_by(DATE) %>%
+  # filter(year(time) != 2000) %>% # remove the one output for yr 2000
+  # mutate(pcp_mm = pcp*60*60) %>% # convert from kg /m-2 s-1 to mm -- not needed since processed with 'ReadUWData'
+  # summarize(tmp_minC=min(owc_airtemp),tmp_maxC=max(owc_airtemp),dailypcp_mm=sum(owc_pcp),tmp_avgC=((min(owc_airtemp)+max(owc_airtemp))/2)) %>% # Change column names to match ReadUWClimate output
+  mutate(doy=yday(DATE)) %>%
+  mutate(year=year(DATE)) %>%
+  mutate(PRCP = replace(PRCP, is.na(PRCP),-99)) %>% 
+  mutate(TMIN = replace(TMIN, is.na(TMIN),-99)) %>%
+  mutate(TMAX = replace(TMAX, is.na(TMAX),-99)) %>%
+  mutate(PRCP = format(round(PRCP,5))) %>% # I think these three lines could be better but leaving for now
+  mutate(TMAX= format(round(TMAX,5))) %>%
+  mutate(TMIN=format(round(TMIN,5))) %>%
+  mutate(across(everything(), as.character)) %>%
+  mutate(TMAX=spaceOutput(TMAX,11)) %>%
+  mutate(TMIN=spaceOutput(TMIN,12)) %>%
+  mutate(PRCP=spaceOutput(PRCP,11)) %>%
+  mutate(doy=spaceOutput(doy,5))
+
+rm(dailyClim_final)
+
+
+
+
+
+### Write SWAT+ climate files ####
+TxtInOut<-file.path(here("Scenarios",'userClimScen'))
+
+setwd(TxtInOut)
+
+
+nbyr<-max(as.numeric(dailyClimData$year))-min(as.numeric(dailyClimData$year))+1
+
+### Write tmp file  ####
+# head of tmp file 
+tmp_header<- c('owcmet_tmp.tmp: Temperature data - file written by SWAT+ editor 2022-01-21 12:20:49.114642\nnbyr     tstep       lat       lon      elev')
+
+tmp_header1<-paste0(spaceOutput(as.character(nbyr),4), c('         0    41.378   -82.508   184.000'))
+
+DF<-paste0(dailyClimData$year,dailyClimData$doy, dailyClimData$TMAX,dailyClimData$TMIN,'  ') # add 2 empty spaces to see if this is causing the issue w temp file
+
+climFile<-file.path('owcmet_tmp.tmp')
+if (file.exists(climFile)){
+  
+  # wipe file clean 
+  close( file( climFile, open="w" ) ) 
+  
+}else{
+  
+  # create file
+  file.create(climFile) 
+  
+}
+
+
+
+sink(climFile, type=c("output"), append = T)
+write(tmp_header,climFile,sep = "\n",append=T)
+write(tmp_header1,climFile,sep = "\n",append=T)
+write(DF,climFile,sep = "\n",append=T)
+sink()
+
+#### Write pcp file ####
+# head of pcp file 
+tmp_header<- c('owcmet_pcp.pcp: Precipitation data - file written by SWAT+ editor 2022-01-21 12:20:49.028861\nnbyr     tstep       lat       lon      elev')
+
+DF<-paste0(dailyClimData$year,dailyClimData$doy, dailyClimData$PRCP)
+
+climFile<-file.path('owcmet_pcp.pcp')
+if (file.exists(climFile)){
+  
+  # wipe file clean 
+  close( file( climFile, open="w" ) ) 
+  
+}else{
+  
+  # create file
+  file.create(climFile) 
+  
+}
+
+
+climFile<-file.path('owcmet_pcp.pcp')
+sink(climFile, type=c("output"), append = T)
+write(tmp_header,climFile,sep = "\n",append=T)
+write(tmp_header1,climFile,sep = "\n",append=T)
+write(DF,climFile,sep = "\n",append=T)
+sink()
+
+
+
+
+
 
 return(list(FUT_CLIM_WY))  
 
