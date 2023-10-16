@@ -5,13 +5,15 @@ Folder structure should look like
 Main Folder
 Scripts.R
 	
-	Baseline (is TxtInOut)
+	Baseline (original TxtInOut)
 	data (potential delete)
 	Scenarios
-		CNRM (is TxtInOut)
-		hist (is TxtInOut)
-		IPSL-CM5A-MR (is TxtInOut)
-		MIROC5 (is TxtInOut)
+		hyd-sed-lte.cha (edited mgt file, copied into userClimScen and hist)
+		hydrology.hyd (edited mgt file, copied into userClimScen and hist)
+		hru-data.hru (edited mgt file, copied into userClimScen and hist)
+		userClimScen/  --> user climate data + mgt changes
+		userClimScen_baseline/ --> historical (1986-2019)
+		hist/ --> mgt changes (climate = 2013-2020)
 	www
 	UW Climate Data
 		CNRM
