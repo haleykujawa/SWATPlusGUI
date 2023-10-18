@@ -1,4 +1,4 @@
-#GUI for OWC-SWAT+
+# GUI for OWC-SWAT+
 # Test if I can push changes to the remote repository
 
 library(shiny)
@@ -44,7 +44,6 @@ rotations <- read.csv("data/LumAreaSummary.csv")
 baseline_data_avg<-read.csv("data/baseline_data_avg.csv")
 
 
-baseline_dir<- paste0(getwd(),"/Baseline")
 scenario_dir <- paste0(getwd(),"/Scenarios")
 
 
@@ -74,59 +73,79 @@ ui <- fluidPage(
                    
                 tabsetPanel(
                      tabPanel("Management and conservation practices",br(),
-                                strong('Total rate of all seven management scenarios needs to add up to 100%'),br(),
-                                strong('Rate of buffers + grassed waterways on each management scenario cannot total greater than 100%'), 
-                                p('e.g. buffers 50% & grassed waterways 50% = OK, buffers = 100% & grassed waterways = 100% = model will crash'),
-                                p('To calculate an even rate on a subset of scenarios for grassed waterways (grww) or vegetated buffers, use the following equation:'),
-                                p('Input rate = desired total rate of buffers or grww on cropland (percent) x (1 / fraction of total cropland to have buffer or grww on (decimal percent)) '),
-                              br(),
-                   #management widgets       
-                   fluidRow(column(3,numericInput("CSFT", label = "Corn Bean - Full Tillage", value = 21)), 
-                            column(3,br(),textOutput("CSFT_ratechange")),
-                            column(3,numericInput("CSFT_B", label = "Vegetated buffer rate", value = 0)),
-                            column(3,numericInput("CSFT_GW", label = "Grassed waterway rate", value = 0))),
-                   
-                   hr(style="border-color: silver;"),
-                   
-                   fluidRow(column(3,numericInput("CSNT", label = "Corn Bean - No Till", value = 40)),
-                            column(3,br(),textOutput("CSNT_ratechange")),
-                            column(3,numericInput("CSNT_B", label = "Vegetated buffer rate", value = 44)),
-                            column(3,numericInput("CSNT_GW", label = "Grassed waterway rate", value = 26))),
-                   
-                   hr(style="border-color: silver;"),
-                   
-                   fluidRow(column(3,numericInput("CSRot", label = "Corn Bean - Rotational No Till", value = 15)),
-                            column(3,br(),textOutput("CSRot_ratechange")),
-                            column(3,numericInput("CSRot_B", label = "Vegetated buffer rate", value = 44)),
-                            column(3,numericInput("CSRot_GW", label = "Grassed waterway rate", value = 26))),
-                   
-                   hr(style="border-color: silver;"),
-                   
-                   fluidRow(column(3,numericInput("CSRT", label = "Corn Bean - Reduced Till", value = 4)),
-                            column(3,br(),textOutput("CSRT_ratechange")),
-                            column(3,numericInput("CSRT_B", label = "Vegetated buffer rate", value = 44)),
-                            column(3,numericInput("CSRT_GW", label = "Grassed waterway rate", value = 26))),
-                   
-                   hr(style="border-color: silver;"),
-                   
-                   fluidRow(column(3,numericInput("CSNTcc", label = "Corn Bean - No Till with rye cover crop", value = 10)),
-                            column(3,br(),textOutput("CSNTcc_ratechange")),
-                            column(3,numericInput("CSNTcc_B", label = "Vegetated buffer rate", value = 44)),
-                            column(3,numericInput("CSNTcc_GW", label = "Grassed waterway rate", value = 26))),
-                   
-                   hr(style="border-color: silver;"),
-                   
-                   fluidRow(column(3,numericInput("CSWS", label = "Corn Bean Wheat /Double crop bean", value = 9)),
-                            column(3,br(),textOutput("CSWS_ratechange")),
-                            column(3,numericInput("CSWS_B", label = "Vegetated buffer rate", value = 44)),
-                            column(3,numericInput("CSWS_GW", label = "Grassed waterway rate", value = 26))),
-                   
-                   hr(style="border-color: silver;"),
-                   
-                   fluidRow(column(3,numericInput("CSWcc", label = "Corn Bean Wheat /rye cover crop", value = 1)),
-                            column(3,br(),textOutput("CSWcc_ratechange")),
-                            column(3,numericInput("CSWcc_B", label = "Vegetated buffer rate", value = 44)),
-                            column(3,numericInput("CSWcc_GW", label = "Grassed waterway rate", value = 26))),
+                              
+                              fluidRow(column(6,numericInput("cc", label = "Rye cover crop", value = 10)),
+                                       column(6,br(),textOutput("cc_rate_change"))),
+                              
+                              hr(style="border-color: silver;"),
+                              
+                              fluidRow(column(6,numericInput("vfs", label = "Vegetated buffer rate", value = 35)),
+                                       column(6,br(),textOutput("vfs_rate_change"))),
+                              
+                              hr(style="border-color: silver;"),
+                              
+                              fluidRow(column(6,numericInput("grww", label = "Grassed water way rate", value = 21)),
+                                       column(6,br(),textOutput("grww_rate_change"))),
+
+                              
+                              
+                              
+                              
+                  
+                              
+                   #              strong('Total rate of all seven management scenarios needs to add up to 100%'),br(),
+                   #              strong('Rate of buffers + grassed waterways on each management scenario cannot total greater than 100%'), 
+                   #              p('e.g. buffers 50% & grassed waterways 50% = OK, buffers = 100% & grassed waterways = 100% = model will crash'),
+                   #              p('To calculate an even rate on a subset of scenarios for grassed waterways (grww) or vegetated buffers, use the following equation:'),
+                   #              p('Input rate = desired total rate of buffers or grww on cropland (percent) x (1 / fraction of total cropland to have buffer or grww on (decimal percent)) '),
+                   #            br(),
+                   # #management widgets       
+                   # fluidRow(column(3,numericInput("CSFT", label = "Corn Bean - Full Tillage", value = 21)), 
+                   #          column(3,br(),textOutput("CSFT_ratechange")),
+                   #          column(3,numericInput("CSFT_B", label = "Vegetated buffer rate", value = 0)),
+                   #          column(3,numericInput("CSFT_GW", label = "Grassed waterway rate", value = 0))),
+                   # 
+                   # hr(style="border-color: silver;"),
+                   # 
+                   # fluidRow(column(3,numericInput("CSNT", label = "Corn Bean - No Till", value = 40)),
+                   #          column(3,br(),textOutput("CSNT_ratechange")),
+                   #          column(3,numericInput("CSNT_B", label = "Vegetated buffer rate", value = 44)),
+                   #          column(3,numericInput("CSNT_GW", label = "Grassed waterway rate", value = 26))),
+                   # 
+                   # hr(style="border-color: silver;"),
+                   # 
+                   # fluidRow(column(3,numericInput("CSRot", label = "Corn Bean - Rotational No Till", value = 15)),
+                   #          column(3,br(),textOutput("CSRot_ratechange")),
+                   #          column(3,numericInput("CSRot_B", label = "Vegetated buffer rate", value = 44)),
+                   #          column(3,numericInput("CSRot_GW", label = "Grassed waterway rate", value = 26))),
+                   # 
+                   # hr(style="border-color: silver;"),
+                   # 
+                   # fluidRow(column(3,numericInput("CSRT", label = "Corn Bean - Reduced Till", value = 4)),
+                   #          column(3,br(),textOutput("CSRT_ratechange")),
+                   #          column(3,numericInput("CSRT_B", label = "Vegetated buffer rate", value = 44)),
+                   #          column(3,numericInput("CSRT_GW", label = "Grassed waterway rate", value = 26))),
+                   # 
+                   # hr(style="border-color: silver;"),
+                   # 
+                   # fluidRow(column(3,numericInput("CSNTcc", label = "Corn Bean - No Till with rye cover crop", value = 10)),
+                   #          column(3,br(),textOutput("CSNTcc_ratechange")),
+                   #          column(3,numericInput("CSNTcc_B", label = "Vegetated buffer rate", value = 44)),
+                   #          column(3,numericInput("CSNTcc_GW", label = "Grassed waterway rate", value = 26))),
+                   # 
+                   # hr(style="border-color: silver;"),
+                   # 
+                   # fluidRow(column(3,numericInput("CSWS", label = "Corn Bean Wheat /Double crop bean", value = 9)),
+                   #          column(3,br(),textOutput("CSWS_ratechange")),
+                   #          column(3,numericInput("CSWS_B", label = "Vegetated buffer rate", value = 44)),
+                   #          column(3,numericInput("CSWS_GW", label = "Grassed waterway rate", value = 26))),
+                   # 
+                   # hr(style="border-color: silver;"),
+                   # 
+                   # fluidRow(column(3,numericInput("CSWcc", label = "Corn Bean Wheat /rye cover crop", value = 1)),
+                   #          column(3,br(),textOutput("CSWcc_ratechange")),
+                   #          column(3,numericInput("CSWcc_B", label = "Vegetated buffer rate", value = 44)),
+                   #          column(3,numericInput("CSWcc_GW", label = "Grassed waterway rate", value = 26))),
         
                    
                    # h5("Baseline rates of management:"),
@@ -380,13 +399,18 @@ server <- function(input, output, session) {
      paste0("Management rate input is ", input$CSFT+input$CSNT+input$CSRT+input$CSRot+input$CSNTcc+input$CSWS+input$CSWcc, "%, ready to run!")})
   
   # rate change
-  output$CSFT_ratechange<-renderText({paste0("Change from 21% to ", input$CSFT, "% (change ",input$CSFT-21 ,"%)")})
-  output$CSNT_ratechange<-renderText({paste0("Change from 40% to ", input$CSNT, "% (change ",input$CSNT-40 ,"%)")})
-  output$CSRot_ratechange<-renderText({paste0("Change from 15% to ", input$CSRot, "% (change ",input$CSRot-15 ,"%)")})
-  output$CSRT_ratechange<-renderText({paste0("Change from 4% to ", input$CSRT, "% (change ",input$CSRT-4 ,"%)")})
-  output$CSNTcc_ratechange<-renderText({paste0("Change from 10% to ", input$CSNTcc, "% (change ",input$CSNTcc-10 ,"%)")})
-  output$CSWS_ratechange<-renderText({paste0("Change from 9% to ", input$CSWS, "% (change ",input$CSWS-9 ,"%)")})
-  output$CSWcc_ratechange<-renderText({paste0("Change from 1% to ", input$CSWcc, "% (change ",input$CSWcc-1 ,"%)")})
+  # output$CSFT_ratechange<-renderText({paste0("Change from 21% to ", input$CSFT, "% (change ",input$CSFT-21 ,"%)")})
+  # output$CSNT_ratechange<-renderText({paste0("Change from 40% to ", input$CSNT, "% (change ",input$CSNT-40 ,"%)")})
+  # output$CSRot_ratechange<-renderText({paste0("Change from 15% to ", input$CSRot, "% (change ",input$CSRot-15 ,"%)")})
+  # output$CSRT_ratechange<-renderText({paste0("Change from 4% to ", input$CSRT, "% (change ",input$CSRT-4 ,"%)")})
+  # output$CSNTcc_ratechange<-renderText({paste0("Change from 10% to ", input$CSNTcc, "% (change ",input$CSNTcc-10 ,"%)")})
+  # output$CSWS_ratechange<-renderText({paste0("Change from 9% to ", input$CSWS, "% (change ",input$CSWS-9 ,"%)")})
+  # output$CSWcc_ratechange<-renderText({paste0("Change from 1% to ", input$CSWcc, "% (change ",input$CSWcc-1 ,"%)")})
+  
+  output$cc_rate_change<-renderText({paste0("Change from 10% to ", input$cc, "% (change ",input$cc-10 ,"%)")})
+  output$vfs_rate_change<-renderText({paste0("Change from 35% to ", input$vfs, "% (change ",input$vfs-35 ,"%)")})
+  output$grww_rate_change<-renderText({paste0("Change from 21% to ", input$grww, "% (change ",input$grww-21 ,"%)")})
+  
   
   
   scenario_buff_rate<-reactive({round(input$CSFT*input$CSFT_B/100 +input$CSNT*input$CSNT_B/100+ input$CSRT*input$CSRT_B/100+ input$CSRot*input$CSRot_B/100+ input$CSNTcc*input$CSNTcc_B/100 +input$CSWS*input$CSWS_B/100 +input$CSWcc*input$CSWcc_B/100)})

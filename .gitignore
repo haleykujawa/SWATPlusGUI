@@ -6,5 +6,48 @@
 Baseline/
 Scenario/
 data/
+Extend Climate/
+
 *.Rproj
 TestShinyUI.R
+NewBaseline.R
+InstallPackages.R
+
+
+shinyShortcut.vbs
+.shiny_run/
+
+# random files
+testingfunctioninputs.txt
+CompareClim_2013-2020.png
+CompareClim_2013-2020_all.png
+CompareClim_2013-2020_annual.png
+CompareClim_2013-2020_daily.png
+CompareClim_2013-2020_monthly.png
+CompareClimateOutput.xlsx
+ChangeGWrate.xlsx
+
+
+Scenarios/
+#Scenarios/MRI-CGCM
+#Scenarios/MIROC
+#Scenarios/IPSL
+#Scenarios/GFDL
+#Scenarios/CNRM
+#Scenarios/ACCESS
+#Scenarios/.Rhistory
+#Scenarios/mgt_check_baseline.csv
+#Scenarios/mgt_check.csv
+
+# These files are copied from the baseline folder and if mgt changes are made edited in the Scenarios directory
+# then copied into userClimScen and hist
+Scenarios/hyd-sed-lte.cha
+Scenarios/hydrology.hyd
+Scenarios/hru-data.hru
+Scenarios/*.png
+
+UW Climate Data/
+
+
+
+
