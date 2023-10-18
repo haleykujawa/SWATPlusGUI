@@ -73,19 +73,37 @@ ui <- fluidPage(
                    
                 tabsetPanel(
                      tabPanel("Management and conservation practices",br(),
+                              p('Percent of practice on row-crop lands. All inputs must be between 0-100'),
                               
                               fluidRow(column(6,numericInput("cc", label = "Rye cover crop", value = 10)),
                                        column(6,br(),textOutput("cc_rate_change"))),
                               
                               hr(style="border-color: silver;"),
                               
-                              fluidRow(column(6,numericInput("vfs", label = "Vegetated buffer rate", value = 35)),
+                              fluidRow(column(6,numericInput("vfs", label = "Vegetative field buffers", value = 35)),
                                        column(6,br(),textOutput("vfs_rate_change"))),
                               
                               hr(style="border-color: silver;"),
                               
-                              fluidRow(column(6,numericInput("grww", label = "Grassed water way rate", value = 21)),
+                              fluidRow(column(6,numericInput("grww", label = "Grassed water way", value = 21)),
                                        column(6,br(),textOutput("grww_rate_change"))),
+                              
+                              hr(style="border-color: silver;"),
+                              
+                              fluidRow(column(6,numericInput("notill", label = "Continuous no-tillage", value = 60)),
+                                       column(6,br(),textOutput("notill_rate_change"))),
+                              
+                              hr(style="border-color: silver;"),
+                              
+                              fluidRow(column(6,numericInput("subfert", label = "Subsurface placement", value = 21)),
+                                       column(6,br(),textOutput("subfert_rate_change"))),
+                              
+                              hr(style="border-color: silver;"),
+                              
+                              #ditch widget
+                              fluidRow(column(6,numericInput("ditch_rate", label = ("Conservation ditches"), value = 0),
+                                              p("This changes the rate of conservation ditches on streams of order 2. Changing to 100% only changes 38 km (24 mi) of stream"))) ,
+                              img(src="Stream map.png",width=5846/10,height=4133/10)
 
                               
                               
@@ -158,11 +176,7 @@ ui <- fluidPage(
                    # p("Corn Bean Wheat /rye cover crop is 1%"),
                    
 
-                   #ditch widget
-                   fluidRow(column(6,sliderInput("ditch_rate", label = h3("Conservation ditches"), min = 0, 
-                               max = 100, value = 0),
-                   p("This changes the rate of conservation ditches on streams of order 2. Changing to 100% only changes 38 km (24 mi) of stream"))) ,
-                   img(src="Stream map.png",width=5846/10,height=4133/10)
+
                    
                    
                    # actionButton("simulate", "Apply changes to management")
@@ -410,6 +424,8 @@ server <- function(input, output, session) {
   output$cc_rate_change<-renderText({paste0("Change from 10% to ", input$cc, "% (change ",input$cc-10 ,"%)")})
   output$vfs_rate_change<-renderText({paste0("Change from 35% to ", input$vfs, "% (change ",input$vfs-35 ,"%)")})
   output$grww_rate_change<-renderText({paste0("Change from 21% to ", input$grww, "% (change ",input$grww-21 ,"%)")})
+  output$notill_rate_change<-renderText({paste0("Change from 60% to ", input$notill, "% (change ",input$notill-60 ,"%)")})
+  output$subfert_rate_change<-renderText({paste0("Change from X% to ", input$subfert, "% (change ",input$subfert-0 ,"%)")})
   
   
   
