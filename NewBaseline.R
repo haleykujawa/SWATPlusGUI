@@ -113,11 +113,18 @@ hru_data$buffers[grepl('B',hru_data$lu_mgt)]<-1
 
 hru_data$tile[grepl('_t',hru_data$lu_mgt)]<-1
 
-# set lu mgt where cropland index is true to only the base management--otherwise addition of numbering for scenarios won't work
-# this should get moved to when I'm building out the scenarios in RunAllScripts... 10/19/23
-# hru_data$lu_mgt[cropland_index]<-hru_data$base_mgt[cropland_index]
+
 
 hru_data$id<-as.numeric(hru_data$id)
+
+####### create index for rotations with exisiting conservation #######
+
+hru_data<-hru_data %>% 
+  mutate(cc = NA) %>% 
+  mutate(nt = NA) %>% 
+  mutate(subfert = NA) %>% 
+  mutate(cc = replace(cc, base_mgt %in% c(50,73,51),1 )) %>% 
+  mutate(nt = replace(nt, base_mgt %in% c(40,50,63,73,41,51),1 ))
 
 ####### write hru lookup ########
 
@@ -217,7 +224,7 @@ DF_aghru<-left_join(DF,hru_data,by=c("name"))
 DF_aghru<-DF_aghru %>%
   filter(base_mgt != 'frsd' & base_mgt != 'urml' & base_mgt != 'past') %>%
   mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin) %>%
-  select("base_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","hyd_grp", "slp","tile") %>%
+  select("yr","lu_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","hyd_grp", "slp","tile") %>%
   mutate(scenario=scenario)
 
 write.csv(DF_aghru,"hru_baseline.csv",row.names=F)
@@ -358,7 +365,7 @@ DF_aghru<-left_join(DF,hru_data,by=c("name"))
 # index all mgt scenarios
 DF_aghru<-DF_aghru %>% 
   mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin) %>% 
-  select("base_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","hyd_grp", "slp","tile") %>% 
+  select("yr","lu_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","hyd_grp", "slp","tile") %>% 
   mutate(scenario=scenario)
 
 # Could use gather instead of melt
