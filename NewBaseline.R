@@ -222,8 +222,8 @@ DF_aghru<-left_join(DF,hru_data,by=c("name"))
 
 # index all mgt scenarios
 DF_aghru<-DF_aghru %>%
-  filter(base_mgt != 'frsd' & base_mgt != 'urml' & base_mgt != 'past') %>%
-  mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin) %>%
+  # filter(base_mgt != 'frsd' & base_mgt != 'urml' & base_mgt != 'past') %>%
+  mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin+tilelabp+lchlabp) %>%
   select("yr","lu_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","hyd_grp", "slp","tile") %>%
   mutate(scenario=scenario)
 
@@ -256,30 +256,15 @@ DF[,c(1:5,7:(ncol(DF)-1))]<-as.numeric(unlist(DF[,c(1:5,7:(ncol(DF)-1))]))      
 
 toc()
 
-# combine with lookup table
-DF_lookup<-left_join(DF,hru_data, by=c("unit"="id"))
 
-DF_lookup<-DF_lookup %>% 
-  # mutate(mgt=replace(mgt, grepl(paste0(c("SC_FT","CS_FT"),collapse='|'),lu_mgt), "CS_FT")) %>% 
-  # mutate(mgt=replace(mgt, grepl(paste0(c("SC_RT","CS_RT"),collapse='|'),lu_mgt), "CS_RT")) %>% 
-  # mutate(mgt=replace(mgt, grepl(paste0(c("SC_RotT","CS_RotT"),collapse='|'),lu_mgt), "CS_RotT")) %>% 
-  # mutate(mgt=replace(mgt, (grepl(paste0(c("SC_NT","CS_NT"),collapse='|'),lu_mgt) & !grepl(paste0(c("SC_NTcc","CS_NTcc"),collapse='|'),lu_mgt)), "CS_NT")) %>% 
-  # mutate(mgt=replace(mgt, grepl(paste0(c("SC_NTcc","CS_NTcc"),collapse='|'),lu_mgt), "CS_NTcc")) %>% 
-  # mutate(mgt=replace(mgt, grepl("CSWS",lu_mgt), "CSWS")) %>% 
-  # mutate(mgt=replace(mgt, grepl("CSWcc",lu_mgt), "CSWcc")) %>% 
-  filter(!(PLANTNM %in% c('rye','frsd','urbn_cool','past')))
-
-ggplot(DF_lookup,aes(x='1',y=MASS,fill=tile))+geom_boxplot()+facet_grid(PLANTNM ~ base_mgt)+ylab("plant mass (kg/ha)")+xlab("")
-ggsave("yield_by_mgt.png",last_plot(),height=200,width=400, units="mm")
 
 #convert mass to bu / acre
-DF_lookup$MASS[DF_lookup$PLANTNM=='corn']<-DF_lookup$MASS[DF_lookup$PLANTNM=='corn']/62.77
-DF_lookup$MASS[DF_lookup$PLANTNM=='soyb']<-DF_lookup$MASS[DF_lookup$PLANTNM=='soyb']/67.25
-DF_lookup$MASS[DF_lookup$PLANTNM=='wwht']<-DF_lookup$MASS[DF_lookup$PLANTNM=='wwht']/67.25
+DF$MASS[DF$PLANTNM=='corn']<-DF$MASS[DF$PLANTNM=='corn']/62.77
+DF$MASS[DF$PLANTNM=='soyb']<-DF$MASS[DF$PLANTNM=='soyb']/67.25
+DF$MASS[DF$PLANTNM=='wwht']<-DF$MASS[DF$PLANTNM=='wwht']/67.25
 
-DF_lookup$scenario<-'baseline'
 
-write.csv(DF_lookup,file="crop_yield_baseline.csv",row.names=F)
+write.csv(DF,file="crop_yield_baseline.csv",row.names=F)
 
 ##### Climate scenario ######
 
@@ -364,7 +349,7 @@ DF_aghru<-left_join(DF,hru_data,by=c("name"))
 
 # index all mgt scenarios
 DF_aghru<-DF_aghru %>% 
-  mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin) %>% 
+  mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin+tilelabp+lchlabp) %>% 
   select("yr","lu_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","hyd_grp", "slp","tile") %>% 
   mutate(scenario=scenario)
 
