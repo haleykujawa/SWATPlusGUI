@@ -1,6 +1,4 @@
-RunAllScripts_SWATv60.5.2<-function(scenario_dir,SelectClimate,stream_rate,CSFT,CSNT,CSRT,CSRot,CSNTcc,CSWS,CSWcc,
-                                    CSFT_B,CSNT_B,CSRT_B,CSRot_B,CSNTcc_B,CSWS_B,CSWcc_B,
-                                    CSFT_GW,CSNT_GW,CSRT_GW,CSRot_GW,CSNTcc_GW,CSWS_GW,CSWcc_GW){
+RunAllScripts_SWATv60.5.2<-function(scenario_dir,SelectClimate,stream_rate,cc_rate,subfert_rate,notill_rate,vfs_rate){
 
 #if going at add changing management into this file, maybe also add copying over the baseline directory here
 print('im here')
@@ -19,9 +17,9 @@ if (is.null(SelectClimate)){
  stop('No climate data selected') 
 }
 
-if (CSFT+CSNT+CSRT+CSRot+CSNTcc+CSWS+CSWcc > 100 | CSFT+CSNT+CSRT+CSRot+CSNTcc+CSWS+CSWcc < 100){
-  stop('Management rates do not total 100%')
-}
+# if (CSFT+CSNT+CSRT+CSRot+CSNTcc+CSWS+CSWcc > 100 | CSFT+CSNT+CSRT+CSRot+CSNTcc+CSWS+CSWcc < 100){
+#   stop('Management rates do not total 100%')
+# }
 
 # add error for buffers + grww?
 
@@ -46,7 +44,7 @@ baseline <- paste0(here("Baseline"))
   
  ########## Copy over baseline files ################################################################
   file.copy(from = file.path(getwd(),'Baseline',mgt_files),   # Copy files
-            to = file.path(scenario_dir,mgt_files))
+            to = file.path(scenario_dir,mgt_files),overwrite = T)
   
   
  ########## Rewrite all input files if changes made from baseline ###################################
@@ -243,334 +241,455 @@ baseline <- paste0(here("Baseline"))
   
   ########################### CHANGE MANAGEMENT ######################################################
   
+  ##### read hru lookup ######
+  hru_data<-read.csv(here('Baseline','hru_lookup.csv'))
   
-  ########################## CONVERT MANAGEMENT RATES TO DECIMAL PERCENT ##############
-  # CSFT<-CSFT/100
-  # CSNT<-CSNT/100
-  # CSRT<-CSRT/100
-  # CSRot<-CSRot/100
-  # CSNTcc<-CSNTcc/100
-  # CSWS<-CSWS/100
-  # CSWcc<-CSWcc/100
-  
-  mgt<-data.frame(matrix(nrow=12,ncol=4))
-  colnames(mgt)<-c("name","rate","vfs_rate","grww_rate")
-  
-  mgt$name<-c("CS_FT","CS_RT","CS_RotT","CS_NT","CS_NTcc","CSWS","CSWcc","SC_FT","SC_RT","SC_RotT","SC_NT","SC_NTcc")
-  # don't know if I need all this, could just append the base name
-  # mgt$name_t<-c("CS_FT_t","CS_RT_t","CS_RotT_t","CS_NT_t","CS_NTcc_t","CSWS_t","CSWcc_t", 
-  # "SC_FT_t","SC_RT_t","SC_RotT_t","SC_NT_t","SC_NTcc_t")
-  
-  #mgt
-  mgt$rate[mgt$name=="CS_FT"]<-(CSFT/2)/100
-  mgt$rate[mgt$name=="SC_FT"]<-(CSFT/2)/100
-  
-  mgt$rate[mgt$name=="CS_RT"]<-(CSRT/2)/100
-  mgt$rate[mgt$name=="SC_RT"]<-(CSRT/2)/100
-  
-  mgt$rate[mgt$name=="CS_RotT"]<-(CSRot/2)/100
-  mgt$rate[mgt$name=="SC_RotT"]<-(CSRot/2)/100
-  
-  mgt$rate[mgt$name=="CS_NT"]<-(CSNT/2)/100
-  mgt$rate[mgt$name=="SC_NT"]<-(CSNT/2)/100
-  
-  mgt$rate[mgt$name=="CS_NTcc"]<-(CSNTcc/2)/100
-  mgt$rate[mgt$name=="SC_NTcc"]<-(CSNTcc/2)/100
-  
-  mgt$rate[mgt$name=="CSWS"]<-(CSWS)/100
-  
-  mgt$rate[mgt$name=="CSWcc"]<-(CSWcc)/100
-  
-  #buffers
-  #remove dividing by 2 bc it's halving the total rate
-  mgt$vfs_rate[mgt$name=="CS_FT"]<-(CSFT_B)/100
-  mgt$vfs_rate[mgt$name=="SC_FT"]<-(CSFT_B)/100
-  
-  mgt$vfs_rate[mgt$name=="CS_RT"]<-(CSRT_B)/100
-  mgt$vfs_rate[mgt$name=="SC_RT"]<-(CSRT_B)/100
-  
-  mgt$vfs_rate[mgt$name=="CS_RotT"]<-(CSRot_B)/100
-  mgt$vfs_rate[mgt$name=="SC_RotT"]<-(CSRot_B)/100
-  
-  mgt$vfs_rate[mgt$name=="CS_NT"]<-(CSNT_B)/100
-  mgt$vfs_rate[mgt$name=="SC_NT"]<-(CSNT_B)/100
-  
-  mgt$vfs_rate[mgt$name=="CS_NTcc"]<-(CSNTcc_B)/100
-  mgt$vfs_rate[mgt$name=="SC_NTcc"]<-(CSNTcc_B)/100
-  
-  mgt$vfs_rate[mgt$name=="CSWS"]<-(CSWS_B)/100
-  
-  mgt$vfs_rate[mgt$name=="CSWcc"]<-(CSWcc_B)/100
-  
-  #grassed waterways
-  mgt$grww_rate[mgt$name=="CS_FT"]<-(CSFT_GW)/100
-  mgt$grww_rate[mgt$name=="SC_FT"]<-(CSFT_GW)/100
-  
-  mgt$grww_rate[mgt$name=="CS_RT"]<-(CSRT_GW)/100
-  mgt$grww_rate[mgt$name=="SC_RT"]<-(CSRT_GW)/100
-  
-  mgt$grww_rate[mgt$name=="CS_RotT"]<-(CSRot_GW)/100
-  mgt$grww_rate[mgt$name=="SC_RotT"]<-(CSRot_GW)/100
-  
-  mgt$grww_rate[mgt$name=="CS_NT"]<-(CSNT_GW)/100
-  mgt$grww_rate[mgt$name=="SC_NT"]<-(CSNT_GW)/100
-  
-  mgt$grww_rate[mgt$name=="CS_NTcc"]<-(CSNTcc_GW)/100
-  mgt$grww_rate[mgt$name=="SC_NTcc"]<-(CSNTcc_GW)/100
-  
-  mgt$grww_rate[mgt$name=="CSWS"]<-(CSWS_GW)/100
-  
-  mgt$grww_rate[mgt$name=="CSWcc"]<-(CSWcc_GW)/100
-  
-  #remove rows where mgt rate is 0
-  mgt<-mgt[mgt$rate > 0,]
-  
-  ############### READ IN HRU-DATA ##########################
-  setwd(baseline)
-  tmp <- file('hru-data.hru')
-  open(tmp, "r") #read
-  
-  #read past headerline and save to rewrite the file
-  topOfFile<-readLines(tmp, n = 2) 
-  
-  #read file 
-  data1<-readLines(tmp, n = -1)
-  
-  close(tmp)
-  
-  #read by spacing 
-  id<-substr(data1, 1,8)
-  name<-substr(data1, 9,17)
-  topo<-substr(data1, 18,44)
-  hydro<-substr(data1, 45,62)
-  soil<-substr(data1, 63,80)
-  lu_mgt<-substr(data1, 82,98)
-  soil_plant_init<-substr(data1, 100,116)
-  surf_stor<-substr(data1, 118,134)
-  snow<-substr(data1, 136,152)
-  field<-substr(data1, 154,170)
-  
-  hru_data<-data.frame(id,name,topo,hydro,soil,lu_mgt,soil_plant_init,surf_stor,snow,field)
-  
-  ################## READ IN SOILS DATA ###############################
-  #setwd('..')
-  SSURGO<-read.table("SSURGO.txt",header=T,sep="\t")
-  # currently I only need hydr grp and muid
-  SSURGO<-SSURGO[,c(2,6)]
-  colnames(hru_data)[5]<-"muid"
-  hru_data$muid<-as.integer(hru_data$muid)
-  
-  hru_data<-left_join(hru_data,SSURGO,by="muid")
+
+  # set lu mgt where cropland index is true to only the base management--otherwise addition of numbering for scenarios won't work
+  cropland_index<-grepl(paste(c('10','20','30','40','50','63','73','11','21','31','41','51'),collapse='|'),hru_data$lu_mgt)
+  hru_data$lu_mgt[cropland_index]<-hru_data$base_mgt[cropland_index]
   
   
-  ################# READ IN HRU AREA ##################################
-  
-  ##Pull area of each hru from hru.con
-  tmp <- file('hru.con')
-  open(tmp, "r") #read
-  readLines(tmp, n = 2) 
-  
-  HRUarea<-readLines(tmp, n = -1) 
-  HRUarea<-tibble(substr(HRUarea,11,17),substr(HRUarea,37,50)) # space 44-50 to 37-50, fixed 9/14/23
-  colnames(HRUarea)<-c("name","area_ha")
-  
-  close(tmp)
-  
-  #remove spaces so the name characters match
-  hru_data$name<-str_replace_all(hru_data$name, fixed(" "), "")
-  HRUarea$name<-str_replace_all(HRUarea$name, fixed(" "), "")
-  
-  hru_data<-left_join(hru_data,HRUarea,by="name")
-  hru_data$area_ha<-as.numeric(hru_data$area_ha)
-  
-  #total cropland area
-  cropland_area<-sum(hru_data$area_ha[grepl("corn_lum",hru_data$lu_mgt) | grepl("soyb_lum",hru_data$lu_mgt) | grepl(paste(c("CS","SC"),collapse="|"),hru_data$lu_mgt)])
-  print(paste("cropland area is", cropland_area, "ha")) #testing
-  ################# READ IN HRU SLOPES ###############################
-  
-  ##Pull slope of each hru from topography.hyd
-  tmp <- file('topography.hyd')
-  open(tmp, "r") #read
-  readLines(tmp, n = 2) 
-  
-  HRUslp<-readLines(tmp, n = -1) 
-  HRUslp<-tibble(substr(HRUslp,1,11),substr(HRUslp,24,32))
-  colnames(HRUslp)<-c("topo","slp")
   
   
-  hru_data$topo <- lapply(hru_data$topo, str_trim) # trim white space 
-  hru_data$topo<-unlist(hru_data$topo)
-  hru_data<-left_join(hru_data,HRUslp,by="topo")
-  hru_data$slp<-as.numeric(hru_data$slp)
+  ##### FUNCTION FOR CHANGING MANAGEMENT #######
   
-  close(tmp)
+ChangeMgt<-function(hru_data, name,  num, scenario_rate){
+  # hru lookup table, name of practice (cc, nt, ...), numeric identifier, rate of implementation on cropland
   
-  ################# EDIT HRU DATA #####################################
+  # sum exisiting area of cropland with practice
+  exisiting_rate<-sum(hru_data$area[!is.na(hru_data[[name]]) ])/3840.16 # 3840.16 = total row crop area
   
-  #replace all data with a generic filler
-  hru_data$lu_mgt[grepl(paste(c("CS","SC","corn_lum","soyb_lum"),collapse="|"),hru_data$lu_mgt)]<-"rowcrop_lum"
+  # increase in percentage points based on user input
+  add_rate=(scenario_rate/100)-exisiting_rate 
   
-  ###### loop for base mgt #################################################
+  # Index row crop hrus without the practice for random selection
+  IndexVal<-is.na(hru_data[[name]]) & cropland_index  
   
-  for(mgt_nm in mgt$name[-length(mgt$name)]){
+  
+  # use change HRU function to get indices of where practice should be
+  ind<-ChangeHRU(hru_data , IndexVal , 3840.16 , add_rate , hru_data$area_ha) # returns row index as numbers, same as the id column
+  
+  if (!is.na(num)){
     
-    rt<-mgt$rate[mgt$name == mgt_nm]
-    if (rt > 0){
-      IndexVal<-grepl("^rowcrop_lum$",hru_data$lu_mgt)
-      hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , cropland_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t")
-    }
+  # add numeric code to add practice to mgt rotation if mgt change, otherwise, 
+  # change index from NA to 1 to add practice to landuse table
+    
+  hru_data$lu_mgt[ind]<-paste0(hru_data$lu_mgt[ind], num)
+  
+  #double check the final rate
+  final_rate<-(sum(hru_data$area[!is.na(hru_data[[name]]) ]) + sum(hru_data$area[ind]) ) /3840.16
+  
+  }else{
+  
+  # add buffers
+  hru_data[[name]][ind]<-1
+  
+  final_rate<-(sum(hru_data$area[!is.na(hru_data[[name]]) ]) ) /3840.16
     
   }
   
-  #replace remaining with the last mgt rotation or the loop will hang
-  mgt_nm<-mgt$name[length(mgt$name)]
-  rt<-mgt$rate[mgt$name == mgt_nm]
+
   
-  if (rt > 0){
-    IndexVal<-grepl("^rowcrop_lum$",hru_data$lu_mgt)
-    hru_data$lu_mgt[IndexVal]<-paste0(mgt_nm,"_t")
+  #return the edited hru lookup table and the final implementation rate
+  return(list(hru_data,c(paste('the final rate is ', final_rate*100))))
+  
+}
+  
+  
+  
+
+  # cover crops
+  if (cc_rate != 10){
+    New_outputs<-ChangeMgt(hru_data,'cc','2',cc_rate)
+
+    hru_data<-New_outputs[[1]]
+    output_rate<-New_outputs[[2]]
+    print(output_rate)
   }
-  ##### add grww ##########################################################
-  for(mgt_nm in mgt$name[-length(mgt$name)]){
+  
+  # sub fert
+  if (subfert_rate != 0){
+    New_outputs<-ChangeMgt(hru_data,'subfert','4',subfert_rate)
     
-    if (mgt$rate[mgt$name == mgt_nm] > 0){
-      rt<-mgt$grww_rate[mgt$name == mgt_nm]
-      if (rt > 0){ #prevent from adding to very small fields
-        
-        IndexVal<-grepl(paste0("^",mgt_nm,"_t$"),hru_data$lu_mgt)
-        mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
-        hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t_G") 
-        
-      }
-    }
-  }
+    hru_data<-New_outputs[[1]]
+    output_rate<-New_outputs[[2]]
+    print(output_rate)
+  } 
   
-  #replace remaining with the last mgt rotation or the loop will hang
-  mgt_nm<-mgt$name[length(mgt$name)]
-  
-  if(mgt$rate[mgt$name == mgt_nm] > 0){
+
+  # no till
+  if (notill_rate != 60){
+    New_outputs<-ChangeMgt(hru_data,'nt','1',notill_rate)
     
-    rt<-mgt$grww_rate[mgt$name == mgt_nm]
+    hru_data<-New_outputs[[1]]
+    output_rate<-New_outputs[[2]]
+    print(output_rate)
+  } 
+  
+  
+  # buffers
+  if (vfs_rate != 35){
+    New_outputs<-ChangeMgt(hru_data,'buffers',NA,vfs_rate)
     
-    if (rt > 0){
-      IndexVal<-grepl(paste0("^",mgt_nm,"_t$"),hru_data$lu_mgt)
-      mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
-      hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t_G") 
-    } 
-  }
-  # add LS, MS, or HS based on slope
-  IndexVal<-(grepl("_G",hru_data$lu_mgt) & (hru_data$slp <=  0.02))
-  hru_data$lu_mgt[IndexVal]<-paste0(hru_data$lu_mgt[IndexVal],"L") # Low slope buffers #
-  
-  #medium
-  IndexVal<-(grepl("_G",hru_data$lu_mgt) & (0.02 < hru_data$slp & hru_data$slp <=  0.08))
-  hru_data$lu_mgt[IndexVal]<-paste0(hru_data$lu_mgt[IndexVal],"M") # Medium slope buffers #
-  
-  #high
-  IndexVal<-(grepl("_G",hru_data$lu_mgt) & (0.08 < hru_data$slp))
-  hru_data$lu_mgt[IndexVal]<-paste0(hru_data$lu_mgt[IndexVal],"H") # High slope buffers #
-  
-  ##### add buffers ##########################################################
-  for(mgt_nm in mgt$name[-length(mgt$name)]){
-    if (mgt$rate[mgt$name == mgt_nm] > 0){ #don't enter loop if no mgt scenario
-      rt<-mgt$vfs_rate[mgt$name == mgt_nm]  
-      
-      if (rt > 0){
-        IndexVal<-grepl(paste0("^",mgt_nm,"_t$"),hru_data$lu_mgt)
-        mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
-        hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t_B") 
-        
-      }
-    }
-  }
-  
-  #replace remaining with the last mgt rotation or the loop will hang
-  mgt_nm<-mgt$name[length(mgt$name)]
-  if (mgt$rate[mgt$name == mgt_nm] > 0){ 
-    rt<-mgt$vfs_rate[mgt$name == mgt_nm]
-    
-    if (rt > 0){
-      IndexVal<-grepl(paste0("^",mgt_nm,"_t$"),hru_data$lu_mgt)
-      mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
-      hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t_B") 
-    }
-  }
-  
-  ###### check buffers #################################################################
-  # mgt_check<-hru_data %>%
-  # group_by(lu_mgt) %>%
-  # summarize(value=sum(area_ha,na.rm=T))
-  
-  # mgt_check$percent<-round(mgt_check$value*100/cropland_area,2)
-  
-  # output_buffer_rate<-sum(mgt_check$value[grepl("_B",mgt_check$lu_mgt)]*100/cropland_area)
-  # input_buffer_rate<-sum(mgt$rate*100*mgt$vfs_rate)
-  
-  # buffer_error<-output_buffer_rate-input_buffer_rate
-  
-  # output_grww_rate<-sum(mgt_check$value[grepl("_G",mgt_check$lu_mgt)]*100/cropland_area)
-  # input_grww_rate<-sum(mgt$rate*100*mgt$grww_rate)
-  
-  # grww_error<-output_grww_rate-input_grww_rate
-  
-  ############ REMOVE TILES #################################
-  rmtileInd<-( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
-  
-  hru_data$lu_mgt[rmtileInd]<-str_remove(hru_data$lu_mgt[rmtileInd],"_t")
-  
-  
-  ############ CHECK % OF FINAL MGT ##############################
-  
-  # mgt_check<-hru_data %>%
-  # group_by(lu_mgt) %>%
-  # summarize(value=sum(area_ha,na.rm=T))
-  
-  mgt_check<-data.frame(matrix(nrow=7,ncol=4))
-  colnames(mgt_check)<-c("rot","rate","buffers","grww")
-  mgt_check$rot<-c("CSFT","CSNT","CSRotT","CSRT","CSNTcc","CSWS","CSWcc")
-  
-  area_CSFT<-sum(hru_data$area_ha[grepl(paste(c("CS_FT","SC_FT"),collapse="|"),hru_data$lu_mgt)])
-  area_CSNT<-sum(hru_data$area_ha[grepl(paste(c("CS_NT","SC_NT"),collapse="|") ,hru_data$lu_mgt) & !grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|") ,hru_data$lu_mgt)])
-  area_CSRT<-sum(hru_data$area_ha[grepl(paste(c("CS_RT","SC_RT"),collapse="|"),hru_data$lu_mgt)])
-  area_CSRotT<-sum(hru_data$area_ha[grepl(paste(c("CS_RotT","SC_RotT"),collapse="|"),hru_data$lu_mgt)])
-  area_CSNTcc<-sum(hru_data$area_ha[grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|"),hru_data$lu_mgt)])
-  area_CSWS<-sum(hru_data$area_ha[grepl(c("CSWS"),hru_data$lu_mgt)])
-  area_CSWcc<-sum(hru_data$area_ha[grepl(c("CSWcc"),hru_data$lu_mgt)])
-  
-  mgt_check$rate[mgt_check$rot=="CSFT"]<-area_CSFT*100/cropland_area
-  mgt_check$rate[mgt_check$rot=="CSNT"]<-area_CSNT*100/cropland_area
-  mgt_check$rate[mgt_check$rot=="CSRT"]<-area_CSRT*100/cropland_area
-  mgt_check$rate[mgt_check$rot=="CSRotT"]<-area_CSRotT*100/cropland_area
-  mgt_check$rate[mgt_check$rot=="CSNTcc"]<-area_CSNTcc*100/cropland_area
-  mgt_check$rate[mgt_check$rot=="CSWS"]<-area_CSWS*100/cropland_area
-  mgt_check$rate[mgt_check$rot=="CSWcc"]<-area_CSWcc*100/cropland_area
-  
-  
-  mgt_check$buffers[mgt_check$rot=="CSFT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_FT","SC_FT"),collapse="|"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSFT
-  mgt_check$buffers[mgt_check$rot=="CSNT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_NT","SC_NT"),collapse="|") ,hru_data$lu_mgt) & !grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|") ,hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSNT
-  mgt_check$buffers[mgt_check$rot=="CSRT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_RT","SC_RT"),collapse="|"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSRT
-  mgt_check$buffers[mgt_check$rot=="CSRotT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_RotT","SC_RotT"),collapse="|"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSRotT
-  mgt_check$buffers[mgt_check$rot=="CSNTcc"]<-sum(hru_data$area_ha[grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSNTcc
-  mgt_check$buffers[mgt_check$rot=="CSWS"]<-sum(hru_data$area_ha[grepl(c("CSWS"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSWS
-  mgt_check$buffers[mgt_check$rot=="CSWcc"]<-sum(hru_data$area_ha[grepl(c("CSWcc"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSWcc
-  
-  
-  mgt_check$grww[mgt_check$rot=="CSFT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_FT","SC_FT"),collapse="|"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSFT
-  mgt_check$grww[mgt_check$rot=="CSNT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_NT","SC_NT"),collapse="|") ,hru_data$lu_mgt) & !grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|") ,hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSNT
-  mgt_check$grww[mgt_check$rot=="CSRT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_RT","SC_RT"),collapse="|"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSRT
-  mgt_check$grww[mgt_check$rot=="CSRotT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_RotT","SC_RotT"),collapse="|"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSRotT
-  mgt_check$grww[mgt_check$rot=="CSNTcc"]<-sum(hru_data$area_ha[grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSNTcc
-  mgt_check$grww[mgt_check$rot=="CSWS"]<-sum(hru_data$area_ha[grepl(c("CSWS"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSWS
-  mgt_check$grww[mgt_check$rot=="CSWcc"]<-sum(hru_data$area_ha[grepl(c("CSWcc"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSWcc
+    hru_data<-New_outputs[[1]]
+    output_rate<-New_outputs[[2]]
+    print(output_rate)
+  } 
   
   
   
-  # colnames(mgt_check)<-c("lum","area ha") 
-  write.csv(mgt_check,paste0(scenario_dir,"\\mgt_check.csv"),row.names=F) #testing
+  
+  ##### re - add existing or new physical practices to mgt code ######
+
+  addtileInd<-which((hru_data$tile==1) & !grepl("_t",hru_data$lu_mgt))
+  hru_data$lu_mgt[addtileInd]<-paste0(hru_data$lu_mgt[addtileInd],"_t")
+  
+  # add grww to any changed hrus that had grww
+  addgrwwInd<-!grepl("_G",hru_data$lu_mgt) & grepl('G',hru_data$grww)
+  
+  # add grww
+  hru_data$lu_mgt[grepl('GL',hru_data$grww) & addgrwwInd]<-paste0(hru_data$lu_mgt[grepl('GL',hru_data$grww) & addgrwwInd],'_GL')
+  hru_data$lu_mgt[grepl('GM',hru_data$grww) & addgrwwInd]<-paste0(hru_data$lu_mgt[grepl('GM',hru_data$grww) & addgrwwInd],'_GM')
+  hru_data$lu_mgt[grepl('GH',hru_data$grww) & addgrwwInd]<-paste0(hru_data$lu_mgt[grepl('GH',hru_data$grww) & addgrwwInd],'_GH')
+  
+  # add buffers to any changed HRUs
+  addbuffInd<- hru_data$buffers %in% 1
+  
+  # add buffers
+  hru_data$lu_mgt[!is.na(hru_data$buffers) & addbuffInd]<-paste0(hru_data$lu_mgt[!is.na(hru_data$buffers) & addbuffInd],'_B')
+  
+  
+  
+  # 
+  # 
+  # ########################## CONVERT MANAGEMENT RATES TO DECIMAL PERCENT ##############
+  # # CSFT<-CSFT/100
+  # # CSNT<-CSNT/100
+  # # CSRT<-CSRT/100
+  # # CSRot<-CSRot/100
+  # # CSNTcc<-CSNTcc/100
+  # # CSWS<-CSWS/100
+  # # CSWcc<-CSWcc/100
+  # 
+  # mgt<-data.frame(matrix(nrow=12,ncol=4))
+  # colnames(mgt)<-c("name","rate","vfs_rate","grww_rate")
+  # 
+  # mgt$name<-c("CS_FT","CS_RT","CS_RotT","CS_NT","CS_NTcc","CSWS","CSWcc","SC_FT","SC_RT","SC_RotT","SC_NT","SC_NTcc")
+  # # don't know if I need all this, could just append the base name
+  # # mgt$name_t<-c("CS_FT_t","CS_RT_t","CS_RotT_t","CS_NT_t","CS_NTcc_t","CSWS_t","CSWcc_t", 
+  # # "SC_FT_t","SC_RT_t","SC_RotT_t","SC_NT_t","SC_NTcc_t")
+  # 
+  # #mgt
+  # mgt$rate[mgt$name=="CS_FT"]<-(CSFT/2)/100
+  # mgt$rate[mgt$name=="SC_FT"]<-(CSFT/2)/100
+  # 
+  # mgt$rate[mgt$name=="CS_RT"]<-(CSRT/2)/100
+  # mgt$rate[mgt$name=="SC_RT"]<-(CSRT/2)/100
+  # 
+  # mgt$rate[mgt$name=="CS_RotT"]<-(CSRot/2)/100
+  # mgt$rate[mgt$name=="SC_RotT"]<-(CSRot/2)/100
+  # 
+  # mgt$rate[mgt$name=="CS_NT"]<-(CSNT/2)/100
+  # mgt$rate[mgt$name=="SC_NT"]<-(CSNT/2)/100
+  # 
+  # mgt$rate[mgt$name=="CS_NTcc"]<-(CSNTcc/2)/100
+  # mgt$rate[mgt$name=="SC_NTcc"]<-(CSNTcc/2)/100
+  # 
+  # mgt$rate[mgt$name=="CSWS"]<-(CSWS)/100
+  # 
+  # mgt$rate[mgt$name=="CSWcc"]<-(CSWcc)/100
+  # 
+  # #buffers
+  # #remove dividing by 2 bc it's halving the total rate
+  # mgt$vfs_rate[mgt$name=="CS_FT"]<-(CSFT_B)/100
+  # mgt$vfs_rate[mgt$name=="SC_FT"]<-(CSFT_B)/100
+  # 
+  # mgt$vfs_rate[mgt$name=="CS_RT"]<-(CSRT_B)/100
+  # mgt$vfs_rate[mgt$name=="SC_RT"]<-(CSRT_B)/100
+  # 
+  # mgt$vfs_rate[mgt$name=="CS_RotT"]<-(CSRot_B)/100
+  # mgt$vfs_rate[mgt$name=="SC_RotT"]<-(CSRot_B)/100
+  # 
+  # mgt$vfs_rate[mgt$name=="CS_NT"]<-(CSNT_B)/100
+  # mgt$vfs_rate[mgt$name=="SC_NT"]<-(CSNT_B)/100
+  # 
+  # mgt$vfs_rate[mgt$name=="CS_NTcc"]<-(CSNTcc_B)/100
+  # mgt$vfs_rate[mgt$name=="SC_NTcc"]<-(CSNTcc_B)/100
+  # 
+  # mgt$vfs_rate[mgt$name=="CSWS"]<-(CSWS_B)/100
+  # 
+  # mgt$vfs_rate[mgt$name=="CSWcc"]<-(CSWcc_B)/100
+  # 
+  # #grassed waterways
+  # mgt$grww_rate[mgt$name=="CS_FT"]<-(CSFT_GW)/100
+  # mgt$grww_rate[mgt$name=="SC_FT"]<-(CSFT_GW)/100
+  # 
+  # mgt$grww_rate[mgt$name=="CS_RT"]<-(CSRT_GW)/100
+  # mgt$grww_rate[mgt$name=="SC_RT"]<-(CSRT_GW)/100
+  # 
+  # mgt$grww_rate[mgt$name=="CS_RotT"]<-(CSRot_GW)/100
+  # mgt$grww_rate[mgt$name=="SC_RotT"]<-(CSRot_GW)/100
+  # 
+  # mgt$grww_rate[mgt$name=="CS_NT"]<-(CSNT_GW)/100
+  # mgt$grww_rate[mgt$name=="SC_NT"]<-(CSNT_GW)/100
+  # 
+  # mgt$grww_rate[mgt$name=="CS_NTcc"]<-(CSNTcc_GW)/100
+  # mgt$grww_rate[mgt$name=="SC_NTcc"]<-(CSNTcc_GW)/100
+  # 
+  # mgt$grww_rate[mgt$name=="CSWS"]<-(CSWS_GW)/100
+  # 
+  # mgt$grww_rate[mgt$name=="CSWcc"]<-(CSWcc_GW)/100
+  # 
+  # #remove rows where mgt rate is 0
+  # mgt<-mgt[mgt$rate > 0,]
+  # 
+  # ############### READ IN HRU-DATA ##########################
+  # setwd(baseline)
+  # tmp <- file('hru-data.hru')
+  # open(tmp, "r") #read
+  # 
+  # #read past headerline and save to rewrite the file
+  # topOfFile<-readLines(tmp, n = 2) 
+  # 
+  # #read file 
+  # data1<-readLines(tmp, n = -1)
+  # 
+  # close(tmp)
+  # 
+  # #read by spacing 
+  # id<-substr(data1, 1,8)
+  # name<-substr(data1, 9,17)
+  # topo<-substr(data1, 18,44)
+  # hydro<-substr(data1, 45,62)
+  # soil<-substr(data1, 63,80)
+  # lu_mgt<-substr(data1, 82,98)
+  # soil_plant_init<-substr(data1, 100,116)
+  # surf_stor<-substr(data1, 118,134)
+  # snow<-substr(data1, 136,152)
+  # field<-substr(data1, 154,170)
+  # 
+  # hru_data<-data.frame(id,name,topo,hydro,soil,lu_mgt,soil_plant_init,surf_stor,snow,field)
+  # 
+  # ################## READ IN SOILS DATA ###############################
+  # #setwd('..')
+  # SSURGO<-read.table("SSURGO.txt",header=T,sep="\t")
+  # # currently I only need hydr grp and muid
+  # SSURGO<-SSURGO[,c(2,6)]
+  # colnames(hru_data)[5]<-"muid"
+  # hru_data$muid<-as.integer(hru_data$muid)
+  # 
+  # hru_data<-left_join(hru_data,SSURGO,by="muid")
+  # 
+  # 
+  # ################# READ IN HRU AREA ##################################
+  # 
+  # ##Pull area of each hru from hru.con
+  # tmp <- file('hru.con')
+  # open(tmp, "r") #read
+  # readLines(tmp, n = 2) 
+  # 
+  # HRUarea<-readLines(tmp, n = -1) 
+  # HRUarea<-tibble(substr(HRUarea,11,17),substr(HRUarea,37,50)) # space 44-50 to 37-50, fixed 9/14/23
+  # colnames(HRUarea)<-c("name","area_ha")
+  # 
+  # close(tmp)
+  # 
+  # #remove spaces so the name characters match
+  # hru_data$name<-str_replace_all(hru_data$name, fixed(" "), "")
+  # HRUarea$name<-str_replace_all(HRUarea$name, fixed(" "), "")
+  # 
+  # hru_data<-left_join(hru_data,HRUarea,by="name")
+  # hru_data$area_ha<-as.numeric(hru_data$area_ha)
+  # 
+  # #total cropland area
+  # cropland_area<-sum(hru_data$area_ha[grepl("corn_lum",hru_data$lu_mgt) | grepl("soyb_lum",hru_data$lu_mgt) | grepl(paste(c("CS","SC"),collapse="|"),hru_data$lu_mgt)])
+  # print(paste("cropland area is", cropland_area, "ha")) #testing
+  # ################# READ IN HRU SLOPES ###############################
+  # 
+  # ##Pull slope of each hru from topography.hyd
+  # tmp <- file('topography.hyd')
+  # open(tmp, "r") #read
+  # readLines(tmp, n = 2) 
+  # 
+  # HRUslp<-readLines(tmp, n = -1) 
+  # HRUslp<-tibble(substr(HRUslp,1,11),substr(HRUslp,24,32))
+  # colnames(HRUslp)<-c("topo","slp")
+  # 
+  # 
+  # hru_data$topo <- lapply(hru_data$topo, str_trim) # trim white space 
+  # hru_data$topo<-unlist(hru_data$topo)
+  # hru_data<-left_join(hru_data,HRUslp,by="topo")
+  # hru_data$slp<-as.numeric(hru_data$slp)
+  # 
+  # close(tmp)
+  # 
+  # ################# EDIT HRU DATA #####################################
+  # 
+  # #replace all data with a generic filler
+  # hru_data$lu_mgt[grepl(paste(c("CS","SC","corn_lum","soyb_lum"),collapse="|"),hru_data$lu_mgt)]<-"rowcrop_lum"
+  # 
+  # ###### loop for base mgt #################################################
+  # 
+  # for(mgt_nm in mgt$name[-length(mgt$name)]){
+  #   
+  #   rt<-mgt$rate[mgt$name == mgt_nm]
+  #   if (rt > 0){
+  #     IndexVal<-grepl("^rowcrop_lum$",hru_data$lu_mgt)
+  #     hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , cropland_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t")
+  #   }
+  #   
+  # }
+  # 
+  # #replace remaining with the last mgt rotation or the loop will hang
+  # mgt_nm<-mgt$name[length(mgt$name)]
+  # rt<-mgt$rate[mgt$name == mgt_nm]
+  # 
+  # if (rt > 0){
+  #   IndexVal<-grepl("^rowcrop_lum$",hru_data$lu_mgt)
+  #   hru_data$lu_mgt[IndexVal]<-paste0(mgt_nm,"_t")
+  # }
+  # ##### add grww ##########################################################
+  # for(mgt_nm in mgt$name[-length(mgt$name)]){
+  #   
+  #   if (mgt$rate[mgt$name == mgt_nm] > 0){
+  #     rt<-mgt$grww_rate[mgt$name == mgt_nm]
+  #     if (rt > 0){ #prevent from adding to very small fields
+  #       
+  #       IndexVal<-grepl(paste0("^",mgt_nm,"_t$"),hru_data$lu_mgt)
+  #       mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
+  #       hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t_G") 
+  #       
+  #     }
+  #   }
+  # }
+  # 
+  # #replace remaining with the last mgt rotation or the loop will hang
+  # mgt_nm<-mgt$name[length(mgt$name)]
+  # 
+  # if(mgt$rate[mgt$name == mgt_nm] > 0){
+  #   
+  #   rt<-mgt$grww_rate[mgt$name == mgt_nm]
+  #   
+  #   if (rt > 0){
+  #     IndexVal<-grepl(paste0("^",mgt_nm,"_t$"),hru_data$lu_mgt)
+  #     mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
+  #     hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t_G") 
+  #   } 
+  # }
+  # # add LS, MS, or HS based on slope
+  # IndexVal<-(grepl("_G",hru_data$lu_mgt) & (hru_data$slp <=  0.02))
+  # hru_data$lu_mgt[IndexVal]<-paste0(hru_data$lu_mgt[IndexVal],"L") # Low slope buffers #
+  # 
+  # #medium
+  # IndexVal<-(grepl("_G",hru_data$lu_mgt) & (0.02 < hru_data$slp & hru_data$slp <=  0.08))
+  # hru_data$lu_mgt[IndexVal]<-paste0(hru_data$lu_mgt[IndexVal],"M") # Medium slope buffers #
+  # 
+  # #high
+  # IndexVal<-(grepl("_G",hru_data$lu_mgt) & (0.08 < hru_data$slp))
+  # hru_data$lu_mgt[IndexVal]<-paste0(hru_data$lu_mgt[IndexVal],"H") # High slope buffers #
+  # 
+  # ##### add buffers ##########################################################
+  # for(mgt_nm in mgt$name[-length(mgt$name)]){
+  #   if (mgt$rate[mgt$name == mgt_nm] > 0){ #don't enter loop if no mgt scenario
+  #     rt<-mgt$vfs_rate[mgt$name == mgt_nm]  
+  #     
+  #     if (rt > 0){
+  #       IndexVal<-grepl(paste0("^",mgt_nm,"_t$"),hru_data$lu_mgt)
+  #       mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
+  #       hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t_B") 
+  #       
+  #     }
+  #   }
+  # }
+  # 
+  # #replace remaining with the last mgt rotation or the loop will hang
+  # mgt_nm<-mgt$name[length(mgt$name)]
+  # if (mgt$rate[mgt$name == mgt_nm] > 0){ 
+  #   rt<-mgt$vfs_rate[mgt$name == mgt_nm]
+  #   
+  #   if (rt > 0){
+  #     IndexVal<-grepl(paste0("^",mgt_nm,"_t$"),hru_data$lu_mgt)
+  #     mgt_area<-cropland_area*mgt$rate[mgt$name==mgt_nm]
+  #     hru_data$lu_mgt[ChangeHRU(hru_data , IndexVal , mgt_area , rt , hru_data$area_ha)]<-paste0(mgt_nm,"_t_B") 
+  #   }
+  # }
+  # 
+  # ###### check buffers #################################################################
+  # # mgt_check<-hru_data %>%
+  # # group_by(lu_mgt) %>%
+  # # summarize(value=sum(area_ha,na.rm=T))
+  # 
+  # # mgt_check$percent<-round(mgt_check$value*100/cropland_area,2)
+  # 
+  # # output_buffer_rate<-sum(mgt_check$value[grepl("_B",mgt_check$lu_mgt)]*100/cropland_area)
+  # # input_buffer_rate<-sum(mgt$rate*100*mgt$vfs_rate)
+  # 
+  # # buffer_error<-output_buffer_rate-input_buffer_rate
+  # 
+  # # output_grww_rate<-sum(mgt_check$value[grepl("_G",mgt_check$lu_mgt)]*100/cropland_area)
+  # # input_grww_rate<-sum(mgt$rate*100*mgt$grww_rate)
+  # 
+  # # grww_error<-output_grww_rate-input_grww_rate
+  # 
+  # ############ REMOVE TILES #################################
+  # rmtileInd<-( hru_data$hyd_grp=="A" | (hru_data$hyd_grp=="B" & hru_data$slp >= 0.02))
+  # 
+  # hru_data$lu_mgt[rmtileInd]<-str_remove(hru_data$lu_mgt[rmtileInd],"_t")
+  # 
+  # 
+  # ############ CHECK % OF FINAL MGT ##############################
+  # 
+  # # mgt_check<-hru_data %>%
+  # # group_by(lu_mgt) %>%
+  # # summarize(value=sum(area_ha,na.rm=T))
+  # 
+  # mgt_check<-data.frame(matrix(nrow=7,ncol=4))
+  # colnames(mgt_check)<-c("rot","rate","buffers","grww")
+  # mgt_check$rot<-c("CSFT","CSNT","CSRotT","CSRT","CSNTcc","CSWS","CSWcc")
+  # 
+  # area_CSFT<-sum(hru_data$area_ha[grepl(paste(c("CS_FT","SC_FT"),collapse="|"),hru_data$lu_mgt)])
+  # area_CSNT<-sum(hru_data$area_ha[grepl(paste(c("CS_NT","SC_NT"),collapse="|") ,hru_data$lu_mgt) & !grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|") ,hru_data$lu_mgt)])
+  # area_CSRT<-sum(hru_data$area_ha[grepl(paste(c("CS_RT","SC_RT"),collapse="|"),hru_data$lu_mgt)])
+  # area_CSRotT<-sum(hru_data$area_ha[grepl(paste(c("CS_RotT","SC_RotT"),collapse="|"),hru_data$lu_mgt)])
+  # area_CSNTcc<-sum(hru_data$area_ha[grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|"),hru_data$lu_mgt)])
+  # area_CSWS<-sum(hru_data$area_ha[grepl(c("CSWS"),hru_data$lu_mgt)])
+  # area_CSWcc<-sum(hru_data$area_ha[grepl(c("CSWcc"),hru_data$lu_mgt)])
+  # 
+  # mgt_check$rate[mgt_check$rot=="CSFT"]<-area_CSFT*100/cropland_area
+  # mgt_check$rate[mgt_check$rot=="CSNT"]<-area_CSNT*100/cropland_area
+  # mgt_check$rate[mgt_check$rot=="CSRT"]<-area_CSRT*100/cropland_area
+  # mgt_check$rate[mgt_check$rot=="CSRotT"]<-area_CSRotT*100/cropland_area
+  # mgt_check$rate[mgt_check$rot=="CSNTcc"]<-area_CSNTcc*100/cropland_area
+  # mgt_check$rate[mgt_check$rot=="CSWS"]<-area_CSWS*100/cropland_area
+  # mgt_check$rate[mgt_check$rot=="CSWcc"]<-area_CSWcc*100/cropland_area
+  # 
+  # 
+  # mgt_check$buffers[mgt_check$rot=="CSFT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_FT","SC_FT"),collapse="|"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSFT
+  # mgt_check$buffers[mgt_check$rot=="CSNT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_NT","SC_NT"),collapse="|") ,hru_data$lu_mgt) & !grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|") ,hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSNT
+  # mgt_check$buffers[mgt_check$rot=="CSRT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_RT","SC_RT"),collapse="|"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSRT
+  # mgt_check$buffers[mgt_check$rot=="CSRotT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_RotT","SC_RotT"),collapse="|"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSRotT
+  # mgt_check$buffers[mgt_check$rot=="CSNTcc"]<-sum(hru_data$area_ha[grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSNTcc
+  # mgt_check$buffers[mgt_check$rot=="CSWS"]<-sum(hru_data$area_ha[grepl(c("CSWS"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSWS
+  # mgt_check$buffers[mgt_check$rot=="CSWcc"]<-sum(hru_data$area_ha[grepl(c("CSWcc"),hru_data$lu_mgt) & grepl("_B",hru_data$lu_mgt)])*100/area_CSWcc
+  # 
+  # 
+  # mgt_check$grww[mgt_check$rot=="CSFT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_FT","SC_FT"),collapse="|"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSFT
+  # mgt_check$grww[mgt_check$rot=="CSNT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_NT","SC_NT"),collapse="|") ,hru_data$lu_mgt) & !grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|") ,hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSNT
+  # mgt_check$grww[mgt_check$rot=="CSRT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_RT","SC_RT"),collapse="|"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSRT
+  # mgt_check$grww[mgt_check$rot=="CSRotT"]<-sum(hru_data$area_ha[grepl(paste(c("CS_RotT","SC_RotT"),collapse="|"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSRotT
+  # mgt_check$grww[mgt_check$rot=="CSNTcc"]<-sum(hru_data$area_ha[grepl(paste(c("CS_NTcc","SC_NTcc"),collapse="|"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSNTcc
+  # mgt_check$grww[mgt_check$rot=="CSWS"]<-sum(hru_data$area_ha[grepl(c("CSWS"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSWS
+  # mgt_check$grww[mgt_check$rot=="CSWcc"]<-sum(hru_data$area_ha[grepl(c("CSWcc"),hru_data$lu_mgt) & grepl("_G",hru_data$lu_mgt)])*100/area_CSWcc
+  # 
+  # 
+  # 
+  # # colnames(mgt_check)<-c("lum","area ha") 
+  # write.csv(mgt_check,paste0(scenario_dir,"\\mgt_check.csv"),row.names=F) #testing
   
   
   ############ WRITE LOOKUP TABLE FOR PLOTTING OUTPUTS ############
-  write.csv(hru_data,paste0(scenario_dir,"\\hru_lookup.csv"),row.names=F)
+  write.csv(hru_data,paste0(scenario_dir,"\\hru_lookup_scenario.csv"),row.names=F)
   
   
   ############ WRITE NEW HRU-DATA.HRU #############################
@@ -599,6 +718,7 @@ baseline <- paste0(here("Baseline"))
   #99-116 surf_stor
   #117-134 snow
   #135-152 field
+  hru_data$id<-spaceOutput(hru_data$id,9)
   hru_data$name<-spaceOutput(hru_data$name,9)
   hru_data$topo<-spaceOutput(hru_data$topo,27)
   hru_data$hydro<-spaceOutput(hru_data$hydro,18)
@@ -608,6 +728,9 @@ baseline <- paste0(here("Baseline"))
   hru_data$surf_stor<-spaceOutput(hru_data$surf_stor,18)
   hru_data$snow<-spaceOutput(hru_data$snow,18)
   hru_data$field<-spaceOutput(hru_data$field,18)
+  
+  topOfFile<-c('hru-data.hru: written by SWAT+ editor v2.0.4 on 2022-01-21 12:22
+      id  name                          topo             hydro              soil            lu_mgt   soil_plant_init         surf_stor              snow             field  ')
   
   
   setwd(scenario_dir)
@@ -669,17 +792,19 @@ baseline <- paste0(here("Baseline"))
   hru_data$perco[grepl("frsd_lum",hru_data$lu_mgt)]<-"0.95000" #stayed the same
   hru_data$perco[grepl("past_lum",hru_data$lu_mgt)]<-"0.70000" #had at 0.7
   hru_data$perco[grepl("urml_lum",hru_data$lu_mgt)]<-"0.05000"
-  hru_data$perco[grepl("CS",hru_data$lu_mgt)]<-"0.10000"
-  hru_data$perco[grepl("SC",hru_data$lu_mgt)]<-"0.10000"
+  hru_data$perco[grepl(paste(c("10","11"), collapse='|'),substr(hru_data$lu_mgt,1,2))]<-"0.10000" # CS FT
   
   #rotations with no conservation
-  hru_data$perco[grepl("NT",hru_data$lu_mgt)]<-"0.40000" #had all conservation at 0.4
-  hru_data$perco[grepl("NTcc",hru_data$lu_mgt)]<-"0.40000"
-  hru_data$perco[grepl("CSW",hru_data$lu_mgt)]<-"0.40000"
-  hru_data$perco[grepl("RT",hru_data$lu_mgt)]<-"0.20000" #these were at 0.2
-  hru_data$perco[grepl("RotT",hru_data$lu_mgt)]<-"0.20000"
+  hru_data$perco[grepl(paste(c("40","41","50","51","63","73"), collapse='|'),substr(hru_data$lu_mgt,1,2))]<-"0.40000" #had all conservation at 0.4
+  hru_data$perco[grepl(paste(c("20","21","30","31"), collapse='|'),substr(hru_data$lu_mgt,1,2))]<-"0.20000" #these were at 0.2
+  
+  
+  hru_data$perco[grepl("3",substr(hru_data$lu_mgt,3,nchar(hru_data$lu_mgt)))]<-"0.10000" # decr perco parameters for full tillage
+  hru_data$perco[grepl("1",substr(hru_data$lu_mgt,3,nchar(hru_data$lu_mgt))) ]<-"0.40000" # incr perco if changing to no-till
+
   
   DF<-hru_data[,c(1:15)]
+
   
   ################ REWRITE NEW HRU PARAMS #################################
   # convert table to characters and strip of whitespace
