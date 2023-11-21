@@ -85,28 +85,28 @@ ui <- fluidPage(
                               
                               hr(style="border-color: silver;"),
                               
-                              fluidRow(column(6,numericInput("grww", label = "Grassed water way", value = 21)),
-                                       column(6,br(),textOutput("grww_rate_change"))),
-                              
-                              hr(style="border-color: silver;"),
+                              # fluidRow(column(6,numericInput("grww", label = "Grassed water way", value = 21)),
+                              #          column(6,br(),textOutput("grww_rate_change"))),
+                              # 
+                              # hr(style="border-color: silver;"),
                               
                               fluidRow(column(6,numericInput("notill", label = "Continuous no-tillage", value = 60)),
                                        column(6,br(),textOutput("notill_rate_change"))),
                               
                               hr(style="border-color: silver;"),
                               
-                              fluidRow(column(6,numericInput("subfert", label = "Subsurface placement", value = 21)),
+                              fluidRow(column(6,numericInput("subfert", label = "Subsurface placement", value = 0)),
                                        column(6,br(),textOutput("subfert_rate_change"))),
                               
                               hr(style="border-color: silver;"),
                               
                               #ditch widget
-                              fluidRow(column(6,numericInput("ditch_rate", label = ("Conservation ditches"), value = 0),
-                                              p("This changes the rate of conservation ditches on streams of order 2. Changing to 100% only changes 38 km (24 mi) of stream"))) ,
+                              fluidRow(column(6,numericInput("ditch_rate", label = ("Conservation ditches"), value = 0)),
+                                              column(6,p("This changes the rate of conservation ditches on streams of order 2. Changing to 100% only changes 38 km (24 mi) of stream"))) ,
                               img(src="Stream map.png",width=5846/10,height=4133/10)
 
                               
-                              
+
                               
                               
                   
@@ -372,8 +372,11 @@ tabPanel("Visualize outputs",
          plotOutput("BR_plot"),
          p("Fig 1. Change between the baseline management (representative of years 2013-2020) and changes implemented in management and
            conservation practices tab"),
-         plotOutput("HRU_plot"),
-         plotOutput("yield_plot"),
+         plotOutput("HRU_per"),
+         plotOutput("HRU_abs"),
+         plotOutput("yield_per"),
+         plotOutput("yield_abs"),
+         tableOutput("yield_table"),
          h2('Results for climate and land use change'),
          plotOutput("BR_plot_clim"),
          p("Fig 1. Change between the historical climate and management (representative of years 1990-2019) and changes implemented in management and
@@ -508,14 +511,13 @@ server <- function(input, output, session) {
   text_reactive <-eventReactive( input$runswat, {
   
    showModal(modalDialog(title="Running SWAT+",tagList("Any further changes to the model will not be reflected in results tab"), footer=NULL,easyClose = T))
-   RunAllScripts_SWATv60.5.2(scenario_dir,input$SelectClimate,input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
-                             input$CSNTcc,input$CSWS,input$CSWcc,
-                             
-                             input$CSFT_B,input$CSNT_B,input$CSRT_B,input$CSRot_B,
-                             input$CSNTcc_B,input$CSWS_B,input$CSWcc_B,
-                             
-                             input$CSFT_GW,input$CSNT_GW,input$CSRT_GW,input$CSRot_GW,
-                             input$CSNTcc_GW,input$CSWS_GW,input$CSWcc_GW)
+   RunAllScripts_SWATv60.5.2(scenario_dir,
+                             input$SelectClimate,
+                             input$ditch_rate,
+                             input$cc,
+                             input$subfert,
+                             input$notill,
+                             input$vfs)
    removeModal()
    testPlot(scenario_dir,input$SelectClimate)# testGUI()
    
@@ -600,13 +602,15 @@ server <- function(input, output, session) {
   
   # Recent climate plots, 2013-2020
   output$BR_plot<-renderPlot({text_reactive()[[2]]})
-  output$HRU_plot<-renderPlot({text_reactive()[[3]]})
-  output$yield_plot<-renderPlot({text_reactive()[[4]]})
-  output$area_table<-renderTable({text_reactive()[[8]]})
+  output$HRU_per<-renderPlot({text_reactive()[[3]]})
+  output$HRU_abs<-renderPlot({text_reactive()[[4]]})
+  output$yield_per<-renderPlot({text_reactive()[[5]]})
+  output$yield_abs<-renderPlot({text_reactive()[[6]]})
+  output$yield_table<-renderTable({text_reactive()[[7]]})
   # Climate + land use change plots
-  output$BR_plot_clim<-renderPlot({text_reactive()[[5]]})
-  output$HRU_plot_clim<-renderPlot({text_reactive()[[6]]})
-  output$yield_plot_clim<-renderPlot({text_reactive()[[7]]})
+  output$BR_plot_clim<-renderPlot({text_reactive()[[8]]})
+  output$HRU_plot_clim<-renderPlot({text_reactive()[[9]]})
+  output$yield_plot_clim<-renderPlot({text_reactive()[[10]]})
   
   # This code isn't working when using text_reactive()[[]], unsure why
   # # # change to render img
