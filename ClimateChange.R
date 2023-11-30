@@ -20,7 +20,7 @@
 # Calculating daily climate needs to be removed-- can replace the recalculated WY with the WY data frame
 # that is used to replace years 4/25/23
 
-#Full seasons that are within the 1990-2019 WY are included. This excludes fall 2019
+# Full seasons that are within the 1990-2019 WY are included. This excludes fall 2019
 
 ClimateChange<-function(nyrs_LOWPCP_HIGHTMP,nyrs_HIGHPCP_AVGTMP,nyrs_AVGPCP_HIGHTMP,deltaC, deltaP){
 
@@ -218,7 +218,7 @@ WY <- data.frame(ClimateSummary_annual[,c(1:3)])
 
 WY_LOWPCP_HIGHTMP<-c()
 # Hot and dry temp
-if (nyrs_LOWPCP_HIGHTMP > 0 ){ 
+# if (nyrs_LOWPCP_HIGHTMP > 0 ){ # 11/30/23 remove this function bc if it is 0 it will just sample 0 years and nothing should change
 # WY_LOWPCP_HIGHTMP<-AnnualData %>%
 #   filter(TMP_C >= quantile(TMP_C, 0.75,na.rm=T) & TMP_C > mean(TMP_C,na.rm=T) & PCP_mm <= quantile(PCP_mm, 0.4,na.rm=T)) %>%
 #   select('WY') %>%
@@ -241,11 +241,11 @@ if (nyrs_LOWPCP_HIGHTMP < length(WY_LOWPCP_HIGHTMP)) {
   
 }
 
- }
+ # }
 
 WY_HIGHPCP_AVGTMP<-c()
 # Wet but not particularly hot
-if (nyrs_HIGHPCP_AVGTMP > 0) { 
+# if (nyrs_HIGHPCP_AVGTMP > 0) { 
 # WY_HIGHPCP_AVGTMP<-AnnualData %>%
 #   filter(TMP_C > mean(TMP_C,na.rm=T) & PCP_mm >= quantile(PCP_mm, 0.75,na.rm=T)) %>%
 #   select('WY') %>%
@@ -267,11 +267,11 @@ if (nyrs_HIGHPCP_AVGTMP < length(WY_HIGHPCP_AVGTMP)) {
   
 }
 
- }
+ # }
 
 WY_AVGPCP_HIGHTMP<-c()
 # Wet, warmer
-if (nyrs_AVGPCP_HIGHTMP > 0){
+# if (nyrs_AVGPCP_HIGHTMP > 0){
 # WY_AVGPCP_HIGHTMP<-AnnualData %>%
 #   filter(TMP_C >= quantile(TMP_C, 0.70,na.rm=T) & TMP_C > mean(TMP_C,na.rm=T) & PCP_mm >= mean(PCP_mm,na.rm=T)) %>%
 #   select('WY') %>%
@@ -295,7 +295,7 @@ if (nyrs_AVGPCP_HIGHTMP < length(WY_AVGPCP_HIGHTMP)) {
 }
 
 
- }
+ # }
 
 # Other option is to replace any years that aren't in the future scenario, replacing the coldest years first 
 WY_hist<-ClimateSummary_annual %>%
