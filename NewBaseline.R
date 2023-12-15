@@ -158,6 +158,11 @@ headers_ch<-c("jday",	"mon",	"day",	"yr",	"unit",	"gis_id",	"name",	"areaha",	"p
 headers_hru<-c("jday",	"mon",	"day",	"yr",	"unit",	"gis_id",	"name",	"sedyld_tha","sedorgn_kgha","sedorgp_kgha",
                "surqno3_kgha","lat3no3_kgha","surqsolp_kgha","usle_tons","sedmin","tileno3","lchlabp","tilelabp","satexn")
 
+headers_hru_wb<-c("jday",   "mon",   "day",    "yr",    "unit",  "gis_id",  "name", "precip", "snofall",  "snomlt",   "surq_gen", "latq", "wateryld", "perc",
+                  "et", "ecanopy",  "eplant", "esoil","surq_cont",  "cn", "sw_init","sw_final", "sw_ave", "sw_300", "sno_init", "sno_final",  "snopack",  "pet", "qtile",         
+                  "irr",  "surq_runon",  "latq_runon",    "overbank",    "surq_cha",    "surq_res", "surq_ls","latq_cha", "latq_res", "latq_ls",  "gwtranq","satex","satex_chan",   
+                  "sw_change",     "lagsurf",     "laglatq",   "lagsatex")
+
 headers_crop<-c(  "jday",   "mon",   "day",    "yr",    "unit", "PLANTNM", "MASS", "C", "N", "P")
 
 tmp <- file('channel_sd_yr.txt')
@@ -195,7 +200,7 @@ baseline_data$baseline[baseline_data$variable=="totp_kg"]<-sum(DF$solp_outkgP + 
 write.csv(baseline_data,"baseline_data_avg.csv",row.names=F)
 
 ##### Management rotations / tile plot ######################
-
+##### nutrients and sediment ######
 tmp <- file('hru_ls_yr.txt')
 open(tmp, "r") #read
 
@@ -220,11 +225,36 @@ DF[,c(1:6,8:(ncol(DF)-1))]<-as.numeric(unlist(DF[,c(1:6,8:(ncol(DF)-1))]))      
 
 DF_aghru<-left_join(DF,hru_data,by=c("name"))
 
+##### hydrology #####
+tmp <- file('hru_wb_yr.txt')
+open(tmp, "r") #read
+
+#read past headerlines
+readLines(tmp, n = 3) 
+
+
+
+###### read in simulated data columns #########
+# Calculating loss from each of the fields
+
+data<-readLines(tmp, n = -1)
+close(tmp)
+DF<-strsplit(data,split=" ")
+DF<-lapply(DF, function(z){ z[z != ""]})
+DF<-data.frame(do.call(rbind, DF)) #unlist
+colnames(DF)<-headers_hru_wb
+
+
+# DF$date<-as.Date(paste(DF$mon,DF$day,DF$yr,sep="/"), format="%m/%d/%Y")              # add date column
+DF[,c(1:6,8:(ncol(DF)-1))]<-as.numeric(unlist(DF[,c(1:6,8:(ncol(DF)-1))]))           # convert to numerics
+
+DF_aghru<-left_join(DF_aghru,DF,by=c("name","yr"))
+
 # index all mgt scenarios
 DF_aghru<-DF_aghru %>%
   # filter(base_mgt != 'frsd' & base_mgt != 'urml' & base_mgt != 'past') %>%
   mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin+tilelabp+lchlabp) %>%
-  select("yr","lu_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","hyd_grp", "slp","tile") %>%
+  select("yr","lu_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","qtile","surq_cont","perc","hyd_grp", "slp","tile") %>%
   mutate(scenario=scenario)
 
 write.csv(DF_aghru,"hru_baseline.csv",row.names=F)
@@ -323,7 +353,7 @@ write.csv(baseline_data,"baseline_data_avg.csv",row.names=F)
 # If changing management for the baseline would need to rewrite this file
 setwd(here('Scenarios','userClimScen_baseline'))
 
-
+# sediment and nutrients
 tmp <- file('hru_ls_yr.txt')
 open(tmp, "r") #read
 
@@ -346,11 +376,36 @@ DF[,c(1:6,8:(ncol(DF)-1))]<-as.numeric(unlist(DF[,c(1:6,8:(ncol(DF)-1))]))      
 
 DF_aghru<-left_join(DF,hru_data,by=c("name"))
 
+##### hydrology #####
+tmp <- file('hru_wb_yr.txt')
+open(tmp, "r") #read
+
+#read past headerlines
+readLines(tmp, n = 3) 
+
+
+
+###### read in simulated data columns #########
+# Calculating loss from each of the fields
+
+data<-readLines(tmp, n = -1)
+close(tmp)
+DF<-strsplit(data,split=" ")
+DF<-lapply(DF, function(z){ z[z != ""]})
+DF<-data.frame(do.call(rbind, DF)) #unlist
+colnames(DF)<-headers_hru_wb
+
+
+# DF$date<-as.Date(paste(DF$mon,DF$day,DF$yr,sep="/"), format="%m/%d/%Y")              # add date column
+DF[,c(1:6,8:(ncol(DF)-1))]<-as.numeric(unlist(DF[,c(1:6,8:(ncol(DF)-1))]))           # convert to numerics
+
+DF_aghru<-left_join(DF_aghru,DF,by=c("name","yr"))
+
 
 # index all mgt scenarios
 DF_aghru<-DF_aghru %>% 
   mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin+tilelabp+lchlabp) %>% 
-  select("yr","lu_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","hyd_grp", "slp","tile") %>% 
+  select("yr","lu_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","qtile","surq_cont","perc","hyd_grp", "slp","tile") %>% 
   mutate(scenario=scenario)
 
 # Could use gather instead of melt

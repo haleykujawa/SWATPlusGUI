@@ -104,18 +104,21 @@ if ('hist' %in% SelectClimate){
   
   # NewBaseline writes the *hru loss* file INTO the matching scenario folder and calls it 'hru_baseline'
   hru_loss_baseline<-read.csv("hru_baseline.csv") %>% 
-    rename("sedyld_tha_b"="sedyld_tha",
-           "tilelabp_b"="tilelabp",
-           "totp_b"   =   "totp",
-           "surqsolp_kgha_b"="surqsolp_kgha")
+    gather(variable,value,-yr,-lu_mgt,-name,-hyd_grp,-slp,-tile,-scenario)
+    # rename("sedyld_tha_b"="sedyld_tha",
+    #        "tilelabp_b"="tilelabp",
+    #        "totp_b"   =   "totp",
+    #        "surqsolp_kgha_b"="surqsolp_kgha")
   
   # baseline lookup written in Baseline folder
   hru_lookup_b<-read.csv(paste0(baseline_dir,"\\hru_lookup.csv")) %>% 
-    rename_with( .fn = function(.x){paste0("b_", .x)})
+    # rename_with( .fn = function(.x){paste0("b_", .x)})
+    rename("b_lu_mgt"="lu_mgt") %>% 
+    select(name,b_lu_mgt)
   
   # scenario lookup written in Scenario folder
   hru_lookup<-read.csv(paste0(scenario_dir,"\\hru_lookup_scenario.csv")) %>% 
-    left_join(.,hru_lookup_b,by=c("name"="b_name")) %>% 
+    left_join(.,hru_lookup_b,by=c("name")) %>% 
     mutate(changed_hru=NA) %>% 
     mutate(changed_hru=replace(changed_hru,lu_mgt != b_lu_mgt,1)) %>% 
     select(id,name,hydro,muid,lu_mgt,b_lu_mgt,hyd_grp,area_ha,slp,changed_hru,tile)
@@ -145,20 +148,51 @@ if ('hist' %in% SelectClimate){
   # DF$date<-as.Date(paste(DF$mon,DF$day,DF$yr,sep="/"), format="%m/%d/%Y")              # add date column
   DF[,c(1:6,8:(ncol(DF)-1))]<-as.numeric(unlist(DF[,c(1:6,8:(ncol(DF)-1))])) # convert to numerics
     
-  DF <- DF %>% 
-    mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin+tilelabp+lchlabp) %>% 
-    select("name" ,'yr',"sedyld_tha","tilelabp","totp","surqsolp_kgha") %>% 
-    mutate(scenario='land management scenario')
+  DF_aghru <- DF %>% 
+    mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin+tilelabp+lchlabp) 
   
-  DF_aghru<-left_join(DF,hru_lookup,by=c("name"))%>% 
-    mutate(scenario='Recent climate (2013-2020) - change landuse') 
+  
+  ##### hydrology #####
+  tmp <- file('hru_wb_yr.txt')
+  open(tmp, "r") #read
+  
+  #read past headerlines
+  readLines(tmp, n = 3) 
+  
+  
+  
+  ###### read in simulated data columns #########
+  # Calculating loss from each of the fields
+  
+  data<-readLines(tmp, n = -1)
+  close(tmp)
+  DF<-strsplit(data,split=" ")
+  DF<-lapply(DF, function(z){ z[z != ""]})
+  DF<-data.frame(do.call(rbind, DF)) #unlist
+  colnames(DF)<-headers_hru_wb
+  
+  
+  # DF$date<-as.Date(paste(DF$mon,DF$day,DF$yr,sep="/"), format="%m/%d/%Y")              # add date column
+  DF[,c(1:6,8:(ncol(DF)-1))]<-as.numeric(unlist(DF[,c(1:6,8:(ncol(DF)-1))]))           # convert to numerics
+  
+  DF_aghru<-left_join(DF_aghru,DF,by=c("name","yr","day","jday","mon","unit","gis_id"))
+  
+  DF_aghru<-DF_aghru %>% 
+    left_join(.,hru_lookup,by=c("name")) %>% 
+    mutate(scenario='Recent climate (2013-2020) - change landuse') %>% 
+    select("yr","lu_mgt","area_ha", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","qtile","surq_cont","perc","hyd_grp", "slp","tile","scenario","changed_hru") %>% 
+    gather(variable,value,-yr,-lu_mgt,-name,-hyd_grp,-slp,-tile,-scenario,-area_ha,-changed_hru)
   
   #### calculate reduction for all hrus and for hrus with practice applied ######
   
   
   scenariodf<-DF_aghru %>% 
-    select(name,yr,sedyld_tha,tilelabp,totp,surqsolp_kgha,area_ha,slp,changed_hru,hyd_grp) %>% 
-    left_join(.,hru_loss_baseline,by=c('yr','name','slp','hyd_grp')) %>% 
+    rename("value_scen"="value",
+           "lu_mgt_scen"="lu_mgt") %>% 
+    left_join(.,hru_loss_baseline,by=c("yr","name","hyd_grp","slp","tile","variable")) %>% #### STOPPED HERE FRIDAY 12/15/2023 ####
+    group_by(GIS,YR,variable,scenario) %>%
+    summarize(value=sum(value,na.rm=T)) %>% # yearly average of monthly values
+    mutate(percent_change=(value-value[scenario=="Baseline"])*100/value[scenario=="Baseline"]) %>%
     mutate(totp_change=(totp-totp_b)*100/totp_b,
            surqsolp_change=(surqsolp_kgha-surqsolp_kgha_b)*100/surqsolp_kgha_b,
            sedyld_change=(sedyld_tha-sedyld_tha_b)*100/sedyld_tha_b) %>% 
