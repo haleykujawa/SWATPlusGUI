@@ -75,12 +75,12 @@ ui <- fluidPage(
                      tabPanel("Management and conservation practices",br(),
                               p('Percent of practice on row-crop lands. All inputs must be between 0-100'),
                               
-                              fluidRow(column(6,numericInput("cc", label = "Rye cover crop", value = 10)),
+                              fluidRow(column(6,sliderInput("cc", label = "Rye cover crop",min=10,max=100, value = 10)),
                                        column(6,br(),textOutput("cc_rate_change"))),
                               
                               hr(style="border-color: silver;"),
                               
-                              fluidRow(column(6,numericInput("vfs", label = "Vegetative field buffers", value = 35)),
+                              fluidRow(column(6,sliderInput("vfs", label = "Vegetative field buffers", min=35,max=100,value = 35)),
                                        column(6,br(),textOutput("vfs_rate_change"))),
                               
                               hr(style="border-color: silver;"),
@@ -90,18 +90,18 @@ ui <- fluidPage(
                               # 
                               # hr(style="border-color: silver;"),
                               
-                              fluidRow(column(6,numericInput("notill", label = "Continuous no-tillage", value = 60)),
+                              fluidRow(column(6,sliderInput("notill", label = "Continuous no-tillage", min=60,max=100,value = 60)),
                                        column(6,br(),textOutput("notill_rate_change"))),
                               
                               hr(style="border-color: silver;"),
                               
-                              fluidRow(column(6,numericInput("subfert", label = "Subsurface placement", value = 0)),
+                              fluidRow(column(6,sliderInput("subfert", label = "Subsurface placement",min=0,max=100, value = 0)),
                                        column(6,br(),textOutput("subfert_rate_change"))),
                               
                               hr(style="border-color: silver;"),
                               
-                              #ditch widget
-                              fluidRow(column(6,numericInput("ditch_rate", label = ("Conservation ditches"), value = 0)),
+                              #ditch widget--maybe change this to miles of stream as an input?
+                              fluidRow(column(6,sliderInput("ditch_rate", label = ("Conservation ditches"),min=0,max=100, value = 0)),
                                               column(6,p("This changes the rate of conservation ditches on streams of order 2. Changing to 100% only changes 38 km (24 mi) of stream"))) ,
                               img(src="Stream map.png",width=5846/10,height=4133/10)
 
@@ -372,20 +372,41 @@ tabPanel("Visualize outputs",
          plotOutput("BR_plot"),
          p("Fig 1. Change between the baseline management (representative of years 2013-2020) and changes implemented in management and
            conservation practices tab"),
-         plotOutput("HRU_per"),
-         plotOutput("HRU_abs"),
-         plotOutput("yield_per"),
-         plotOutput("yield_abs"),
+         
+         fluidRow(column(6,         plotOutput("HRU_per")),
+                  column(6,         plotOutput("HRU_abs"))),
+         
+         fluidRow(column(6,                  p("Fig 2. Change between the baseline management (representative of years 2013-2020) and changes implemented in management and
+           conservation practices tab. Only HRUs with a landscape management change are included on this graph")),
+                  column(6,                  p("Fig 3. Absolute value change between the baseline management (representative of years 2013-2020) and changes implemented in management and
+           conservation practices tab. Only HRUs with a landscape management change are included on this graph"))),
+         
+         br(),
+        
+         fluidRow(column(6,         plotOutput("yield_per")),
+                  column(6,         plotOutput("yield_abs"))),
+         
+         fluidRow(column(6,                  p("Fig 4. Yield change (%) between the baseline management (representative of years 2013-2020) and changes implemented in management and
+           conservation practices tab. Only HRUs with a landscape management change are included on this graph")),
+                  column(6,                  p("Fig 5. Absolute value change (bu/acre) between the baseline management (representative of years 2013-2020) and changes implemented in management and
+           conservation practices tab. Only HRUs with a landscape management change are included on this graph"))),
+         
+         br(), 
+         
+         p("Table 1. Summary of yield changes"),
          tableOutput("yield_table"),
+         
          h2('Results for climate and land use change'),
          plotOutput("BR_plot_clim"),
          p("Fig 1. Change between the historical climate and management (representative of years 1990-2019) and changes implemented in management and
            conservation practices + climate change tabs"),
-         plotOutput("HRU_plot_clim"),
-         plotOutput("yield_plot_clim"),
+         plotOutput("HRU_per_clim"),
+         plotOutput("HRU_abs_clim"),
+         plotOutput("yield_per_clim"),
+         plotOutput("yield_abs_clim"),
+         tableOutput("yield_table_clim"),
          p("+Changes in crop yields"),
-         p("+Changes in water balance"),
-         p("+Estuary P and sediment accumulation")
+         p("+Changes in water balance")
          # imageOutput("runningmodel3")
 ),
 
@@ -408,6 +429,13 @@ server <- function(input, output, session) {
   session$onSessionEnded(function() {
     stopApp()
   })
+  
+  # prevent time out of application
+  # https://tickets.dominodatalab.com/hc/en-us/articles/14794822159124-Shiny-App-shows-a-gray-screen-after-sometime-or-timeouts
+  keep_alive <- shiny::reactiveTimer(intervalMs = 10000, session = shiny::getDefaultReactiveDomain())
+  shiny::observe({keep_alive()})
+  
+  
   
   ###management scenarios###
   #error message#
@@ -609,8 +637,11 @@ server <- function(input, output, session) {
   output$yield_table<-renderTable({text_reactive()[[7]]})
   # Climate + land use change plots
   output$BR_plot_clim<-renderPlot({text_reactive()[[8]]})
-  output$HRU_plot_clim<-renderPlot({text_reactive()[[9]]})
-  output$yield_plot_clim<-renderPlot({text_reactive()[[10]]})
+  output$HRU_per_clim<-renderPlot({text_reactive()[[9]]})
+  output$HRU_abs_clim<-renderPlot({text_reactive()[[10]]})
+  output$yield_per_clim<-renderPlot({text_reactive()[[11]]})
+  output$yield_abs_clim<-renderPlot({text_reactive()[[12]]})
+  output$yield_table_clim<-renderTable({text_reactive()[[13]]})
   
   # This code isn't working when using text_reactive()[[]], unsure why
   # # # change to render img

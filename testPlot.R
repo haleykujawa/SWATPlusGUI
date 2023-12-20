@@ -34,6 +34,11 @@ testPlot<-function(scenario_dir,SelectClimate){
   
   headers_crop<-c(  "jday",   "mon",   "day",    "yr",    "unit", "PLANTNM", "MASS", "C", "N", "P")
   
+  headers_hru_wb<-c("jday",   "mon",   "day",    "yr",    "unit",  "gis_id",  "name", "precip", "snofall",  "snomlt",   "surq_gen", "latq", "wateryld", "perc",
+                    "et", "ecanopy",  "eplant", "esoil","surq_cont",  "cn", "sw_init","sw_final", "sw_ave", "sw_300", "sno_init", "sno_final",  "snopack",  "pet", "qtile",         
+                    "irr",  "surq_runon",  "latq_runon",    "overbank",    "surq_cha",    "surq_res", "surq_ls","latq_cha", "latq_res", "latq_ls",  "gwtranq","satex","satex_chan",   
+                    "sw_change",     "lagsurf",     "laglatq",   "lagsatex")
+  
   #### Datat frames for final data #######
   ch_loss<-c()
   # hru_loss<-c()
@@ -104,7 +109,14 @@ if ('hist' %in% SelectClimate){
   
   # NewBaseline writes the *hru loss* file INTO the matching scenario folder and calls it 'hru_baseline'
   hru_loss_baseline<-read.csv("hru_baseline.csv") %>% 
-    gather(variable,value,-yr,-lu_mgt,-name,-hyd_grp,-slp,-tile,-scenario)
+    mutate(sedyld_t=sedyld_tha*area_ha,
+           tilelabp_kg=tilelabp*area_ha,
+           totp_kg=totp*area_ha,
+           surqsolp_kg=surqsolp_kgha*area_ha,
+           qtile_m3=qtile*area_ha*10000/1000,
+           surq_m3=surq_cont*area_ha*10000/1000,
+           perc_m3=perc*area_ha*10000/1000) %>% 
+    gather(variable,value,-yr,-lu_mgt,-name,-hyd_grp,-slp,-tile,-scenario,-area_ha)
     # rename("sedyld_tha_b"="sedyld_tha",
     #        "tilelabp_b"="tilelabp",
     #        "totp_b"   =   "totp",
@@ -153,7 +165,7 @@ if ('hist' %in% SelectClimate){
   
   
   ##### hydrology #####
-  tmp <- file('hru_wb_yr.txt')
+  tmp <-file(here(scenario_dir,climatemodel,'hru_wb_yr.txt'))
   open(tmp, "r") #read
   
   #read past headerlines
@@ -181,44 +193,128 @@ if ('hist' %in% SelectClimate){
     left_join(.,hru_lookup,by=c("name")) %>% 
     mutate(scenario='Recent climate (2013-2020) - change landuse') %>% 
     select("yr","lu_mgt","area_ha", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","qtile","surq_cont","perc","hyd_grp", "slp","tile","scenario","changed_hru") %>% 
+    
+    mutate(sedyld_t=sedyld_tha*area_ha,
+           tilelabp_kg=tilelabp*area_ha,
+           totp_kg=totp*area_ha,
+           surqsolp_kg=surqsolp_kgha*area_ha,
+           qtile_m3=qtile*area_ha*10000/1000,
+           surq_m3=surq_cont*area_ha*10000/1000,
+           perc_m3=perc*area_ha*10000/1000) %>% 
     gather(variable,value,-yr,-lu_mgt,-name,-hyd_grp,-slp,-tile,-scenario,-area_ha,-changed_hru)
   
   #### calculate reduction for all hrus and for hrus with practice applied ######
   
-  
+  # % change in only changed HRUs
+  # perecent change in average annual loss 
   scenariodf<-DF_aghru %>% 
     rename("value_scen"="value",
            "lu_mgt_scen"="lu_mgt") %>% 
-    left_join(.,hru_loss_baseline,by=c("yr","name","hyd_grp","slp","tile","variable")) %>% #### STOPPED HERE FRIDAY 12/15/2023 ####
-    group_by(GIS,YR,variable,scenario) %>%
-    summarize(value=sum(value,na.rm=T)) %>% # yearly average of monthly values
-    mutate(percent_change=(value-value[scenario=="Baseline"])*100/value[scenario=="Baseline"]) %>%
-    mutate(totp_change=(totp-totp_b)*100/totp_b,
-           surqsolp_change=(surqsolp_kgha-surqsolp_kgha_b)*100/surqsolp_kgha_b,
-           sedyld_change=(sedyld_tha-sedyld_tha_b)*100/sedyld_tha_b) %>% 
-    filter(!(lu_mgt %in% c('frsd_lum','urml_lum','past_lum')), changed_hru==1) # only look at changes in changed HRUs
+    left_join(.,hru_loss_baseline,by=c("yr","name","hyd_grp","slp","tile","variable")) %>% 
+    filter(changed_hru==1) %>%
+    # group_by(variable,name,hyd_grp,slp,tile,lu_mgt_scen,changed_hru) %>% 
+    # summarize(value=mean(value,na.rm=T),value_scen=mean(value_scen,na.rm=T)) %>% # annual output for whole run
+    ungroup() %>% 
+    group_by(name,variable) %>% 
+    summarize(value=mean(value,na.rm=T),value_scen=mean(value_scen,na.rm=T)) %>% # annual output for whole run
+    mutate(percent_change=(value-value_scen)*100/value)
+    # filter(!(lu_mgt %in% c('frsd_lum','urml_lum','past_lum'))) # only look at changes in changed HRUs// don't need bc changed HRUs would only be agricultural
+  
+  # Overall change from landscape 
+  # summarize total loss from all HRUs and calculate a % change
+  # for ALL HRUs
+  TotalHRUchange<-DF_aghru %>% 
+    rename("value_scen"="value",
+           "lu_mgt_scen"="lu_mgt") %>% 
+    select(-area_ha) %>% 
+    left_join(.,hru_loss_baseline,by=c("yr","name","hyd_grp","slp","tile","variable")) %>% 
+    filter(!(lu_mgt %in% c('frsd_lum','urml_lum','past_lum'))) %>% 
+    group_by(variable,yr) %>%
+    summarize(value=sum(value),value_scen=sum(value_scen),area_ha=sum(area_ha)) %>% # total annual
+    ungroup() %>% 
+    group_by(variable) %>% 
+    summarize(value=mean(value),value_scen=mean(value_scen),area_ha=mean(area_ha)) %>% # average annual 2013-2020
+    mutate(percent_change=(value_scen-value)*100/value) %>% 
+    mutate(output='All row crop HRUs')
+  
+  # for changed HRUs only
+  TotalHRUchange_changed<-DF_aghru %>% 
+    rename("value_scen"="value",
+           "lu_mgt_scen"="lu_mgt") %>% 
+    select(-area_ha) %>%
+    left_join(.,hru_loss_baseline,by=c("yr","name","hyd_grp","slp","tile","variable")) %>% 
+    filter(!(lu_mgt %in% c('frsd_lum','urml_lum','past_lum')),
+           changed_hru==1) %>% 
+    group_by(variable,yr) %>%
+    summarize(value=sum(value),value_scen=sum(value_scen),area_ha=sum(area_ha)) %>% # total annual
+    ungroup() %>% 
+    group_by(variable) %>% 
+    summarize(value=mean(value),value_scen=mean(value_scen),area_ha=mean(area_ha)) %>%# average annual 2013-2020
+    mutate(percent_change=(value_scen-value)*100/value) %>%
+    mutate(output='Changed HRUs only')
+  
+  # combine
+  
+  TotalHRUchange<-rbind(TotalHRUchange,TotalHRUchange_changed) %>% 
+    mutate(abs_change_kgha= (value_scen-value)) %>% 
+    mutate(abs_change_lbsacre=(value_scen-value)*2.20462/area_ha*2.47105)
+    
   
  ##### new hru plots comparing hru loss from all agricultural hrus and hrus with change implemented only ##### 
-  print('line 187')
   
   # Consider separating by tile/ nontiled
   
-  variable_labs<-c('Sediment yield','Surface soluble P','Total P')
-  names(variable_labs)<-c('sedyld_change','surqsolp_change','totp_change')
+  variable_labs<-c('Sediment yield','Surface soluble P','Tile P','Total P','Surface runoff','Tile discharge')
+  names(variable_labs)<-c('sedyld_t','surqsolp_kg','tilelabp_kg','totp_kg','surq_m3','qtile_m3')
   
   # percent change plot
-    HRU_per<-scenariodf %>% 
-    select(name,totp_change,sedyld_change,surqsolp_change) %>% 
-    gather(variable,value,-name) %>% 
-    ggplot(.,aes(x=1,y=value))+geom_boxplot()+facet_wrap(~variable,scales='free_y',labeller=labeller(variable=variable_labs))+
-    xlab("")+ylab("Percent change from baseline")+
-    # scale_fill_manual(values=c('baseline (2013-2020)'='white', 'land management scenario (2013-2020)'='grey'))+
-    theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
-          panel.background = element_blank(),text = element_text(size = 16),
-          panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
-          legend.title = element_blank(),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank())
+    # HRU_per<-scenariodf %>% 
+    # select(name,variable,percent_change) %>% 
+    # filter(grepl(paste0(c('sedyld_t$','surqsolp_kg$','tilelabp_kg$','totp_kg$','surq_m3$','qtile_m3$'),collapse="|"),variable)) %>% 
+    # # gather(variable,value,-name) %>% http://127.0.0.1:47443/graphics/3e03f3e7-b090-43ee-b920-1f80bdbba4cd.png
+    # ggplot(.,aes(x=1,y=percent_change))+geom_boxplot()+facet_wrap(~variable,scales='free_y',labeller=labeller(variable=variable_labs))+
+    # xlab("")+ylab("Percent change from baseline")+
+    # # scale_fill_manual(values=c('baseline (2013-2020)'='white', 'land management scenario (2013-2020)'='grey'))+
+    # theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+    #       panel.background = element_blank(),text = element_text(size = 16),
+    #       panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+    #       legend.title = element_blank(),
+    #       axis.text.x=element_blank(),
+    #       axis.ticks.x=element_blank())
+    
+    # Percent change from all HRUs 
+    
+    HRU_per<-TotalHRUchange %>% 
+      filter(variable %in% c('perc_m3','qtile_m3','sedyld_t','surq_m3','surqsolp_kg','tilelabp_kg','totp_kg')) %>% 
+      ggplot(., aes(x=variable,y=percent_change,fill=output))+geom_bar(stat='identity',position="dodge")+    
+      xlab("")+ylab("Percent change from baseline")+
+      scale_x_discrete(labels=c('sedyld_t'='Sediment yield','surqsolp_kg'='Surface soluble P',
+                                'tilelabp_kg'='Tile P','totp_kg'='Total P','surq_m3'='Surface runoff','qtile_m3'='Tile discharge',
+                                'perc_m3'='Percolation'))+
+      # scale_fill_manual(values=c('baseline (2013-2020)'='white', 'land management scenario (2013-2020)'='grey'))+
+      theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+            panel.background = element_blank(),text = element_text(size = 16),
+            panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+            legend.title = element_blank(),
+            legend.position='top')
+    
+    # Change in kg/ha from all HRUs, only nutrients / sediments 
+    
+    HRU_abs<-TotalHRUchange %>% 
+      filter(variable %in% c('sedyld_t','surqsolp_kg','tilelabp_kg','totp_kg')) %>% 
+      # gather(units,change,-variable,-value,-value_scen,-area_ha,-percent_change,-output) %>% 
+      ggplot(., aes(x=variable, y=abs_change_lbsacre, fill=output))+geom_bar(stat='identity',position="dodge")+    
+      xlab("")+ylab("Absolute change from baseline (lb/acre)")+
+      scale_x_discrete(labels=c('sedyld_t'='Sediment yield','surqsolp_kg'='Surface soluble P',
+                                'tilelabp_kg'='Tile P','totp_kg'='Total P','surq_m3'='Surface runoff','qtile_m3'='Tile discharge',
+                                'perc_m3'='Percolation'))+
+      # scale_fill_manual(values=c('baseline (2013-2020)'='white', 'land management scenario (2013-2020)'='grey'))+
+      theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+            panel.background = element_blank(),text = element_text(size = 16),
+            panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+            legend.title = element_blank(),
+            legend.position='top')
+    
   
   
   variable_labs<-c('Sediment yield (t/ha)','Surface soluble P (kg/ha)','Total P (kg/ha)')
@@ -226,23 +322,23 @@ if ('hist' %in% SelectClimate){
 
   
   # absolute change plot
-    HRU_abs<-scenariodf %>% 
-    select(name,totp,totp_b,surqsolp_kgha,surqsolp_kgha_b,sedyld_tha,sedyld_tha_b) %>% 
-    gather(variable,value,-name) %>% 
-    mutate(scenario=NA) %>% 
-    mutate(scenario=replace(scenario,grepl('b',variable),'baseline (2013-2020)')) %>% 
-    mutate(scenario=replace(scenario,!grepl('b',variable),'land management scenario (2013-2020)')) %>% 
-    mutate_at('variable',str_replace,"_b","") %>% 
-    ggplot(.,aes(x=1,y=value,fill=scenario))+geom_boxplot()+facet_wrap(~variable,scales='free_y',labeller=labeller(variable=variable_labs))+
-    xlab("")+ylab("")+
-    scale_fill_manual(values=c('baseline (2013-2020)'='white', 'land management scenario (2013-2020)'='grey'))+
-    theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
-                                                                                     panel.background = element_blank(),text = element_text(size = 16),
-                                                                                     panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
-          legend.title = element_blank(),
-          legend.position = 'bottom',
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank())
+    # HRU_abs<-scenariodf %>% 
+    # select(name,totp,totp_b,surqsolp_kgha,surqsolp_kgha_b,sedyld_tha,sedyld_tha_b) %>% 
+    # gather(variable,value,-name) %>% 
+    # mutate(scenario=NA) %>% 
+    # mutate(scenario=replace(scenario,grepl('b',variable),'baseline (2013-2020)')) %>% 
+    # mutate(scenario=replace(scenario,!grepl('b',variable),'land management scenario (2013-2020)')) %>% 
+    # mutate_at('variable',str_replace,"_b","") %>% 
+    # ggplot(.,aes(x=1,y=value,fill=scenario))+geom_boxplot()+facet_wrap(~variable,scales='free_y',labeller=labeller(variable=variable_labs))+
+    # xlab("")+ylab("")+
+    # scale_fill_manual(values=c('baseline (2013-2020)'='white', 'land management scenario (2013-2020)'='grey'))+
+    # theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
+    #                                                                                  panel.background = element_blank(),text = element_text(size = 16),
+    #                                                                                  panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+    #       legend.title = element_blank(),
+    #       legend.position = 'bottom',
+    #       axis.text.x=element_blank(),
+    #       axis.ticks.x=element_blank())
   
 
   ################## Read and write baseline yield ########################################
@@ -501,6 +597,7 @@ if ('hist' %in% SelectClimate){
               panel.background = element_blank(),text = element_text(size = 16),
               panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
               legend.title = element_blank(),
+              legend.position = 'top',
               axis.text.x=element_blank(),
               axis.ticks.x=element_blank())
       
@@ -524,6 +621,7 @@ if ('hist' %in% SelectClimate){
               panel.background = element_blank(),text = element_text(size = 16),
               panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
               legend.title = element_blank(),
+              legend.position = 'top',
               axis.text.x=element_blank(),
               axis.ticks.x=element_blank())
       

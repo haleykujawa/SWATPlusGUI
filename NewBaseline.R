@@ -254,7 +254,7 @@ DF_aghru<-left_join(DF_aghru,DF,by=c("name","yr"))
 DF_aghru<-DF_aghru %>%
   # filter(base_mgt != 'frsd' & base_mgt != 'urml' & base_mgt != 'past') %>%
   mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin+tilelabp+lchlabp) %>%
-  select("yr","lu_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","qtile","surq_cont","perc","hyd_grp", "slp","tile") %>%
+  select("yr","area_ha","lu_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","qtile","surq_cont","perc","hyd_grp", "slp","tile") %>%
   mutate(scenario=scenario)
 
 write.csv(DF_aghru,"hru_baseline.csv",row.names=F)
@@ -405,7 +405,7 @@ DF_aghru<-left_join(DF_aghru,DF,by=c("name","yr"))
 # index all mgt scenarios
 DF_aghru<-DF_aghru %>% 
   mutate(totp=sedorgp_kgha+surqsolp_kgha+sedmin+tilelabp+lchlabp) %>% 
-  select("yr","lu_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","qtile","surq_cont","perc","hyd_grp", "slp","tile") %>% 
+  select("yr","area_ha","lu_mgt", "name" ,"sedyld_tha","tilelabp","totp","surqsolp_kgha","qtile","surq_cont","perc","hyd_grp", "slp","tile") %>% 
   mutate(scenario=scenario)
 
 # Could use gather instead of melt
