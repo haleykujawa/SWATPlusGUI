@@ -54,10 +54,11 @@ ui <- fluidPage(
       
       tabPanel("About OWC-SWAT+", br(),strong("Welcome to the Old Woman Creek Soil and Water Assessment Tool! (OWC-SWAT+)"),
                br(),br(),
-               p("This tool was designed to aid conservation efforts in the Old Woman Creek watershed to improve water quality and remove OWC from the 303d list of impaired waters.
-                 OWC-SWAT+ summarizes the potential impacts of climate and agricultural land management on changes in water quality."),
+               p("This tool was designed to aid conservation efforts in the Old Woman Creek (OWC) watershed to improve water quality and remove OWC from the 303d list of impaired waters.
+                 OWC-SWAT+ summarizes the potential impacts of climate and agricultural land management on changes in water quality. Row crop agriculture is the predominant land-use in the OWC watershed (>50%), followed by forested, pasture, and urban land-use, respectively.
+                 "),
                
-               img(src="owc_map.png",width=1430/2,height=1105/2),br(),p('Figure 1. Map of Old Woman Creek watershed and estuary'),
+               img(src="owc_map.png",width=1430/2,height=1105/2),br(),p('Figure 1. Map of Old Woman Creek watershed and estuary. Old Woman Creek is located in northern Ohio in the Great Lakes Basin.'),
                br(),br(),br(),br(),
                img(src="old-woman-creek.png",height=503/4,width=800/4),
                img(src="davidson.png",height=117/2,width=432/2),
