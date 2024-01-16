@@ -2,7 +2,6 @@
 
 testPlot<-function(scenario_dir,SelectClimate){
 
-  
   baseline_dir<-here('Baseline')
   
   BR_plot_hist<-NULL
@@ -18,6 +17,14 @@ testPlot<-function(scenario_dir,SelectClimate){
   yield_per_clim<-NULL
   yield_abs_clim<-NULL
   yield_table_clim<-NULL
+  
+  # in case hru plots aren't made in historical climate return NULL
+  BR_plot<-NULL
+  HRU_per<-NULL
+  HRU_abs<-NULL
+  yield_per<-NULL
+  yield_abs<-NULL
+  yield_table<-NULL
   
 # Calculate outputs here
   headers_ch<-c("jday",	"mon",	"day",	"yr",	"unit",	"gis_id",	"name",	"areaha",	"precipha.m",	"evapha.m",	
@@ -47,8 +54,6 @@ testPlot<-function(scenario_dir,SelectClimate){
   
 # if ('hist' %in% SelectClimate){
   for(climatemodel in SelectClimate){
-  
-  climatemodel<-'hist'
     
   setwd(paste0(scenario_dir,'/',climatemodel))
   
@@ -396,6 +401,9 @@ testPlot<-function(scenario_dir,SelectClimate){
   }  
   
   # changed hrus only
+  print(sum(yield$changed_hru))
+  if(sum(yield$changed_hru) > 0){
+    
     yield_per<-yield %>% 
     filter(changed_hru==1,PLANTNM %in% c('soyb','corn','wwht')) %>%
     select(unit,PLANTNM,MASS_change) %>% 
@@ -408,6 +416,7 @@ testPlot<-function(scenario_dir,SelectClimate){
           panel.background = element_blank(),text = element_text(size = 16),
           panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
           legend.title = element_blank())
+  }
 
   plot_mean <- function(x){
     return(c(y = max(x)*1.2, label = round(mean(x),0))) 
@@ -766,7 +775,7 @@ testPlot<-function(scenario_dir,SelectClimate){
   # }
 
   
-  return(list(print("OWC-SWAT+ run complete"), BR_plot,HRU_per, HRU_abs, yield_per,yield_abs,yield_table,
+  return(list(print("OWC-SWAT+ run complete"), BR_plot_hist,HRU_per_hist, HRU_abs_hist, yield_per_hist,yield_abs_hist,yield_table_hist,
               BR_plot_clim,HRU_per_clim, HRU_abs_clim, yield_per_clim,yield_abs_clim,yield_table_clim))
   
   

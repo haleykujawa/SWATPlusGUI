@@ -5,7 +5,6 @@ library(shiny)
 library(readtext)
 library(splitstackshape)
 library(shinyjs)
-library(tictoc)
 library(rlang)
 library(reshape2)
 library(rapportools)
@@ -18,22 +17,9 @@ library(tidyverse) # commenting out all packages contained in the tidyverse
 library(ggpubr)
 library(magrittr)
 
-# library(ggplot2)
-# library(tidyr)
-# library(stringr)
-# library(dplyr)
 
-# Load scripts to be used ---
-# source("Change_rot_dist.R")
-# source("ChangeSWATInputs.R") #changed from improve ditch params
-# source("TestShiny.R")
-# source("Reset_scenario.R")
 source("RunAllScripts_SWATv60.5.2.R")
-# source("testGUI.R")
-# source("ReadHRU_losses.R")
-# source("ReadChannel_daily2.R")
 source("testPlot.R")
-# source("ChangeSWATClimate.R")
 source("ClimateChange.R")
 
 run_yrs<-c(2009)
@@ -52,18 +38,52 @@ ui <- fluidPage(
     titlePanel("OWC-SWAT+"),
     tabsetPanel(
       
-      tabPanel("About OWC-SWAT+", br(),strong("Welcome to the Old Woman Creek Soil and Water Assessment Tool! (OWC-SWAT+)"),
+      tabPanel("About OWC-SWAT+", br(),strong("Welcome to the Old Woman Creek Soil and Water Assessment Tool! (OWC-SWAT+)"), br(),br(),
+               em('This is an online beta version of the app for demonstration purposes only. This app has limited run-time and multiple online users may slow the app performance. An app that can be deployed as a standalone Windows application is forthcoming soon.'),
                br(),br(),
-               p("This tool was designed to aid conservation efforts in the Old Woman Creek (OWC) watershed to improve water quality and remove OWC from the 303d list of impaired waters.
-                 OWC-SWAT+ summarizes the potential impacts of climate and agricultural land management on changes in water quality. Row crop agriculture is the predominant land-use in the OWC watershed (>50%), followed by forested, pasture, and urban land-use, respectively.
+               p("This tool was designed to aid conservation efforts in the Old Woman Creek (OWC) watershed. Contained within this is a watershed model of Old Woman Creek built with the Soil and Water Assessment Tool framework (SWAT+; https://swat.tamu.edu/software/plus/). SWAT is a landscape hydrology and pollutant transport model designed by the U.S. Department of Agricultural Research Service (USDA) to simulate the transport of nutrients, sediments, and
+pesticides in agricultural landscapes (Arnold et al., 2012; Moriasi et al., 2015)."),
+                 p("Old Woman Creek estuary is vulnerable to both climate and land-use changes. The original intent of the national estuary reserve designation was to include the watershed within the conservation area, however this placed an undue burden on farmers to preserve this land (Hanselmann & Vogel, 1978).
+                 Therefore, while the final preservation area included the estuary and some of the surrounding uplands, the majority of its watershed remains open to development. Changes in land-use and climate are expected to alter hydrology and nutrient loadings in Lake Erie watersheds (Michalak et al., 2013). Addressing the estuary’s vulnerability to future land-use and climate change 
+                 required a process-based watershed model that could incorporate multiple data sources such as
+                 climate, land managment, and watershed processes."), br(),
+                 p("The OWC-SWAT+ model was designed to focus on addressing nutrient and sediment runoff from row-crop agriculture, as it is the predominant land-use in the OWC watershed (>50%). The tool herein can simulate the effects of increasing agricultural conservation practices (see 'Management and conservation practices' tab) on the landscape as well as the effects of changes in climate and summarize the effects on discharge, phosphorus, and sediment runoff at the watershed and field scale.
+                 For more information on the watershed model build (input data, calibration/validation, parameters), you can refence the 'OWC-SWAT+ Model Build tab'. For information on how to use this application, reference the 'OWC-SWAT+ Manual' tab.
                  "),
                
                img(src="owc_map.png",width=1430/2,height=1105/2),br(),p('Figure 1. Map of Old Woman Creek watershed and estuary. Old Woman Creek is located in northern Ohio in the Great Lakes Basin.'),
-               br(),br(),br(),br(),
+               br(), hr(style="border-color: silver;"),br(),
+               p("This app was written and designed by Haley Kujawa supported with funding from the Margaret A. Davidson fellowship."),
+                 p("Shiny code used to design the app can be found in https://github.com/haleykujawa/SWATPlusGUI.git."), p("Contact: kujawa.21@osu.edu"),br(),
                img(src="old-woman-creek.png",height=503/4,width=800/4),
                img(src="davidson.png",height=117/2,width=432/2),
                img(src="osu.png",height=88/2,width=569/2),
-               img(src='erie_swcd.png')),
+               img(src='erie_swcd.png'),
+               
+               br(), hr(style="border-color: silver;"),br(),
+               
+               strong('References'),br(),br(),
+               p('Arnold, J G, Kiniry, J.R., Srinivasan, R., Williams, J.R., Haney, E.B., 2012. Soil and Water
+Assessment Tool (SWAT) User’s Manual, Version 2012. Texas Water Resources
+Institute. https://doi.org/10.1007/978-0-387-35973-1_1231'),
+               p('Hanselmann, D. P., & Vogel, T. L. (1978). Old woman creek, ohio: The designation of a freshwater
+estuarine sanctuary. Coastal Zone Management Journal, 4(3), 329–336.
+https://doi.org/10.1080/08920757809361781'),
+               p('Michalak, A.M., Anderson, E.J., Beletsky, D., Boland, S., Bosch, N.S., Bridgeman, T.B.,
+Chaffin, J.D., Cho, K., Confesor, R., Daloglu, I., Depinto, J. V, Evans, M.A., Fahnenstiel,
+G.L., He, L., Ho, J.C., Jenkins, L., Johengen, T.H., Kuo, K.C., Laporte, E., Liu, X.,
+McWilliams, M.R., Moore, M.R., Posselt, D.J., Richards, R.P., Scavia, D., Steiner, A.L.,
+Verhamme, E., Wright, D.M., Zagorski, M.A., 2013. Record-setting algal bloom in Lake
+Erie caused by agricultural and meteorological trends consistent with expected future
+conditions. Proc. Natl. Acad. Sci. U. S. A. 110, 6448–6452.
+https://doi.org/10.1073/pnas.1216006110'),
+               p('Moriasi, D.N., Gitau, M.W., Pai, N., Daggupati, P., 2015. Hydrologic and Water Quality
+Models: Performance Measures and Evaluation Criteria. Trans. ASABE 58, 1763–1785.
+https://doi.org/10.13031/trans.58.10715'),
+                 p('Old Woman Creek National Estuarine Research Reserve Management Plan 2011-2016. (2011).')
+               
+               
+               ),
       
       tabPanel("Change inputs and run OWC-SWAT+",
                
@@ -74,7 +94,8 @@ ui <- fluidPage(
                    
                 tabsetPanel(
                      tabPanel("Management and conservation practices",br(),
-                              p('Percent of practice on row-crop lands. All inputs must be between 0-100'),
+                              p('Percent of practice on row-crop lands. All practices are intialized at the baseline rate - representative of years 2013-2020.'),
+                              em('The current Shiny-SWAT+ framework can only alter one management practice per model run. Altering multiple practices will not produce desired results.'),br(), br(),
                               
                               fluidRow(column(6,sliderInput("cc", label = "Rye cover crop",min=10,max=100, value = 10)),
                                        column(6,br(),textOutput("cc_rate_change"))),
@@ -86,10 +107,6 @@ ui <- fluidPage(
                               
                               hr(style="border-color: silver;"),
                               
-                              # fluidRow(column(6,numericInput("grww", label = "Grassed water way", value = 21)),
-                              #          column(6,br(),textOutput("grww_rate_change"))),
-                              # 
-                              # hr(style="border-color: silver;"),
                               
                               fluidRow(column(6,sliderInput("notill", label = "Continuous no-tillage", min=60,max=100,value = 60)),
                                        column(6,br(),textOutput("notill_rate_change"))),
@@ -106,81 +123,6 @@ ui <- fluidPage(
                                               column(6,p("This changes the rate of conservation ditches on streams of order 2. Changing to 100% only changes 38 km (24 mi) of stream"))) ,
                               img(src="Stream map.png",width=5846/10,height=4133/10)
 
-                              
-
-                              
-                              
-                  
-                              
-                   #              strong('Total rate of all seven management scenarios needs to add up to 100%'),br(),
-                   #              strong('Rate of buffers + grassed waterways on each management scenario cannot total greater than 100%'), 
-                   #              p('e.g. buffers 50% & grassed waterways 50% = OK, buffers = 100% & grassed waterways = 100% = model will crash'),
-                   #              p('To calculate an even rate on a subset of scenarios for grassed waterways (grww) or vegetated buffers, use the following equation:'),
-                   #              p('Input rate = desired total rate of buffers or grww on cropland (percent) x (1 / fraction of total cropland to have buffer or grww on (decimal percent)) '),
-                   #            br(),
-                   # #management widgets       
-                   # fluidRow(column(3,numericInput("CSFT", label = "Corn Bean - Full Tillage", value = 21)), 
-                   #          column(3,br(),textOutput("CSFT_ratechange")),
-                   #          column(3,numericInput("CSFT_B", label = "Vegetated buffer rate", value = 0)),
-                   #          column(3,numericInput("CSFT_GW", label = "Grassed waterway rate", value = 0))),
-                   # 
-                   # hr(style="border-color: silver;"),
-                   # 
-                   # fluidRow(column(3,numericInput("CSNT", label = "Corn Bean - No Till", value = 40)),
-                   #          column(3,br(),textOutput("CSNT_ratechange")),
-                   #          column(3,numericInput("CSNT_B", label = "Vegetated buffer rate", value = 44)),
-                   #          column(3,numericInput("CSNT_GW", label = "Grassed waterway rate", value = 26))),
-                   # 
-                   # hr(style="border-color: silver;"),
-                   # 
-                   # fluidRow(column(3,numericInput("CSRot", label = "Corn Bean - Rotational No Till", value = 15)),
-                   #          column(3,br(),textOutput("CSRot_ratechange")),
-                   #          column(3,numericInput("CSRot_B", label = "Vegetated buffer rate", value = 44)),
-                   #          column(3,numericInput("CSRot_GW", label = "Grassed waterway rate", value = 26))),
-                   # 
-                   # hr(style="border-color: silver;"),
-                   # 
-                   # fluidRow(column(3,numericInput("CSRT", label = "Corn Bean - Reduced Till", value = 4)),
-                   #          column(3,br(),textOutput("CSRT_ratechange")),
-                   #          column(3,numericInput("CSRT_B", label = "Vegetated buffer rate", value = 44)),
-                   #          column(3,numericInput("CSRT_GW", label = "Grassed waterway rate", value = 26))),
-                   # 
-                   # hr(style="border-color: silver;"),
-                   # 
-                   # fluidRow(column(3,numericInput("CSNTcc", label = "Corn Bean - No Till with rye cover crop", value = 10)),
-                   #          column(3,br(),textOutput("CSNTcc_ratechange")),
-                   #          column(3,numericInput("CSNTcc_B", label = "Vegetated buffer rate", value = 44)),
-                   #          column(3,numericInput("CSNTcc_GW", label = "Grassed waterway rate", value = 26))),
-                   # 
-                   # hr(style="border-color: silver;"),
-                   # 
-                   # fluidRow(column(3,numericInput("CSWS", label = "Corn Bean Wheat /Double crop bean", value = 9)),
-                   #          column(3,br(),textOutput("CSWS_ratechange")),
-                   #          column(3,numericInput("CSWS_B", label = "Vegetated buffer rate", value = 44)),
-                   #          column(3,numericInput("CSWS_GW", label = "Grassed waterway rate", value = 26))),
-                   # 
-                   # hr(style="border-color: silver;"),
-                   # 
-                   # fluidRow(column(3,numericInput("CSWcc", label = "Corn Bean Wheat /rye cover crop", value = 1)),
-                   #          column(3,br(),textOutput("CSWcc_ratechange")),
-                   #          column(3,numericInput("CSWcc_B", label = "Vegetated buffer rate", value = 44)),
-                   #          column(3,numericInput("CSWcc_GW", label = "Grassed waterway rate", value = 26))),
-        
-                   
-                   # h5("Baseline rates of management:"),
-                   # p("Corn Bean - Full Tillage is 21%"), #maybe do /n to remove space between them in UI
-                   # p("Corn Bean - No Tillage is 40%"),
-                   # p("Corn Bean - Reduced Tillage is 4%"),
-                   # p("Corn Bean - Rotational No-Till is 15%"),
-                   # p("Corn Bean - No-Till with rye cover crop is 10%"),
-                   # p("Corn Bean Wheat /Double crop bean is 9%"),
-                   # p("Corn Bean Wheat /rye cover crop is 1%"),
-                   
-
-
-                   
-                   
-                   # actionButton("simulate", "Apply changes to management")
                    ),
                    
                    
@@ -209,7 +151,7 @@ ui <- fluidPage(
                   
                   column(6,numericInput("LOWPCP_HIGHTMP", label = h5("Years with low precip, high temp:"),
                                       value = "5")),br(),br(),
-                  p('  These years include 1991 1999 2010 2012 2016 (5 years)'),
+                  p('  These years include: 1991, 1999, 2010, 2012, 2016 (5 years)'),
                   column(6, textOutput("LOWPCP_HIGHTMP"))
                    
 
@@ -219,7 +161,7 @@ ui <- fluidPage(
                     
                     column(6,numericInput("HIGHPCP_AVGTMP", label = h5("Years with high precip, average temp:"),
                                           value = "5")),br(),br(),
-                    p('  These years include 2000 2007 2008 2013 2019 (5 years)'),
+                    p('  These years include: 2000, 2007, 2008, 2013, 2019 (5 years)'),
                     column(6, textOutput("HIGHPCP_AVGTMP"))
                     
                     
@@ -229,7 +171,7 @@ ui <- fluidPage(
                     
                     column(6,numericInput("AVGPCP_HIGHTMP", label = h5("Years with average precip, high temp:"),
                                           value = "3")),br(),br(),
-                    p('  These years include 1998 2002 2018 (3 years)'),
+                    p('  These years include: 1998, 2002, 2018 (3 years)'),
                     column(6, textOutput("AVGPCP_HIGHTMP"))
                     
                     
@@ -239,7 +181,7 @@ ui <- fluidPage(
                 
                   p('Add a change to the "future" climate data that is added to the dataset in a linear fashion:
                     e.g., year 1 will change by applied amount divided by total number of years, and the final year will
-                    be changed by the total amount'),
+                    be changed by the total amount.'),
                   
                   fluidRow(
                     
@@ -257,41 +199,15 @@ ui <- fluidPage(
 
                    
                   hr(style="border-color: silver;"),
-                  
-                  # plotOutput("ClimatePlot"),
-                  tableOutput("ClimateTable"),
+                  p('Average annual precipitation and temperature in historical and user generated climate scenario:'),
 
-                   
-                   #  going to remove this option for now and work to add it back in if needed
-                   # fileInput("pcpFile", label = h5("If extending climate data beyond 2020, insert pcp here:")),
-                   # fileInput("tmpFile", label = h5("If extending climate data beyond 2020, insert tmp here:")),
-                   
-                   # actionButton("ClimateApply", "Apply changes to climate"),
-                   
-                   
-                   
-                   
-                   
-                   
-                   
-                   
-                   
-                   
-                   
-                   
-                   
-                   
+                  tableOutput("ClimateTable"),
+ 
                    )),
                    
                    br(),br(),
 
-                   
-                   # actionButton("simulate", "Apply changes"),
-                   
 
-                   
-                   
-                   
                    width = 8 ),
                    
       mainPanel(
@@ -307,47 +223,9 @@ ui <- fluidPage(
             strong("Clicking 'Run OWC-SWAT+' can take up to 20 minutes."),
             h5("Recent observed climate = ~ 6 min"),
             h5("Climate change scenario = ~ 12 min"),
-            em("Check inputs before running!"),
+            em("Once you hit 'Run OWC-SWAT+' you cannot redo the model run. You will have to wait until the model completes the runs or restart the app. *Check inputs before running!*"),
         h3("Climate change scenario"),
         span(textOutput("climate_rate"),style='color:green'),
-        
-        h3("Rates of management on row crop lands:"),
-        span(textOutput("total_rate"),style='color:green'),
-        
-        br(),
-        strong("Physical conservation practices:"),
-        br(),
-        span(textOutput("buff_grw_rate"),style='color:black'),
-        br(),
-        #ditches
-        textOutput("selected_ditch_rate"),
-        
-        br(),
-        strong("Winter cover rate:"),
-        textOutput("cc_rate"),
-        textOutput("winter_cover_rate"),
-        
-        br(),
-        strong("Tillage rates:"),
-        textOutput("FT_rate"),
-        textOutput("NT_rate"), 
-        textOutput("RT_rate"),
-        textOutput("Rot_rate"),
-        
-        br(),
-        strong("Fertilizer application:"),
-        textOutput("N_incorp"),
-        textOutput("P_incorp"),
-        textOutput("N_applied"),
-        textOutput("P_applied"),
-
-        
-        p(),
-      
-        
-        p(),p(),p(),
-        
-        # textOutput("ClimateOut"),
         
 
         
@@ -368,7 +246,6 @@ tabPanel("Visualize outputs",
          # br(),
          
          tableOutput("area_table"),
-         # imageOutput("runningmodel2"),
          h2('Results for a recent climate (2013-2020):'),br(),
          plotOutput("BR_plot"),
          p("Fig 1. Change between the baseline management (representative of years 2013-2020) and changes implemented in management and
@@ -378,7 +255,7 @@ tabPanel("Visualize outputs",
                   column(6,         plotOutput("HRU_abs"))),
          
          fluidRow(column(6,                  p("Fig 2. Change between the baseline management (representative of years 2013-2020) and changes implemented in management and
-           conservation practices tab. Only HRUs with a landscape management change are included on this graph")),
+           conservation practices tab. Only HRUs with a landscape management change are included on this graph. If no changes are made to land-use, graph will not appear.")),
                   column(6,                  p("Fig 3. Absolute value change between the baseline management (representative of years 2013-2020) and changes implemented in management and
            conservation practices tab. Only HRUs with a landscape management change are included on this graph"))),
          
@@ -388,7 +265,7 @@ tabPanel("Visualize outputs",
                   column(6,         plotOutput("yield_abs"))),
          
          fluidRow(column(6,                  p("Fig 4. Yield change (%) between the baseline management (representative of years 2013-2020) and changes implemented in management and
-           conservation practices tab. Only HRUs with a landscape management change are included on this graph")),
+           conservation practices tab. Only HRUs with a landscape management change are included on this graph. If no changes are made to land-use, graph will not appear.")),
                   column(6,                  p("Fig 5. Absolute value change (bu/acre) between the baseline management (representative of years 2013-2020) and changes implemented in management and
            conservation practices tab. Only HRUs with a landscape management change are included on this graph"))),
          
@@ -398,26 +275,52 @@ tabPanel("Visualize outputs",
          tableOutput("yield_table"),
          
          h2('Results for climate and land use change'),
+         
          plotOutput("BR_plot_clim"),
-         p("Fig 1. Change between the historical climate and management (representative of years 1990-2019) and changes implemented in management and
+         p("Fig 6. Change between the historical climate and management (representative of years 1990-2019) and changes implemented in management and
            conservation practices + climate change tabs"),
-         plotOutput("HRU_per_clim"),
-         plotOutput("HRU_abs_clim"),
-         plotOutput("yield_per_clim"),
-         plotOutput("yield_abs_clim"),
+         fluidRow(column(6,         plotOutput("HRU_per_clim")),
+                  column(6,         plotOutput("HRU_abs_clim"))),
+         
+         fluidRow(column(6,                  p("Fig 7. Change between the baseline management (representative of years 1990-2019) and changes implemented in management and
+           conservation practices tab. Only HRUs with a landscape management change are included on this graph")),
+                  column(6,                  p("Fig 8. Absolute value change between the baseline management (representative of years 1990-2019) and changes implemented in management and
+           conservation practices tab. Only HRUs with a landscape management change are included on this graph"))),
+         
+         br(),
+         
+         fluidRow(column(6,         plotOutput("yield_per_clim")),
+                  column(6,         plotOutput("yield_abs_clim"))),
+         
+         fluidRow(column(6,                  p("Fig 9. Yield change (%) between the baseline management (representative of years 1990-2019) and changes implemented in management and
+           conservation practices tab. Only HRUs with a landscape management change are included on this graph")),
+                  column(6,                  p("Fig 10. Absolute value change (bu/acre) between the baseline management (representative of years 1990-2019) and changes implemented in management and
+           conservation practices tab. Only HRUs with a landscape management change are included on this graph"))),
+         br(),
+         p("Table 2. Summary of yield changes"),
          tableOutput("yield_table_clim"),
-         p("+Changes in crop yields"),
-         p("+Changes in water balance")
-         # imageOutput("runningmodel3")
+
 ),
 
-tabPanel("Documentation",
+tabPanel("OWC-SWAT+ Manual",
          
          # Insert pdf
          tags$iframe(style="height:1000px; width:100%; scrolling=yes",
                      src="Instruction manual OWC-SWAT+.pdf")
          
-         )
+         ),
+
+tabPanel("OWC-SWAT+ Model Build",
+         
+         br(),strong('The following document is extracted from the dissertation discussing specifics of the OWC-SWAT+ model build and calibration,
+                     as well as the simulation of agricultural conservation scenarios:'),br(),br(),
+         p('Kujawa, H. A. (2023). Watershed modeling for climate change adaptation in the Laurentian Great Lakes: 
+           watershed impact studies and simulation of wetland heterogeneity. Doctoral dissertation, The Ohio State University.'),br(),br(),
+         # Insert pdf
+         tags$iframe(style="height:1000px; width:100%; scrolling=yes",
+                     src="Chapter_2_dissertation.pdf")
+         
+)
 
 )
 
@@ -439,49 +342,19 @@ server <- function(input, output, session) {
   
   
   ###management scenarios###
-  #error message#
-  output$total_rate<-reactive({validate(need((input$CSFT+input$CSNT+input$CSRT+input$CSRot+
-           input$CSNTcc+input$CSWS+input$CSWcc) == 100, "Input management rates do not add up to 100% -- Adjust before running SWAT+"))
-     paste0("Management rate input is ", input$CSFT+input$CSNT+input$CSRT+input$CSRot+input$CSNTcc+input$CSWS+input$CSWcc, "%, ready to run!")})
-  
-  # rate change
-  # output$CSFT_ratechange<-renderText({paste0("Change from 21% to ", input$CSFT, "% (change ",input$CSFT-21 ,"%)")})
-  # output$CSNT_ratechange<-renderText({paste0("Change from 40% to ", input$CSNT, "% (change ",input$CSNT-40 ,"%)")})
-  # output$CSRot_ratechange<-renderText({paste0("Change from 15% to ", input$CSRot, "% (change ",input$CSRot-15 ,"%)")})
-  # output$CSRT_ratechange<-renderText({paste0("Change from 4% to ", input$CSRT, "% (change ",input$CSRT-4 ,"%)")})
-  # output$CSNTcc_ratechange<-renderText({paste0("Change from 10% to ", input$CSNTcc, "% (change ",input$CSNTcc-10 ,"%)")})
-  # output$CSWS_ratechange<-renderText({paste0("Change from 9% to ", input$CSWS, "% (change ",input$CSWS-9 ,"%)")})
-  # output$CSWcc_ratechange<-renderText({paste0("Change from 1% to ", input$CSWcc, "% (change ",input$CSWcc-1 ,"%)")})
   
   output$cc_rate_change<-renderText({paste0("Change from 10% to ", input$cc, "% (change ",input$cc-10 ,"%)")})
   output$vfs_rate_change<-renderText({paste0("Change from 35% to ", input$vfs, "% (change ",input$vfs-35 ,"%)")})
   output$grww_rate_change<-renderText({paste0("Change from 21% to ", input$grww, "% (change ",input$grww-21 ,"%)")})
   output$notill_rate_change<-renderText({paste0("Change from 60% to ", input$notill, "% (change ",input$notill-60 ,"%)")})
-  output$subfert_rate_change<-renderText({paste0("Change from X% to ", input$subfert, "% (change ",input$subfert-0 ,"%)")})
+  output$subfert_rate_change<-renderText({paste0("Change from 0% to ", input$subfert, "% (change ",input$subfert-0 ,"%)")})
   
-  
-  
-  scenario_buff_rate<-reactive({round(input$CSFT*input$CSFT_B/100 +input$CSNT*input$CSNT_B/100+ input$CSRT*input$CSRT_B/100+ input$CSRot*input$CSRot_B/100+ input$CSNTcc*input$CSNTcc_B/100 +input$CSWS*input$CSWS_B/100 +input$CSWcc*input$CSWcc_B/100)})
-  scenario_gww_rate<-reactive({round(input$CSFT*input$CSFT_GW/100 +input$CSNT*input$CSNT_GW/100+ input$CSRT*input$CSRT_GW/100+ input$CSRot*input$CSRot_GW/100+ input$CSNTcc*input$CSNTcc_GW/100 +input$CSWS*input$CSWS_GW/100 +input$CSWcc*input$CSWcc_GW/100)})
-  
-  output$buff_grw_rate<-reactive({validate(need(( (input$CSFT_B + input$CSFT_GW) <= 100) & ((input$CSNT_B + input$CSNT_GW) <= 100) & ((input$CSRT_B + input$CSRT_GW) <= 100) & ((input$CSRot_B + input$CSRot_GW) <= 100) & ((input$CSNTcc_B + input$CSNTcc_GW) <= 100) & ((input$CSWS_B + input$CSWS_GW) <= 100), "Total rate of buffers and grassed waterways on one management scenario cannot be greater than 100% -- Adjust before running SWAT+"))
-    paste0("Total input rate of vegetated buffers is ", scenario_buff_rate(), '%',
-           " and total input rate of grassed waterways is ", scenario_gww_rate() , '%. This is an change of ', round(((as.numeric(scenario_buff_rate())/100) - 0.35) * 8080.74), ' cropland acres with vegetated buffers and ',
-           round(((as.numeric(scenario_gww_rate())/100) - 0.21) * 8080.74), ' cropland acres with grassed waterways' )})
-  
-  #print input management to UI
-  output$cc_rate <- renderText({paste0("Rye cover crops = ", input$CSNTcc + input$CSWcc ,"%") })
-  output$winter_cover_rate <- renderText({paste0("Winter cover (rye + winter wheat) = ", input$CSNTcc + input$CSWcc + input$CSWS,"%") })
-  output$FT_rate <- renderText({paste0("Full till management = ", input$CSFT ,"%") })
-  output$NT_rate <- renderText({paste0("No till management = ", input$CSNT + input$CSNTcc + input$CSWcc + input$CSWS ,"%") })
-  output$RT_rate <- renderText({paste0("Reduced till management = ", input$CSRT ,"%") })
-  output$Rot_rate <- renderText({paste0("Rotational till management = ", input$CSRot ,"%") })
   
   # add other things from excel spreadsheet, like rates of subsurface placement, total N and total P applied 
   output$N_incorp<-renderText({paste0("Incorporated N (%) = ",input$CSFT*1+input$CSNT*0.97+input$CSRT*1+input$CSRot*1+input$CSNTcc*0.9+input$CSWS*0.69+input$CSWcc*0.64)})
   output$P_incorp<-renderText({paste0("Incorporated P (%) = ",input$CSFT*1+input$CSNT*0.1+input$CSRT*1+input$CSRot*1+input$CSNTcc*0.1+input$CSWS*0.55+input$CSWcc*0.69)}) 
-  output$N_applied<-renderText({paste0("Average annual N applied (lb/acre) = ", round( (223*(input$CSFT/100)/2 +206*(input$CSNT/100)/2 + 223*(input$CSRT/100)/2 + 226*(input$CSRot/100)/2 +222*(input$CSNTcc/100)/2 + 296*(input$CSWS/100)/3 + 311*(input$CSWcc/100)/3) ,0))})
-  output$P_applied<-renderText({paste0("Average annual P2O5 applied (lb/acre) = ", round( (118/2*(input$CSFT/100) + 118/2*(input$CSNT/100) + 118/2*(input$CSRT/100) + 116/2*(input$CSRot/100) + 116/2*(input$CSNTcc/100) + 174/3*(input$CSWS/100) + 168/3*(input$CSWcc/100)) ,0))})
+  # output$N_applied<-renderText({paste0("Average annual N applied (lb/acre) = ", round( (223*(input$CSFT/100)/2 +206*(input$CSNT/100)/2 + 223*(input$CSRT/100)/2 + 226*(input$CSRot/100)/2 +222*(input$CSNTcc/100)/2 + 296*(input$CSWS/100)/3 + 311*(input$CSWcc/100)/3) ,0))})
+  # output$P_applied<-renderText({paste0("Average annual P2O5 applied (lb/acre) = ", round( (118/2*(input$CSFT/100) + 118/2*(input$CSNT/100) + 118/2*(input$CSRT/100) + 116/2*(input$CSRot/100) + 116/2*(input$CSNTcc/100) + 174/3*(input$CSWS/100) + 168/3*(input$CSWcc/100)) ,0))})
   
   ###ditches###
   #print input ditch rate to UI
@@ -492,51 +365,7 @@ server <- function(input, output, session) {
   output$HIGHPCP_AVGTMP <- renderText({paste0("Changed high pcp average tmp years by ", input$HIGHPCP_AVGTMP - 5 ," years") })
   output$AVGPCP_HIGHTMP <- renderText({paste0("Changed average pcp high tmp years by ", input$AVGPCP_HIGHTMP - 3 ," years") })
   
-  #run code to change all inputs
-  # observeEvent(input$simulate,ChangeSWATInputs(input$ditch_rate,input$CSFT,input$CSNT,input$CSRT,input$CSRot,
-  #                                              input$CSNTcc,input$CSWS,input$CSWcc,
-  #                                              
-  #                                              input$CSFT_B,input$CSNT_B,input$CSRT_B,input$CSRot_B,
-  #                                              input$CSNTcc_B,input$CSWS_B,input$CSWcc_B,
-  #                                              
-  #                                              input$CSFT_GW,input$CSNT_GW,input$CSRT_GW,input$CSRot_GW,
-  #                                              input$CSNTcc_GW,input$CSWS_GW,input$CSWcc_GW))
-  
 
-  # ClimateOut<-eventReactive(input$ClimateApply,ChangeSWATClimate(input$SelectClimateOption,input$SelectClimateModels,input$ClimateFile))
-  # output$ClimateOut<-renderText({ClimateOut()[[1]]})
-
- 
-  
-  #clear scenario inputs by copying baseline to scenario folder
-  # observeEvent(input$cleardir,  Reset_scenario(baseline_dir,scenario_dir)) 
-# observeEvent(input$cleardir, {shinyjs::reset("side-panel")})
- 
- 
- #observeEvent(input$runswat,  RunAllScripts_SWATv60.5.2(scenario_dir))
- #output$runningmodel<-renderText({ 
- #  bindEvent(input$runswat , RunAllScripts_SWATv60.5.2(scenario_dir) )
- #  })
- #output$runningmodel<-renderText({RunAllScripts_SWATv60.5.2(scenario_dir)})
- #observeEvent(input$runswat,  RunAllScripts_SWATv60.5.2(scenario_dir))
-
-###################################################
-#THIS CODE BELOW WORKS 
-# text_reactive <- eventReactive( input$runswat, {
-#   testGUI()
-# })
- 
-# text output
-# output$runningmodel <- renderText({
-#   text_reactive()
-# })
-###################################################
-
-  #because of how climate is more straight forward as an input than management, maybe just set up climate when going to run SWAT
-  #technically could also do this with management instead of having the button... then whatever management is in the UI when you hit "Run OWC-SWAT+" is the management
-  #You have to stick with--benefit to having it outside is user can fiddle with outputs they want, benefits to inside is it's more clean
-  #Maybe could have list of inputs that are non-reactive at the top of "visualize outputs" That way there's no confusion what inputs the outputs are reflective of
-   
   text_reactive <-eventReactive( input$runswat, {
   
    showModal(modalDialog(title="Running SWAT+",tagList("Any further changes to the model will not be reflected in results tab"), footer=NULL,easyClose = T))
@@ -573,61 +402,14 @@ server <- function(input, output, session) {
    
  })
  
- # output$ClimatePlot<- renderPlot({
- #   
- #     req(ClimateDataInput()[[1]])
- #   
- #   # ClimateDataInput is returned in a list, have to rebuild data frame
- #   
- #   AnnualClimateData<-data.frame(ClimateDataInput()[[1]]$WY,ClimateDataInput()[[1]]$PCP_mm, 
- #                                 ClimateDataInput()[[1]]$TMP_C,ClimateDataInput()[[1]]$data)
- #   colnames(AnnualClimateData)<-c('WY','PCP_mm','TMP_C','data')
- #   
- #   AnnualClimateData
- #   
- #   # This goes into reactive plot
- #     PCP_ANNUAL_PLOT<-ggplot(AnnualClimateData,aes(y=PCP_mm,x=data))+geom_boxplot()
- # 
- #   
- #   
- # })
- 
  output$ClimateTable<- renderTable({
-   
-   # AnnualClimateData<-data.frame(ClimateDataInput()[[1]]$WY,ClimateDataInput()[[1]]$PCP_mm, 
-   #                               ClimateDataInput()[[1]]$TMP_C,ClimateDataInput()[[1]]$data)
-   # colnames(AnnualClimateData)<-c('WY','PCP_mm','TMP_C','data')
-   # 
-   # AnnualClimateData
+
    
    ClimateDataInput()[[1]]
    
    
  })
 
- #  # plot output
- #  output$runningmodel2 <- renderPlot({
- #  if(length(input$SelectClimate)==1){
- #                text_reactive()[[1]]}
- #    
- #  if(length(input$SelectClimate)==2){
- #  grid.arrange(text_reactive()[[1]],
- #               text_reactive()[[2]])
- #  }
- #    
- #  if(length(input$SelectClimate)==3){
- #      grid.arrange(text_reactive()[[1]],
- #                   text_reactive()[[2]],
- #                   text_reactive()[[3]])
- #  }
- #    
- #  if(length(input$SelectClimate)==4){
- #      grid.arrange(text_reactive()[[1]],
- #                   text_reactive()[[2]],
- #                   text_reactive()[[3]],
- #                   text_reactive()[[4]])
- #    }
- #  })
   
   # Recent climate plots, 2013-2020
   output$BR_plot<-renderPlot({text_reactive()[[2]]})
@@ -636,6 +418,7 @@ server <- function(input, output, session) {
   output$yield_per<-renderPlot({text_reactive()[[5]]})
   output$yield_abs<-renderPlot({text_reactive()[[6]]})
   output$yield_table<-renderTable({text_reactive()[[7]]})
+  
   # Climate + land use change plots
   output$BR_plot_clim<-renderPlot({text_reactive()[[8]]})
   output$HRU_per_clim<-renderPlot({text_reactive()[[9]]})
@@ -643,25 +426,7 @@ server <- function(input, output, session) {
   output$yield_per_clim<-renderPlot({text_reactive()[[11]]})
   output$yield_abs_clim<-renderPlot({text_reactive()[[12]]})
   output$yield_table_clim<-renderTable({text_reactive()[[13]]})
-  
-  # This code isn't working when using text_reactive()[[]], unsure why
-  # # # change to render img
-  # output$runningmodel3 <-renderImage({
-  #     
-  #     # image_file <- paste0('www/','avg_change_BR.png')
-  #   image_file <- text_reactive()[[6]]
-  # 
-  #   return(list(
-  #     src = image_file,
-  #     filetype = "image/png",
-  #     height = 520,
-  #     width = 696
-  #   ))
-  # },
-  # deleteFile=T)
 
-
-  
   
  }
 # Run the app ----
