@@ -22,13 +22,6 @@ source("RunAllScripts_SWATv60.5.2.R")
 source("testPlot.R")
 source("ClimateChange.R")
 
-run_yrs<-c(2009)
-
-
-# Load needed data ---
-rotations <- read.csv("data/LumAreaSummary.csv")
-baseline_data_avg<-read.csv("data/baseline_data_avg.csv")
-
 
 scenario_dir <- paste0(getwd(),"/Scenarios")
 
@@ -39,8 +32,7 @@ ui <- fluidPage(
     tabsetPanel(
       
       tabPanel("About OWC-SWAT+", br(),strong("Welcome to the Old Woman Creek Soil and Water Assessment Tool! (OWC-SWAT+)"), br(),br(),
-               em('This is an online beta version of the app for demonstration purposes only. This app has limited run-time and multiple online users may slow the app performance. An app that can be deployed as a standalone Windows application is forthcoming soon.'),
-               br(),br(),
+
                p("This tool was designed to aid conservation efforts in the Old Woman Creek (OWC) watershed. Contained within this is a watershed model of Old Woman Creek built with the Soil and Water Assessment Tool framework (SWAT+; https://swat.tamu.edu/software/plus/). SWAT is a landscape hydrology and pollutant transport model designed by the U.S. Department of Agricultural Research Service (USDA) to simulate the transport of nutrients, sediments, and
 pesticides in agricultural landscapes (Arnold et al., 2012; Moriasi et al., 2015)."),
                  p("Old Woman Creek estuary is vulnerable to both climate and land-use changes. The original intent of the national estuary reserve designation was to include the watershed within the conservation area, however this placed an undue burden on farmers to preserve this land (Hanselmann & Vogel, 1978).
@@ -53,8 +45,8 @@ pesticides in agricultural landscapes (Arnold et al., 2012; Moriasi et al., 2015
                
                img(src="owc_map.png",width=1430/2,height=1105/2),br(),p('Figure 1. Map of Old Woman Creek watershed and estuary. Old Woman Creek is located in northern Ohio in the Great Lakes Basin.'),
                br(), hr(style="border-color: silver;"),br(),
-               p("This app was written and designed by Haley Kujawa supported with funding from the Margaret A. Davidson fellowship."),
-                 p("Shiny code used to design the app can be found in https://github.com/haleykujawa/SWATPlusGUI.git."), p("Contact: kujawa.21@osu.edu"),br(),
+               p("This app was written and designed by Haley Kujawa supported by funding from the Margaret A. Davidson fellowship."),
+                 a(href="https://github.com/haleykujawa/SWATPlusGUI.git","OWC-SWAT+ GUI gitub"),br(), p("kujawa.21@osu.edu"),br(),
                img(src="old-woman-creek.png",height=503/4,width=800/4),
                img(src="davidson.png",height=117/2,width=432/2),
                img(src="osu.png",height=88/2,width=569/2),
@@ -95,28 +87,37 @@ https://doi.org/10.13031/trans.58.10715'),
                 tabsetPanel(
                      tabPanel("Management and conservation practices",br(),
                               p('Percent of practice on row-crop lands. All practices are intialized at the baseline rate - representative of years 2013-2020.'),
-                              em('The current Shiny-SWAT+ framework can only alter one management practice per model run. Altering multiple practices will not produce desired results.'),br(), br(),
-                              
-                              fluidRow(column(6,sliderInput("cc", label = "Rye cover crop",min=10,max=100, value = 10)),
-                                       column(6,br(),textOutput("cc_rate_change"))),
+                              p('The current Shiny-SWAT+ framework can only alter one practice per model run in each of the following categories:'),
                               
                               hr(style="border-color: silver;"),
+                              
+                              br(),p('Edge-of-field BMPs'),br(),
                               
                               fluidRow(column(6,sliderInput("vfs", label = "Vegetative field buffers", min=35,max=100,value = 35)),
                                        column(6,br(),textOutput("vfs_rate_change"))),
                               
                               hr(style="border-color: silver;"),
                               
+                              br(),p('In-field management practices (change one only)'),br(),
                               
+                              fluidRow(column(6,sliderInput("cc", label = "Rye cover crop",min=10,max=100, value = 10)),
+                                       column(6,br(),textOutput("cc_rate_change"))),
+                              
+                              # hr(style="border-color: silver;"),
+                            
                               fluidRow(column(6,sliderInput("notill", label = "Continuous no-tillage", min=60,max=100,value = 60)),
                                        column(6,br(),textOutput("notill_rate_change"))),
                               
-                              hr(style="border-color: silver;"),
+                              # hr(style="border-color: silver;"),
                               
                               fluidRow(column(6,sliderInput("subfert", label = "Subsurface placement",min=0,max=100, value = 0)),
                                        column(6,br(),textOutput("subfert_rate_change"))),
                               
+                              # hr(style="border-color: silver;"),
+                              
                               hr(style="border-color: silver;"),
+                              
+                              br(),p('In-stream BMPs'),br(),
                               
                               #ditch widget--maybe change this to miles of stream as an input?
                               fluidRow(column(6,sliderInput("ditch_rate", label = ("Conservation ditches"),min=0,max=100, value = 0)),
@@ -149,7 +150,7 @@ https://doi.org/10.13031/trans.58.10715'),
                    
                   fluidRow(
                   
-                  column(6,numericInput("LOWPCP_HIGHTMP", label = h5("Years with low precip, high temp:"),
+                  column(6,numericInput("LOWPCP_HIGHTMP", label = h5("Years with low precipitation, high temperatures:"),
                                       value = "5")),br(),br(),
                   p('  These years include: 1991, 1999, 2010, 2012, 2016 (5 years)'),
                   column(6, textOutput("LOWPCP_HIGHTMP"))
@@ -159,7 +160,7 @@ https://doi.org/10.13031/trans.58.10715'),
                   
                   fluidRow(
                     
-                    column(6,numericInput("HIGHPCP_AVGTMP", label = h5("Years with high precip, average temp:"),
+                    column(6,numericInput("HIGHPCP_AVGTMP", label = h5("Years with high precipitation, average temperatures:"),
                                           value = "5")),br(),br(),
                     p('  These years include: 2000, 2007, 2008, 2013, 2019 (5 years)'),
                     column(6, textOutput("HIGHPCP_AVGTMP"))
@@ -169,7 +170,7 @@ https://doi.org/10.13031/trans.58.10715'),
                   
                   fluidRow(
                     
-                    column(6,numericInput("AVGPCP_HIGHTMP", label = h5("Years with average precip, high temp:"),
+                    column(6,numericInput("AVGPCP_HIGHTMP", label = h5("Years with average precipitation, high temperatures:"),
                                           value = "3")),br(),br(),
                     p('  These years include: 1998, 2002, 2018 (3 years)'),
                     column(6, textOutput("AVGPCP_HIGHTMP"))
@@ -361,9 +362,9 @@ server <- function(input, output, session) {
   output$selected_ditch_rate <- renderText({paste0("Conservation ditch rate = ", input$ditch_rate ,"%") })  
   
   # Climate input
-  output$LOWPCP_HIGHTMP <- renderText({paste0("Changed low pcp high tmp years by ", input$LOWPCP_HIGHTMP - 5 ," years") }) # - x is based on nyrs in hist dataset
-  output$HIGHPCP_AVGTMP <- renderText({paste0("Changed high pcp average tmp years by ", input$HIGHPCP_AVGTMP - 5 ," years") })
-  output$AVGPCP_HIGHTMP <- renderText({paste0("Changed average pcp high tmp years by ", input$AVGPCP_HIGHTMP - 3 ," years") })
+  output$LOWPCP_HIGHTMP <- renderText({paste0("Changed low precipitation, high temperature years by ", input$LOWPCP_HIGHTMP - 5 ," years") }) # - x is based on nyrs in hist dataset
+  output$HIGHPCP_AVGTMP <- renderText({paste0("Changed high precipitation, average temperature years by ", input$HIGHPCP_AVGTMP - 5 ," years") })
+  output$AVGPCP_HIGHTMP <- renderText({paste0("Changed average precipitation, high temperature years by ", input$AVGPCP_HIGHTMP - 3 ," years") })
   
 
   text_reactive <-eventReactive( input$runswat, {
