@@ -1,7 +1,14 @@
-RunAllScripts_SWATv60.5.2<-function(scenario_dir,SelectClimate,stream_rate,cc_rate,subfert_rate,notill_rate,vfs_rate){
+RunAllScripts_SWATv60.5.2<-function(SelectClimate,stream_rate,cc_rate,subfert_rate,notill_rate,vfs_rate,local_dir){
 
-#if going at add changing management into this file, maybe also add copying over the baseline directory here
-print('im here')
+  
+  ### folders ########
+  local_dir<-gsub("\\\\", "/",local_dir)
+  
+  baseline_path <- paste0(local_dir,"/Baseline")
+  scenario_path <- paste0(local_dir,"/Scenarios")
+
+  
+  
   set.seed(1)
 ### ADD CODE BELOW ####
   # copy over orginal files from baseline --done 3/20
@@ -23,9 +30,7 @@ if (is.null(SelectClimate)){
 
 # add error for buffers + grww?
 
-### folders ########
-baseline <- paste0(here("Baseline"))  
-# scenario <- paste0(here("Scenarios"))
+
   
 ### functions ######
   spaceOutput<-function(data,nspaces){
@@ -43,8 +48,8 @@ baseline <- paste0(here("Baseline"))
   }
   
  ########## Copy over baseline files ################################################################
-  file.copy(from = file.path(getwd(),'Baseline',mgt_files),   # Copy files
-            to = file.path(scenario_dir,mgt_files),overwrite = T)
+  file.copy(from = file.path(baseline_path,mgt_files),   # Copy files
+            to = file.path(scenario_path,mgt_files),overwrite = T)
   
   
  ########## Rewrite all input files if changes made from baseline ###################################
@@ -57,7 +62,7 @@ baseline <- paste0(here("Baseline"))
   
   
   ############################### CHANGE DITCH PARAMETERS ########################  
-  setwd(baseline)
+  setwd(baseline_path)
   tmp <- file('hyd-sed-lte.cha')
   open(tmp, "r") #read
   
@@ -224,7 +229,7 @@ baseline <- paste0(here("Baseline"))
   
   
   
-  setwd(scenario_dir)
+  setwd(scenario_path)
   
   #unlink(tmp,force=T)
   file.remove('hyd-sed-lte.cha')
@@ -689,7 +694,7 @@ ChangeMgt<-function(hru_data, name,  num, scenario_rate){
   
   
   ############ WRITE LOOKUP TABLE FOR PLOTTING OUTPUTS ############
-  write.csv(hru_data,paste0(scenario_dir,"\\hru_lookup_scenario.csv"),row.names=F)
+  write.csv(hru_data,paste0(scenario_path,"\\hru_lookup_scenario.csv"),row.names=F)
   
   
   ############ WRITE NEW HRU-DATA.HRU #############################
@@ -733,7 +738,7 @@ ChangeMgt<-function(hru_data, name,  num, scenario_rate){
       id  name                          topo             hydro              soil            lu_mgt   soil_plant_init         surf_stor              snow             field  ')
   
   
-  setwd(scenario_dir)
+  setwd(scenario_path)
   file.remove('hru-data.hru')
   sink('hru-data.hru', type=c("output"), append = T)
   write(c(topOfFile),'hru-data.hru',sep = "\n",append=T)
@@ -840,7 +845,7 @@ ChangeMgt<-function(hru_data, name,  num, scenario_rate){
     
   }
   
-  setwd(scenario_dir)
+  setwd(scenario_path)
   
   #unlink(tmp,force=T)
   file.remove('hydrology.hyd')
@@ -896,8 +901,8 @@ ChangeMgt<-function(hru_data, name,  num, scenario_rate){
                               # file.copy(from = file.path(paste0(scenario_dir,"/", my_files)),   # Copy files
                               # to = file.path(paste0(scenario_dir,'/climate','/',climatemodel,'/historical',"/", my_files)))
       
-                              file.copy(from = file.path(paste0(scenario_dir,"/", mgt_files)),   # Copy files
-                              to = file.path(paste0(scenario_dir,'/',climatemodel,"/", mgt_files)),overwrite=T)
+                              file.copy(from = file.path(paste0(scenario_path,"/", mgt_files)),   # Copy files
+                              to = file.path(paste0(scenario_path,'/',climatemodel,"/", mgt_files)),overwrite=T)
                               
                               print(paste0("running ",climatemodel))
                               
@@ -905,8 +910,8 @@ ChangeMgt<-function(hru_data, name,  num, scenario_rate){
                               # setwd(paste0(scenario_dir,'/climate','/',climatemodel,'/historical'))
                               # system('SWATPlus_60.5.5.exe',ignore.stdout = T,ignore.stderr = T) #run executable
                               
-                              setwd(paste0(scenario_dir,'/',climatemodel))
-                              system('SWATPlus_60.5.5.exe',ignore.stdout = F,ignore.stderr = F) #run executable
+                              setwd(paste0(scenario_path,'/',climatemodel))
+                              system('SWATPlus_60.5.5.exe',ignore.stdout = T,ignore.stderr = T) #run executable
                               
                               # Moved to testPlot
                               ### Read in channel data and compare with baseline ####

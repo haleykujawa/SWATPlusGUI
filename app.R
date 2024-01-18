@@ -78,6 +78,7 @@ https://doi.org/10.13031/trans.58.10715'),
                ),
       
       tabPanel("Change inputs and run OWC-SWAT+",
+
                
 
     sidebarLayout(                   
@@ -217,6 +218,14 @@ https://doi.org/10.13031/trans.58.10715'),
         #management scenarios
         br(),
         
+        # Have to run SWAT+ locally on a windows machine. 
+        #This is because Shiny cannot run a windows exe file. In future, could look into using linux based version of swat
+        p('To run the OWC-SWAT+ model using this app, you will need to download the OWC-SWAT+ model and unzip on your local computer. Note this model only runs on Windows.'),
+        a(href="https://buckeyemailosu-my.sharepoint.com/:f:/g/personal/kujawa_21_osu_edu/ElF6DZ3LvV9OmzzMB6Lt6DwBE0T1rRQNLCigHe4S8oYUbw?e=bCMiv9","OWC-SWAT+ files download"),
+        p('Once those files are downloaded and unzipped, place the path to the files below:'),
+        textAreaInput("local_dir","Copy and paste directory on computer where downloaded OWC-SWAT+ files are:", value="",width="1000px"),
+        br(),
+        
         checkboxGroupInput("SelectClimate", label = strong("Climate data to run:"), 
                            choices = list("Recent observed climate (2013-2020)"="hist","Climate change scenario"="userClimScen"), selected = "hist"),
         
@@ -226,7 +235,9 @@ https://doi.org/10.13031/trans.58.10715'),
             h5("Climate change scenario = ~ 12 min"),
             em("Once you hit 'Run OWC-SWAT+' you cannot redo the model run. You will have to wait until the model completes the runs or restart the app. *Check inputs before running!*"),
         h3("Climate change scenario"),
-        span(textOutput("climate_rate"),style='color:green'),
+        span(textOutput("climate_rate"),style='color:green'),br(),
+        
+        span(textOutput("local_dir_input"),style='color:green'),
         
 
         
@@ -370,15 +381,15 @@ server <- function(input, output, session) {
   text_reactive <-eventReactive( input$runswat, {
   
    showModal(modalDialog(title="Running SWAT+",tagList("Any further changes to the model will not be reflected in results tab"), footer=NULL,easyClose = T))
-   RunAllScripts_SWATv60.5.2(scenario_dir,
-                             input$SelectClimate,
+   RunAllScripts_SWATv60.5.2(input$SelectClimate,
                              input$ditch_rate,
                              input$cc,
                              input$subfert,
                              input$notill,
-                             input$vfs)
+                             input$vfs,
+                             input$local_dir)
    removeModal()
-   testPlot(scenario_dir,input$SelectClimate)# testGUI()
+   testPlot(input$local_dir,input$SelectClimate)# testGUI()
    
    
  })
@@ -394,12 +405,14 @@ server <- function(input, output, session) {
    overall precipitation change is ", round(as.numeric(ClimateDataInput()[[1]]$`Precipitation (mm)`[1]),2),"%")})
  
  
+ output$local_dir_input<-reactive({validate(need(!is.empty(input$local_dir), "Input directory with SWAT files (Path/to/OWC_SWAT_GUI_FILES) to start app and resolve above error"))
+   paste0("Local directory is loaded into the app")})
  
  ClimateDataInput <-reactive({
    
    # recalculate climate here 
    ClimateChange(input$LOWPCP_HIGHTMP,input$HIGHPCP_AVGTMP,input$AVGPCP_HIGHTMP,
-                 input$DELTAT, input$DELTAP)
+                 input$DELTAT, input$DELTAP,input$local_dir)
    
  })
  
