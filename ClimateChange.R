@@ -22,9 +22,11 @@
 
 # Full seasons that are within the 1990-2019 WY are included. This excludes fall 2019
 
-ClimateChange<-function(nyrs_LOWPCP_HIGHTMP,nyrs_HIGHPCP_AVGTMP,nyrs_AVGPCP_HIGHTMP,deltaC, deltaP){
+ClimateChange<-function(nyrs_LOWPCP_HIGHTMP,nyrs_HIGHPCP_AVGTMP,nyrs_AVGPCP_HIGHTMP,deltaC, deltaP,local_dir){
 
   set.seed(1)
+  
+  local_dir<-gsub("\\\\", "/",local_dir)
   
     
   ### functions ######
@@ -715,7 +717,7 @@ rm(dailyClim_final)
 
 
 ### Write SWAT+ climate files ####
-TxtInOut<-file.path(here("Scenarios",'userClimScen'))
+TxtInOut<-file.path(paste0(local_dir,"/Scenarios",'/userClimScen'))
 
 setwd(TxtInOut)
 
