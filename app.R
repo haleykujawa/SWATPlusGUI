@@ -114,6 +114,8 @@ https://doi.org/10.13031/trans.58.10715'),
                               fluidRow(column(6,sliderInput("subfert", label = "Subsurface placement",min=0,max=100, value = 0)),
                                        column(6,br(),textOutput("subfert_rate_change"))),
                               
+                              span(textOutput("practice_rate"),style='color:green'),br(),
+                              
                               # hr(style="border-color: silver;"),
                               
                               hr(style="border-color: silver;"),
@@ -220,7 +222,7 @@ https://doi.org/10.13031/trans.58.10715'),
         
         # Have to run SWAT+ locally on a windows machine. 
         #This is because Shiny cannot run a windows exe file. In future, could look into using linux based version of swat
-        p('To run the OWC-SWAT+ model using this app, you will need to download the OWC-SWAT+ model and unzip on your local computer. Note this model only runs on Windows.'),
+        p('To run the OWC-SWAT+ model using this app, you will need to download the OWC-SWAT+ model (OWC_SWAT_GUI_FILES.zip) and unzip on your local computer. Note: this model currently only runs on Windows.'),
         a(href="https://buckeyemailosu-my.sharepoint.com/:f:/g/personal/kujawa_21_osu_edu/ElF6DZ3LvV9OmzzMB6Lt6DwBE0T1rRQNLCigHe4S8oYUbw?e=bCMiv9","OWC-SWAT+ files download"),
         p('Once those files are downloaded and unzipped, place the path to the files below:'),
         textAreaInput("local_dir","Copy and paste directory on computer where downloaded OWC-SWAT+ files are:", value="",width="1000px"),
@@ -405,8 +407,11 @@ server <- function(input, output, session) {
    overall precipitation change is ", round(as.numeric(ClimateDataInput()[[1]]$`Precipitation (mm)`[1]),2),"%")})
  
  
- output$local_dir_input<-reactive({validate(need(!is.empty(input$local_dir), "Input directory with SWAT files (Path/to/OWC_SWAT_GUI_FILES) to start app and resolve above error"))
-   paste0("Local directory is loaded into the app")})
+ output$local_dir_input<-reactive({validate(need(!is.empty(input$local_dir), "Input directory with SWAT files (Path/to/OWC_SWAT_GUI_FILES) to start app and resolve error above (Error: cannot change working directory)"))
+   paste0("Local directory is loaded into the app. If above error persists, ensure directory path is correct (e.g., no additional spaces exist in the path name)")})
+ 
+ output$practice_rate<-reactive({validate(need(input$cc==10 & input$notill==60 |  input$cc==10 & input$subfert==0 | input$notill ==60 & input$subfert == 0 , "More than one in-field management was changed. Slide input values to to left-most position to restore inputs. Change only one in-field management practice rate."))
+   paste0("One or no in-field management was changed")})
  
  ClimateDataInput <-reactive({
    
