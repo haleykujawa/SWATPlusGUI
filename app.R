@@ -33,7 +33,7 @@ ui <- fluidPage(
       
       tabPanel("About OWC-SWAT+", br(),strong("Welcome to the Old Woman Creek Soil and Water Assessment Tool! (OWC-SWAT+)"), br(),br(),
 
-               p("This tool was designed to aid conservation efforts in the Old Woman Creek (OWC) watershed. Contained within this is a watershed model of Old Woman Creek built with the Soil and Water Assessment Tool framework (SWAT+; https://swat.tamu.edu/software/plus/). SWAT is a landscape hydrology and pollutant transport model designed by the U.S. Department of Agricultural Research Service (USDA) to simulate the transport of nutrients, sediments, and
+               p("This tool was designed to aid conservation efforts in the Old Woman Creek (OWC) watershed. Contained within this is a watershed model of Old Woman Creek built with the Soil and Water Assessment Tool framework (SWAT+)."), p("SWAT is a landscape hydrology and pollutant transport model designed by the U.S. Department of Agricultural Research Service (USDA) to simulate the transport of nutrients, sediments, and
 pesticides in agricultural landscapes (Arnold et al., 2012; Moriasi et al., 2015)."),
                  p("Old Woman Creek estuary is vulnerable to both climate and land-use changes. The original intent of the national estuary reserve designation was to include the watershed within the conservation area, however this placed an undue burden on farmers to preserve this land (Hanselmann & Vogel, 1978).
                  Therefore, while the final preservation area included the estuary and some of the surrounding uplands, the majority of its watershed remains open to development. Changes in land-use and climate are expected to alter hydrology and nutrient loadings in Lake Erie watersheds (Michalak et al., 2013). Addressing the estuary’s vulnerability to future land-use and climate change 
@@ -54,7 +54,8 @@ pesticides in agricultural landscapes (Arnold et al., 2012; Moriasi et al., 2015
                
                br(), hr(style="border-color: silver;"),br(),
                
-               strong('References'),br(),br(),
+               strong('References'),br(),
+               br(), a(href="https://swat.tamu.edu/software/plus/","SWAT+ webpage"),br(),br(),
                p('Arnold, J G, Kiniry, J.R., Srinivasan, R., Williams, J.R., Haney, E.B., 2012. Soil and Water
 Assessment Tool (SWAT) User’s Manual, Version 2012. Texas Water Resources
 Institute. https://doi.org/10.1007/978-0-387-35973-1_1231'),
@@ -84,6 +85,7 @@ https://doi.org/10.13031/trans.58.10715'),
     sidebarLayout(                   
       sidebarPanel(#actionButton("cleardir", "Clear scenario"),
                    br(),
+                   strong("Before changing anything in this panel, ensure you have the local directory input -->"),br(),br(),
                    
                 tabsetPanel(
                      tabPanel("Management and conservation practices",br(),
@@ -410,8 +412,8 @@ server <- function(input, output, session) {
  output$local_dir_input<-reactive({validate(need(!is.empty(input$local_dir), "Input directory with SWAT files (Path/to/OWC_SWAT_GUI_FILES) to start app and resolve error above (Error: cannot change working directory)"))
    paste0("Local directory is loaded into the app. If above error persists, ensure directory path is correct (e.g., no additional spaces exist in the path name)")})
  
- output$practice_rate<-reactive({validate(need(input$cc==10 & input$notill==60 |  input$cc==10 & input$subfert==0 | input$notill ==60 & input$subfert == 0 , "More than one in-field management was changed. Slide input values to to left-most position to restore inputs. Change only one in-field management practice rate."))
-   paste0("One or no in-field management was changed")})
+ output$practice_rate<-reactive({validate(need(input$cc==10 & input$notill==60 |  input$cc==10 & input$subfert==0 | input$notill ==60 & input$subfert == 0 , "More than one in-field management was changed. Slide input values to to left-most position to restore inputs. Change at most only one in-field management practice rate."))
+   paste0("In field practices ready to run")})
  
  ClimateDataInput <-reactive({
    
