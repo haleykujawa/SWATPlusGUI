@@ -50,15 +50,16 @@ testPlot<-function(local_dir,SelectClimate){
                     "sw_change",     "lagsurf",     "laglatq",   "lagsatex")
   
   #### Datat frames for final data #######
-  ch_loss<-c()
+
   # hru_loss<-c()
   
   
   
 # if ('hist' %in% SelectClimate){
   for(climatemodel in SelectClimate){
+    
+    ch_loss<-c()
   
-  print(paste0(scenario_dir,'/',climatemodel))
   setwd(paste0(scenario_dir,'/',climatemodel))
   
   tmp <- file('channel_sd_yr.txt')
@@ -107,12 +108,12 @@ testPlot<-function(local_dir,SelectClimate){
   levels(ch_loss$variable)[levels(ch_loss$variable)=="totp_kg"]<-"Total P"
   
   
-  BR_plot<-ggplot(ch_loss,aes(x=variable,y=change_per))+geom_bar(stat = 'identity')+ylab("Change from baseline (%)")+
+  BR_plot<-ggplot(ch_loss,aes(x=variable,y=change_per))+geom_bar(stat = 'identity',color='black')+ylab("Change from baseline (%)")+
     xlab("")+ ggtitle("Change at Berlin Rd")+
     # geom_text(size=16,aes(label=round(change_per)), position=position_dodge(width=0.9), vjust=0.5,colour="black")+
     theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
           panel.background = element_blank(),text = element_text(size = 16),
-          panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
+          panel.border = element_rect(colour = "black", fill=NA, linewidth=1))+geom_hline(yintercept=0)
   
   
   ##### Management rotations / tile plot ######################
@@ -245,7 +246,7 @@ testPlot<-function(local_dir,SelectClimate){
     group_by(variable) %>% 
     summarize(value=mean(value),value_scen=mean(value_scen),area_ha=mean(area_ha)) %>% # average annual 2013-2020
     mutate(percent_change=(value_scen-value)*100/value) %>% 
-    mutate(output='All row crop HRUs')
+    mutate(output='All row-crop fields')
   
   # for changed HRUs only
   TotalHRUchange_changed<-DF_aghru %>% 
@@ -261,7 +262,7 @@ testPlot<-function(local_dir,SelectClimate){
     group_by(variable) %>% 
     summarize(value=mean(value),value_scen=mean(value_scen),area_ha=mean(area_ha)) %>%# average annual 2013-2020
     mutate(percent_change=(value_scen-value)*100/value) %>%
-    mutate(output='Changed HRUs only')
+    mutate(output='Fields with changed practices only')
   
   # combine
   
@@ -296,12 +297,14 @@ testPlot<-function(local_dir,SelectClimate){
     
     HRU_per<-TotalHRUchange %>% 
       filter(variable %in% c('perc_m3','qtile_m3','sedyld_t','surq_m3','surqsolp_kg','tilelabp_kg','totp_kg')) %>% 
-      ggplot(., aes(x=variable,y=percent_change,fill=output))+geom_bar(stat='identity',position="dodge")+    
-      xlab("")+ylab("Percent change from baseline")+
+      ggplot(., aes(x=variable,y=percent_change,fill=output))+geom_bar(stat='identity',position="dodge",color='black')+    
+      xlab("")+ylab("Change from baseline (%)")+
       scale_x_discrete(labels=c('sedyld_t'='Sediment yield','surqsolp_kg'='Surface soluble P',
                                 'tilelabp_kg'='Tile P','totp_kg'='Total P','surq_m3'='Surface runoff','qtile_m3'='Tile discharge',
                                 'perc_m3'='Percolation'))+
       # scale_fill_manual(values=c('baseline (2013-2020)'='white', 'land management scenario (2013-2020)'='grey'))+
+      scale_fill_manual(values=c('All row-crop fields'='white','Fields with changed practices only'='grey'))+
+      geom_hline(yintercept=0)+
       theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
             panel.background = element_blank(),text = element_text(size = 16),
             panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
@@ -313,12 +316,14 @@ testPlot<-function(local_dir,SelectClimate){
     HRU_abs<-TotalHRUchange %>% 
       filter(variable %in% c('sedyld_t','surqsolp_kg','tilelabp_kg','totp_kg')) %>% 
       # gather(units,change,-variable,-value,-value_scen,-area_ha,-percent_change,-output) %>% 
-      ggplot(., aes(x=variable, y=abs_change_lbsacre, fill=output))+geom_bar(stat='identity',position="dodge")+    
+      ggplot(., aes(x=variable, y=abs_change_lbsacre, fill=output))+geom_bar(stat='identity',position="dodge",color='black')+    
       xlab("")+ylab("Absolute change from baseline (lb/acre)")+
       scale_x_discrete(labels=c('sedyld_t'='Sediment yield','surqsolp_kg'='Surface soluble P',
                                 'tilelabp_kg'='Tile P','totp_kg'='Total P','surq_m3'='Surface runoff','qtile_m3'='Tile discharge',
                                 'perc_m3'='Percolation'))+
       # scale_fill_manual(values=c('baseline (2013-2020)'='white', 'land management scenario (2013-2020)'='grey'))+
+      scale_fill_manual(values=c('All row-crop fields'='white','Fields with changed practices only'='grey'))+
+      geom_hline(yintercept=0)+
       theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
             panel.background = element_blank(),text = element_text(size = 16),
             panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
@@ -405,7 +410,6 @@ testPlot<-function(local_dir,SelectClimate){
   }  
   
   # changed hrus only
-  print(sum(yield$changed_hru))
   if(sum(yield$changed_hru) > 0){
     
     yield_per<-yield %>% 
@@ -436,8 +440,8 @@ testPlot<-function(local_dir,SelectClimate){
     mutate(tile=replace(tile,tile==1,'tile fields')) %>% 
     ggplot(.,aes(x=PLANTNM,y=value,fill=variable))+ geom_boxplot()+facet_wrap(~tile)+
     scale_x_discrete(labels=c('corn'='Corn','soyb'='Soybean','wwht'='Winter wheat'))+
-    scale_fill_discrete(labels=c('MASS'='Land management scenario (2013-2020)',
-                                 'MASS_b'='Baseline (2013-2020)'))+
+    scale_fill_manual(labels=c('MASS'='Land management scenario (2013-2020)',
+                                 'MASS_b'='Baseline (2013-2020)'),values=c("MASS"='seagreen',"MASS_b"='lightblue'))+
     xlab("")+ylab("Yield (bu/acre)")+
     stat_summary(fun.data = plot_mean, geom = "text", fun.y = median, 
                  position = position_dodge(width = 0.75))+
