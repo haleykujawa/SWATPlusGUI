@@ -563,8 +563,13 @@ FUT_CLIM_ADD$PCP_mm[1]<-( FUT_CLIM_WY$PCP_mm[FUT_CLIM_WY$data=='fut'] - FUT_CLIM
 FUT_CLIM_WY<-rbind(FUT_CLIM_ADD,FUT_CLIM_WY)
 rm(FUT_CLIM_ADD)
 
-colnames(FUT_CLIM_WY)<-c('Data','Temperature (C)', 'Precipitation (mm)')
-FUT_CLIM_WY[,1]<-c('Change (C, %)','Future climate (user generated)','Historical (1990-2019)')
+colnames(FUT_CLIM_WY)<-c('Data','Temperature', 'Precipitation')
+FUT_CLIM_WY[,1]<-c('Change between historical and user-generated climate scenario','User-generated climate scenario','Historical (1990-2019)')
+
+FUT_CLIM_WY<-FUT_CLIM_WY %>% 
+  arrange(match(c('Historical (1990-2019)','User-generated climate scenario','Change between historical and user-generated climate scenario'), Data)) %>% 
+  mutate(Temperature= round(Temperature,2),Precipitation= round(Precipitation,1)) %>% 
+  mutate(Temperature= paste(Temperature,'C'),Precipitation= paste(Precipitation,c('mm','mm','%')))
 
 # This goes into reactive plot
 # PCP_ANNUAL_PLOT<-ggplot(FinalAnnualSummary,aes(y=PCP_mm,x=data))+geom_boxplot()

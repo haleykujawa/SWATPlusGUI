@@ -277,21 +277,6 @@ testPlot<-function(local_dir,SelectClimate){
   
   variable_labs<-c('Sediment yield','Surface soluble P','Tile P','Total P','Surface runoff','Tile discharge')
   names(variable_labs)<-c('sedyld_t','surqsolp_kg','tilelabp_kg','totp_kg','surq_m3','qtile_m3')
-  
-  # percent change plot
-    # HRU_per<-scenariodf %>% 
-    # select(name,variable,percent_change) %>% 
-    # filter(grepl(paste0(c('sedyld_t$','surqsolp_kg$','tilelabp_kg$','totp_kg$','surq_m3$','qtile_m3$'),collapse="|"),variable)) %>% 
-    # # gather(variable,value,-name) %>% http://127.0.0.1:47443/graphics/3e03f3e7-b090-43ee-b920-1f80bdbba4cd.png
-    # ggplot(.,aes(x=1,y=percent_change))+geom_boxplot()+facet_wrap(~variable,scales='free_y',labeller=labeller(variable=variable_labs))+
-    # xlab("")+ylab("Percent change from baseline")+
-    # # scale_fill_manual(values=c('baseline (2013-2020)'='white', 'land management scenario (2013-2020)'='grey'))+
-    # theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
-    #       panel.background = element_blank(),text = element_text(size = 16),
-    #       panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
-    #       legend.title = element_blank(),
-    #       axis.text.x=element_blank(),
-    #       axis.ticks.x=element_blank())
     
     # Percent change from all HRUs 
     
@@ -335,25 +320,6 @@ testPlot<-function(local_dir,SelectClimate){
   variable_labs<-c('Sediment yield (t/ha)','Surface soluble P (kg/ha)','Total P (kg/ha)')
   names(variable_labs)<-c('sedyld_tha','surqsolp_kgha','totp')
 
-  
-  # absolute change plot
-    # HRU_abs<-scenariodf %>% 
-    # select(name,totp,totp_b,surqsolp_kgha,surqsolp_kgha_b,sedyld_tha,sedyld_tha_b) %>% 
-    # gather(variable,value,-name) %>% 
-    # mutate(scenario=NA) %>% 
-    # mutate(scenario=replace(scenario,grepl('b',variable),'baseline (2013-2020)')) %>% 
-    # mutate(scenario=replace(scenario,!grepl('b',variable),'land management scenario (2013-2020)')) %>% 
-    # mutate_at('variable',str_replace,"_b","") %>% 
-    # ggplot(.,aes(x=1,y=value,fill=scenario))+geom_boxplot()+facet_wrap(~variable,scales='free_y',labeller=labeller(variable=variable_labs))+
-    # xlab("")+ylab("")+
-    # scale_fill_manual(values=c('baseline (2013-2020)'='white', 'land management scenario (2013-2020)'='grey'))+
-    # theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
-    #                                                                                  panel.background = element_blank(),text = element_text(size = 16),
-    #                                                                                  panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
-    #       legend.title = element_blank(),
-    #       legend.position = 'bottom',
-    #       axis.text.x=element_blank(),
-    #       axis.ticks.x=element_blank())
   
 
   ################## Read and write baseline yield ########################################

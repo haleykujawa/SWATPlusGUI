@@ -247,7 +247,7 @@ myplots<-list()
   ########################### CHANGE MANAGEMENT ######################################################
   
   ##### read hru lookup ######
-  hru_data<-read.csv(here('Baseline','hru_lookup.csv'))
+  hru_data<-read.csv(paste0(baseline_path,'/hru_lookup.csv'))
   
 
   # set lu mgt where cropland index is true to only the base management--otherwise addition of numbering for scenarios won't work
@@ -584,6 +584,12 @@ ChangeMgt<-function(hru_data, name,  num, scenario_rate){
                               
                               setwd(paste0(scenario_path,'/',climatemodel))
                               system('SWATPlus_60.5.5.exe',ignore.stdout = T,ignore.stderr = T) #run executable
+                              # Need to return error value and supply the error to the user interface if SWAT crashes
+                              # if (x == 157 | x == 72 | x == 38) {
+                              #   print("\n\n\n\n\n\n")
+                              #   print(x)
+                              #   
+                              #   trial_status <- "FAILED"
                               
                               # Moved to testPlot
                               ### Read in channel data and compare with baseline ####

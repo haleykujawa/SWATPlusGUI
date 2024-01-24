@@ -186,15 +186,16 @@ https://doi.org/10.13031/trans.58.10715'),
                   h4('Add overall change to precipitation and temperature'),
                 
                   p('Add a change to the "future" climate data that is added to the dataset in a linear fashion:
-                    e.g., year 1 will change by applied amount divided by total number of years, and the final year will
-                    be changed by the total amount.'),
+                    e.g., year 1 will change by applied amount divided by total number of years (X/30), and the final year will
+                    be changed by the total amount (X).'),
                   
                   fluidRow(
                     
-                    column(6,numericInput("DELTAT", label = h5("Add linear increase to temperature (C):"),
+                    column(3,numericInput("DELTAT", label = h5("Add linear increase to temperature (C):"),
                                           value = "0")),
-                    column(6,numericInput("DELTAP", label = h5("Add linear increase in precipitation (%):"),
-                                          value = "0"))
+                    column(3,numericInput("DELTAP", label = h5("Add linear increase in precipitation (%):"),
+                                          value = "0")),
+                    column(3,img(src="temp_graph2.png",width=579/1.5,height=485/1.5),p('Example of how temperature or precipitation change is applied in a linear change fashion to the climate data'))
                     
                     
                   ),
@@ -227,7 +228,7 @@ https://doi.org/10.13031/trans.58.10715'),
         p('To run the OWC-SWAT+ model using this app, you will need to download the OWC-SWAT+ model (OWC_SWAT_GUI_FILES.zip) and unzip on your local computer. Note: this model currently only runs on Windows.'),
         a(href="https://buckeyemailosu-my.sharepoint.com/:f:/g/personal/kujawa_21_osu_edu/ElF6DZ3LvV9OmzzMB6Lt6DwBE0T1rRQNLCigHe4S8oYUbw?e=bCMiv9","OWC-SWAT+ files download"),
         p('Once those files are downloaded and unzipped, place the path to the files below:'),
-        textAreaInput("local_dir","Copy and paste directory on computer where downloaded OWC-SWAT+ files are:", value="",width="1000px"),
+        textAreaInput("local_dir","Copy and paste local directory on computer where downloaded OWC-SWAT+ files are:", value="",width="1000px"),
         br(),
         
         checkboxGroupInput("SelectClimate", label = strong("Climate data to run:"), 
