@@ -1,8 +1,9 @@
 #test passing more than 1 plot/graph to the GUI interface
 
-testPlot<-function(local_dir,SelectClimate){
+testPlot<-function(SelectClimate){
   
-  local_dir<-gsub("\\\\", "/",local_dir)
+  # local_dir<-gsub("\\\\", "/",local_dir)
+  local_dir<-here()
 
   baseline_dir<-paste0(local_dir,'/Baseline')
   scenario_dir<-paste0(local_dir,'/Scenarios')

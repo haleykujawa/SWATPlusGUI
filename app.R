@@ -85,7 +85,6 @@ https://doi.org/10.13031/trans.58.10715'),
     sidebarLayout(                   
       sidebarPanel(#actionButton("cleardir", "Clear scenario"),
                    br(),
-                   strong("Before changing anything in this panel, ensure you have the local directory input -->"),br(),br(),
                    
                 tabsetPanel(
                      tabPanel("Management and conservation practices",br(),
@@ -191,14 +190,18 @@ https://doi.org/10.13031/trans.58.10715'),
                   
                   fluidRow(
                     
-                    column(3,numericInput("DELTAT", label = h5("Add linear increase to temperature (C):"),
+                    column(6,numericInput("DELTAT", label = h5("Add linear increase to temperature (C):"),
                                           value = "0")),
-                    column(3,numericInput("DELTAP", label = h5("Add linear increase in precipitation (%):"),
-                                          value = "0")),
-                    column(3,img(src="temp_graph2.png",width=579/1.5,height=485/1.5),p('Example of how temperature or precipitation change is applied in a linear change fashion to the climate data'))
+                    column(6,numericInput("DELTAP", label = h5("Add linear increase in precipitation (%):"),
+                                          value = "0"))
+
                     
                     
                   ),
+                  
+                 img(src="temp_graph3.png",width=808/1.5,height=331/1.5),
+                 br(),br(),
+                 p('Example of how temperature or precipitation change is applied in a linear change fashion to the climate data, where X is the user input value'),
           
                    
 
@@ -221,16 +224,17 @@ https://doi.org/10.13031/trans.58.10715'),
         #### INPUTS ##################
         #Don't know if I need all this printed to the UI if it's already in the left hand panel, consider removing...
         #management scenarios
-        br(),
+        # br(),
+        # 
+        # # Have to run SWAT+ locally on a windows machine. 
+        # #This is because Shiny cannot run a windows exe file. In future, could look into using linux based version of swat
+        # p('To run the OWC-SWAT+ model using this app, you will need to download the OWC-SWAT+ model (OWC_SWAT_GUI_FILES.zip) and unzip on your local computer. Note: this model currently only runs on Windows.'),
+        # a(href="https://buckeyemailosu-my.sharepoint.com/:f:/g/personal/kujawa_21_osu_edu/ElF6DZ3LvV9OmzzMB6Lt6DwBE0T1rRQNLCigHe4S8oYUbw?e=bCMiv9","OWC-SWAT+ files download"),
+        # p('Once those files are downloaded and unzipped, place the path to the files below:'),
+        # textAreaInput("local_dir","Copy and paste local directory on computer where downloaded OWC-SWAT+ files are:", value="",width="1000px"),
+        # br(),
         
-        # Have to run SWAT+ locally on a windows machine. 
-        #This is because Shiny cannot run a windows exe file. In future, could look into using linux based version of swat
-        p('To run the OWC-SWAT+ model using this app, you will need to download the OWC-SWAT+ model (OWC_SWAT_GUI_FILES.zip) and unzip on your local computer. Note: this model currently only runs on Windows.'),
-        a(href="https://buckeyemailosu-my.sharepoint.com/:f:/g/personal/kujawa_21_osu_edu/ElF6DZ3LvV9OmzzMB6Lt6DwBE0T1rRQNLCigHe4S8oYUbw?e=bCMiv9","OWC-SWAT+ files download"),
-        p('Once those files are downloaded and unzipped, place the path to the files below:'),
-        textAreaInput("local_dir","Copy and paste local directory on computer where downloaded OWC-SWAT+ files are:", value="",width="1000px"),
         br(),
-        
         checkboxGroupInput("SelectClimate", label = strong("Climate data to run:"), 
                            choices = list("Recent observed climate (2013-2020)"="hist","Climate change scenario"="userClimScen"), selected = "hist"),
         
@@ -242,7 +246,7 @@ https://doi.org/10.13031/trans.58.10715'),
         h3("Climate change scenario"),
         span(textOutput("climate_rate"),style='color:green'),br(),
         
-        span(textOutput("local_dir_input"),style='color:green'),
+        # span(textOutput("local_dir_input"),style='color:green'),
         
 
         
@@ -272,9 +276,9 @@ tabPanel("Visualize outputs",
                   column(6,         plotOutput("HRU_abs"))),
          
          fluidRow(column(6,                  p("Fig 2. Change between the baseline management (representative of years 2013-2020) and changes implemented in management and
-           conservation practices tab. Only HRUs with a landscape management change are included on this graph. If no changes are made to land-use, graph will not appear.")),
+           conservation practices tab. Only fields with a landscape management change are included on this graph. If no changes are made to land-use, graph will not appear.")),
                   column(6,                  p("Fig 3. Absolute value change between the baseline management (representative of years 2013-2020) and changes implemented in management and
-           conservation practices tab. Only HRUs with a landscape management change are included on this graph"))),
+           conservation practices tab. Only fields with a landscape management change are included on this graph"))),
          
          br(),
         
@@ -282,9 +286,9 @@ tabPanel("Visualize outputs",
                   column(6,         plotOutput("yield_abs"))),
          
          fluidRow(column(6,                  p("Fig 4. Yield change (%) between the baseline management (representative of years 2013-2020) and changes implemented in management and
-           conservation practices tab. Only HRUs with a landscape management change are included on this graph. If no changes are made to land-use, graph will not appear.")),
+           conservation practices tab. Only fields with a landscape management change are included on this graph. If no changes are made to land-use, graph will not appear.")),
                   column(6,                  p("Fig 5. Absolute value change (bu/acre) between the baseline management (representative of years 2013-2020) and changes implemented in management and
-           conservation practices tab. Only HRUs with a landscape management change are included on this graph"))),
+           conservation practices tab. Only fields with a landscape management change are included on this graph"))),
          
          br(), 
          
@@ -300,9 +304,9 @@ tabPanel("Visualize outputs",
                   column(6,         plotOutput("HRU_abs_clim"))),
          
          fluidRow(column(6,                  p("Fig 7. Change between the baseline management (representative of years 1990-2019) and changes implemented in management and
-           conservation practices tab. Only HRUs with a landscape management change are included on this graph")),
+           conservation practices tab. Only fields with a landscape management change are included on this graph")),
                   column(6,                  p("Fig 8. Absolute value change between the baseline management (representative of years 1990-2019) and changes implemented in management and
-           conservation practices tab. Only HRUs with a landscape management change are included on this graph"))),
+           conservation practices tab. Only fields with a landscape management change are included on this graph"))),
          
          br(),
          
@@ -310,9 +314,9 @@ tabPanel("Visualize outputs",
                   column(6,         plotOutput("yield_abs_clim"))),
          
          fluidRow(column(6,                  p("Fig 9. Yield change (%) between the baseline management (representative of years 1990-2019) and changes implemented in management and
-           conservation practices tab. Only HRUs with a landscape management change are included on this graph")),
+           conservation practices tab. Only fields with a landscape management change are included on this graph")),
                   column(6,                  p("Fig 10. Absolute value change (bu/acre) between the baseline management (representative of years 1990-2019) and changes implemented in management and
-           conservation practices tab. Only HRUs with a landscape management change are included on this graph"))),
+           conservation practices tab. Only fields with a landscape management change are included on this graph"))),
          br(),
          p("Table 2. Summary of yield changes"),
          tableOutput("yield_table_clim"),
@@ -391,10 +395,9 @@ server <- function(input, output, session) {
                              input$cc,
                              input$subfert,
                              input$notill,
-                             input$vfs,
-                             input$local_dir)
+                             input$vfs)
    removeModal()
-   testPlot(input$local_dir,input$SelectClimate)# testGUI()
+   testPlot(input$SelectClimate)# testGUI()
    
    
  })
@@ -406,12 +409,12 @@ server <- function(input, output, session) {
  
  ##### Climate graphs for user #######
  output$climate_rate<-reactive({validate(need((input$LOWPCP_HIGHTMP+input$HIGHPCP_AVGTMP+input$AVGPCP_HIGHTMP) <= 30, "Number of years altered is greater than the number of years in the climate change data set (30). Decrease input years"))
-   paste0("Climate change inputs are ready to run! The overall temperature change is ", round(as.numeric(ClimateDataInput()[[1]]$`Temperature (C)`[1]),2), " C and the 
-   overall precipitation change is ", round(as.numeric(ClimateDataInput()[[1]]$`Precipitation (mm)`[1]),2),"%")})
+   paste0("Climate change inputs are ready to run! The overall temperature change is ", ClimateDataInput()[[1]]$Temperature[3], " and the 
+   overall precipitation change is ", ClimateDataInput()[[1]]$Precipitation[3])})
  
  
- output$local_dir_input<-reactive({validate(need(!is.empty(input$local_dir), "Input directory with SWAT files (Path/to/OWC_SWAT_GUI_FILES) to start app and resolve error above (Error: cannot change working directory)"))
-   paste0("Local directory is loaded into the app. If above error persists, ensure directory path is correct (e.g., no additional spaces exist in the path name)")})
+ # output$local_dir_input<-reactive({validate(need(!is.empty(input$local_dir), "Input directory with SWAT files (Path/to/OWC_SWAT_GUI_FILES) to start app and resolve error above (Error: cannot change working directory)"))
+ #   paste0("Local directory is loaded into the app. If above error persists, ensure directory path is correct (e.g., no additional spaces exist in the path name)")})
  
  output$practice_rate<-reactive({validate(need(input$cc==10 & input$notill==60 |  input$cc==10 & input$subfert==0 | input$notill ==60 & input$subfert == 0 , "More than one in-field management was changed. Slide input values to to left-most position to restore inputs. Change at most only one in-field management practice rate."))
    paste0("In field practices ready to run")})
@@ -420,7 +423,7 @@ server <- function(input, output, session) {
    
    # recalculate climate here 
    ClimateChange(input$LOWPCP_HIGHTMP,input$HIGHPCP_AVGTMP,input$AVGPCP_HIGHTMP,
-                 input$DELTAT, input$DELTAP,input$local_dir)
+                 input$DELTAT, input$DELTAP)
    
  })
  

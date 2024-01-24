@@ -22,11 +22,12 @@
 
 # Full seasons that are within the 1990-2019 WY are included. This excludes fall 2019
 
-ClimateChange<-function(nyrs_LOWPCP_HIGHTMP,nyrs_HIGHPCP_AVGTMP,nyrs_AVGPCP_HIGHTMP,deltaC, deltaP,local_dir){
+ClimateChange<-function(nyrs_LOWPCP_HIGHTMP,nyrs_HIGHPCP_AVGTMP,nyrs_AVGPCP_HIGHTMP,deltaC, deltaP){
 
   set.seed(1)
   
-  local_dir<-gsub("\\\\", "/",local_dir)
+  # local_dir<-gsub("\\\\", "/",local_dir)
+  local_dir<-here()
   
     
   ### functions ######

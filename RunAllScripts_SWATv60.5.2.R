@@ -1,8 +1,9 @@
-RunAllScripts_SWATv60.5.2<-function(SelectClimate,stream_rate,cc_rate,subfert_rate,notill_rate,vfs_rate,local_dir){
+RunAllScripts_SWATv60.5.2<-function(SelectClimate,stream_rate,cc_rate,subfert_rate,notill_rate,vfs_rate){
 
   
   ### folders ########
-  local_dir<-gsub("\\\\", "/",local_dir)
+  # local_dir<-gsub("\\\\", "/",local_dir)
+  local_dir<-here()
   
   baseline_path <- paste0(local_dir,"/Baseline")
   scenario_path <- paste0(local_dir,"/Scenarios")
@@ -583,13 +584,12 @@ ChangeMgt<-function(hru_data, name,  num, scenario_rate){
                               # system('SWATPlus_60.5.5.exe',ignore.stdout = T,ignore.stderr = T) #run executable
                               
                               setwd(paste0(scenario_path,'/',climatemodel))
-                              system('SWATPlus_60.5.5.exe',ignore.stdout = T,ignore.stderr = T) #run executable
+                              x<-system('SWATPlus_60.5.5.exe',ignore.stdout = T,ignore.stderr = T) #run executable
                               # Need to return error value and supply the error to the user interface if SWAT crashes
-                              # if (x == 157 | x == 72 | x == 38) {
-                              #   print("\n\n\n\n\n\n")
-                              #   print(x)
-                              #   
-                              #   trial_status <- "FAILED"
+                              if (x == 157 | x == 72 | x == 38) {
+                                stop('OWC-SWAT+ model crashed. Ensure computer has enough space to write model outputs as well reasonable climate
+                                     inputs (e.g., precipitation change by 100% may cause model to crash)') 
+                              }
                               
                               # Moved to testPlot
                               ### Read in channel data and compare with baseline ####
