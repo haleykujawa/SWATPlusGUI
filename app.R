@@ -32,6 +32,8 @@ ui <- fluidPage(
     tabsetPanel(
       
       tabPanel("About OWC-SWAT+", br(),strong("Welcome to the Old Woman Creek Soil and Water Assessment Tool! (OWC-SWAT+)"), br(),br(),
+               
+               a(href="https://registrationcenter-download.intel.com/akdlm/IRC_NAS/5e411842-8348-40cd-81f6-df193c321611/w_ifort_runtime_p_2024.0.0.49848.exe","***Important!*** Before running the model through this application, you will need to install the following Fortran dependencies"), p("*Download and install this exectutable only once*"),br(),
 
                p("This tool was designed to aid conservation efforts in the Old Woman Creek (OWC) watershed. Contained within this is a watershed model of Old Woman Creek built with the Soil and Water Assessment Tool framework (SWAT+)."), p("SWAT is a landscape hydrology and pollutant transport model designed by the U.S. Department of Agricultural Research Service (USDA) to simulate the transport of nutrients, sediments, and
 pesticides in agricultural landscapes (Arnold et al., 2012; Moriasi et al., 2015)."),
@@ -88,19 +90,19 @@ https://doi.org/10.13031/trans.58.10715'),
                    
                 tabsetPanel(
                      tabPanel("Management and conservation practices",br(),
-                              p('Percent of practice on row-crop lands. All practices are intialized at the baseline rate - representative of years 2013-2020.'),
-                              p('The current Shiny-SWAT+ framework can only alter one practice per model run in each of the following categories:'),
+                              h5('Percent of practice on row-crop lands. All practices are intialized at the baseline rate - representative of years 2013-2020.'),
+                              h5('The current Shiny-SWAT+ framework can only alter ', strong('one practice in each of the following categories'), 'per model run:'),
                               
                               hr(style="border-color: silver;"),
                               
-                              br(),p('Edge-of-field BMPs'),br(),
+                              br(),h5(strong('Category 1:'), 'Edge-of-field BMPs'),br(),
                               
                               fluidRow(column(6,sliderInput("vfs", label = "Vegetative field buffers", min=35,max=100,value = 35)),
                                        column(6,br(),textOutput("vfs_rate_change"))),
                               
                               hr(style="border-color: silver;"),
                               
-                              br(),p('In-field management practices (change one only)'),br(),
+                              br(),h5(strong('Category 2:'), 'In-field management practices', em('(change one only)')),br(),
                               
                               fluidRow(column(6,sliderInput("cc", label = "Rye cover crop",min=10,max=100, value = 10)),
                                        column(6,br(),textOutput("cc_rate_change"))),
@@ -121,7 +123,7 @@ https://doi.org/10.13031/trans.58.10715'),
                               
                               hr(style="border-color: silver;"),
                               
-                              br(),p('In-stream BMPs'),br(),
+                              br(),h5(strong('Category 3:'), 'In-stream BMPs'),br(),
                               
                               #ditch widget--maybe change this to miles of stream as an input?
                               fluidRow(column(6,sliderInput("ditch_rate", label = ("Conservation ditches"),min=0,max=100, value = 0)),
@@ -156,7 +158,7 @@ https://doi.org/10.13031/trans.58.10715'),
                   
                   column(6,numericInput("LOWPCP_HIGHTMP", label = h5("Years with low precipitation, high temperatures:"),
                                       value = "5")),br(),br(),
-                  p('  These years include: 1991, 1999, 2010, 2012, 2016 (5 years)'),
+                  # p('  These years include: 1991, 1999, 2010, 2012, 2016 (5 years)'),
                   column(6, textOutput("LOWPCP_HIGHTMP"))
                    
 
@@ -166,7 +168,7 @@ https://doi.org/10.13031/trans.58.10715'),
                     
                     column(6,numericInput("HIGHPCP_AVGTMP", label = h5("Years with high precipitation, average temperatures:"),
                                           value = "5")),br(),br(),
-                    p('  These years include: 2000, 2007, 2008, 2013, 2019 (5 years)'),
+                    # p('  These years include: 2000, 2007, 2008, 2013, 2019 (5 years)'),
                     column(6, textOutput("HIGHPCP_AVGTMP"))
                     
                     
@@ -176,7 +178,7 @@ https://doi.org/10.13031/trans.58.10715'),
                     
                     column(6,numericInput("AVGPCP_HIGHTMP", label = h5("Years with average precipitation, high temperatures:"),
                                           value = "3")),br(),br(),
-                    p('  These years include: 1998, 2002, 2018 (3 years)'),
+                    # p('  These years include: 1998, 2002, 2018 (3 years)'),
                     column(6, textOutput("AVGPCP_HIGHTMP"))
                     
                     
@@ -242,7 +244,8 @@ https://doi.org/10.13031/trans.58.10715'),
             strong("Clicking 'Run OWC-SWAT+' can take up to 20 minutes."),
             h5("Recent observed climate = ~ 6 min"),
             h5("Climate change scenario = ~ 12 min"),
-            em("Once you hit 'Run OWC-SWAT+' you cannot redo the model run. You will have to wait until the model completes the runs or restart the app. *Check inputs before running!*"),
+            em("Once you hit 'Run OWC-SWAT+' you cannot redo the model run. You will have to wait until the model completes the runs or restart your computer. Closing the application will not end the model run. *Check inputs before running!*"),
+        br(),
         h3("Climate change scenario"),
         span(textOutput("climate_rate"),style='color:green'),br(),
         
@@ -286,14 +289,18 @@ tabPanel("Visualize outputs",
                   column(6,         plotOutput("yield_abs"))),
          
          fluidRow(column(6,                  p("Fig 4. Yield change (%) between the baseline management (representative of years 2013-2020) and changes implemented in management and
-           conservation practices tab. Only fields with a landscape management change are included on this graph. If no changes are made to land-use, graph will not appear.")),
+           conservation practices tab. Only fields with a landscape management change are included on this graph. If no changes are made to land-use, graph will not appear.***")),
                   column(6,                  p("Fig 5. Absolute value change (bu/acre) between the baseline management (representative of years 2013-2020) and changes implemented in management and
-           conservation practices tab. Only fields with a landscape management change are included on this graph"))),
+           conservation practices tab. Only fields with a landscape management change are included on this graph***"))),
          
          br(), 
          
          p("Table 1. Summary of yield changes"),
-         tableOutput("yield_table"),
+         tableOutput("yield_table***"),
+         
+         em('***Note that there were limitations with the calibration of winter wheat yields in the OWC-SWAT+ model. While an average yield of 80 bushels/acre was the target yield
+            as advised by the local SWCD, the current SWAT+ configuration could only achieve up to 58 bu/acre on average. This is one of the noted limitations of the OWC-SWAT+
+            model that can be improved upon in future studies'),
          
          h2('Results for climate and land use change'),
          
@@ -389,7 +396,7 @@ server <- function(input, output, session) {
 
   text_reactive <-eventReactive( input$runswat, {
   
-   showModal(modalDialog(title="Running SWAT+. Any further changes to the model will not be reflected in results tab.",tagList(timestamp()), footer=NULL,easyClose = T))
+   showModal(modalDialog(title="Running SWAT+. Any further changes to the model will not be reflected in results tab. Once the model is set to run - you must wait for the run to complete to use the app again. Exiting the application will not stop the model run.",tagList(timestamp()), footer=NULL,easyClose = T))
    RunAllScripts_SWATv60.5.2(input$SelectClimate,
                              input$ditch_rate,
                              input$cc,

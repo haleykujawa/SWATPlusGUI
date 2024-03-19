@@ -3,9 +3,9 @@
 
 
 # To dos
+# Note what Norwalk and OWC data data flags were used in filtering data
 # Replace missing 2008 temp data with OWC data -- done 4/18/23
-# Clean Norwalk and OWC data for data flags?
-# Move winter to be cohesive-- currently summarizing jan/feb, dec of same year, need dec previous year + jan/feb current year
+# Move winter to be cohesive-- currently summarizing jan/feb, dec of same year, need dec previous year + jan/feb current year - done, see lines 193
 
 # Did small spot checks to see that data was being calculated correctly
 # dailyClim_final --> tmin never greater than tmax
@@ -23,6 +23,16 @@
 # Full seasons that are within the 1990-2019 WY are included. This excludes fall 2019
 
 ClimateChange<-function(nyrs_LOWPCP_HIGHTMP,nyrs_HIGHPCP_AVGTMP,nyrs_AVGPCP_HIGHTMP,deltaC, deltaP){
+  
+ if( is.na(deltaP)){
+   
+   deltaP<-0
+ }
+  
+  if( is.na(deltaC)){
+    
+    deltaC<-0
+  }
 
   set.seed(1)
   
