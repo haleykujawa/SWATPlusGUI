@@ -389,7 +389,7 @@ server <- function(input, output, session) {
 
   text_reactive <-eventReactive( input$runswat, {
   
-   showModal(modalDialog(title="Running SWAT+",tagList("Any further changes to the model will not be reflected in results tab"), footer=NULL,easyClose = T))
+   showModal(modalDialog(title="Running SWAT+. Any further changes to the model will not be reflected in results tab.",tagList(timestamp()), footer=NULL,easyClose = T))
    RunAllScripts_SWATv60.5.2(input$SelectClimate,
                              input$ditch_rate,
                              input$cc,
